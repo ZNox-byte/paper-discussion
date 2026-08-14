@@ -9,6 +9,16 @@ def _bullets(items: list[str]) -> str:
     return "\n".join(f"- {item}" for item in items) if items else "- 无"
 
 
+RELATION_LABELS = {
+    "foundation": "基础工作",
+    "direct_improvement": "直接改进",
+    "mechanism_extension": "机制扩展",
+    "alternative": "横向替代",
+    "orthogonal": "正交工作",
+    "evaluation": "评测与验证",
+}
+
+
 def render_report(
     synthesis: SurveySynthesis,
     results: list[ResearchResult],
@@ -21,8 +31,11 @@ def render_report(
 ) -> str:
     cumulative_paper_count = cumulative_paper_count or len(results)
     planned_paper_count = planned_paper_count or len(results)
+    results_by_task = {result.task_id: result for result in results}
     lines = [
         f"# {synthesis.title}",
+        "",
+        "> 阶段产物：DeepSeek v4 Pro 结构化草稿；尚待 Codex GPT 最终审查。",
         "",
         (
             f"> 研究轮次：第 {round_number} 轮；本轮论文：{len(results)} 篇；"
@@ -42,7 +55,7 @@ def render_report(
         "",
     ]
     if failed_task_count:
-        lines[2:2] = [
+        lines[4:4] = [
             (
                 f"> 质量说明：计划 {planned_paper_count} 篇，{len(results)} 篇通过验证，"
                 f"{failed_task_count} 篇被排除；以下综合仅依据已验证结果。"
@@ -56,12 +69,52 @@ def render_report(
                 "",
                 section.overview,
                 "",
-                f"覆盖任务：{', '.join(f'[{task_id}]' for task_id in section.paper_ids)}",
-                "",
-                _bullets(section.trends),
+                f"主分类论文：{', '.join(f'[{task_id}]' for task_id in section.paper_ids)}",
                 "",
             ]
         )
+        for thread in section.evolution_threads:
+            lines.extend(
+                [
+                    f"#### 技术演进主线：{thread.thread_name}",
+                    "",
+                    f"**主线问题：** {thread.question}",
+                    "",
+                    thread.narrative,
+                    "",
+                ]
+            )
+            for number, step in enumerate(thread.ordered_steps, start=1):
+                result = results_by_task[step.task_id]
+                predecessors = (
+                    ", ".join(f"[{task_id}]" for task_id in step.builds_on)
+                    if step.builds_on
+                    else "无（本主线起点）"
+                )
+                lines.extend(
+                    [
+                        f"##### {number}. [{step.task_id}] {result.title}",
+                        "",
+                        f"- 关系类型：{RELATION_LABELS[step.relation_to_previous]}",
+                        f"- 承接论文：{predecessors}",
+                        f"- 前作问题：{step.predecessor_problem}",
+                        f"- 本作贡献或改进：{step.contribution_or_improvement}",
+                        f"- 代价与权衡：{step.tradeoffs}",
+                        f"- 剩余问题：{step.remaining_gap}",
+                        f"- 关系依据：{step.relationship_evidence}",
+                        "",
+                    ]
+                )
+        if section.lateral_connections:
+            lines.extend(
+                [
+                    "#### 横向与跨主线联系",
+                    "",
+                    _bullets(section.lateral_connections),
+                    "",
+                ]
+            )
+        lines.extend(["#### 分类趋势", "", _bullets(section.trends), ""])
 
     lines.extend(
         [

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CategoryPlan",
+  "type": "object",
+  "properties": {
+    "category": {
+      "title": "Category",
+      "type": "string"
+    },
+    "paper_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Paper Ids",
+      "type": "array"
+    },
+    "evolution_threads": {
+      "items": {
+        "$ref": "#/$defs/EvolutionPlanThread"
+      },
+      "minItems": 1,
+      "title": "Evolution Threads",
+      "type": "array"
+    }
+  },
+  "required": [
+    "category",
+    "paper_ids",
+    "evolution_threads"
+  ],
+  "$defs": {
+    "EvolutionPlanStep": {
+      "additionalProperties": false,
+      "properties": {
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        },
+        "relation_to_previous": {
+          "enum": [
+            "foundation",
+            "direct_improvement",
+            "mechanism_extension",
+            "alternative",
+            "orthogonal",
+            "evaluation"
+          ],
+          "title": "Relation To Previous",
+          "type": "string"
+        },
+        "builds_on": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Builds On",
+          "type": "array"
+        },
+        "relationship_rationale": {
+          "title": "Relationship Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "relation_to_previous",
+        "relationship_rationale"
+      ],
+      "title": "EvolutionPlanStep",
+      "type": "object"
+    },
+    "EvolutionPlanThread": {
+      "additionalProperties": false,
+      "properties": {
+        "thread_name": {
+          "title": "Thread Name",
+          "type": "string"
+        },
+        "question": {
+          "title": "Question",
+          "type": "string"
+        },
+        "ordered_steps": {
+          "items": {
+            "$ref": "#/$defs/EvolutionPlanStep"
+          },
+          "minItems": 1,
+          "title": "Ordered Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "thread_name",
+        "question",
+        "ordered_steps"
+      ],
+      "title": "EvolutionPlanThread",
+      "type": "object"
+    }
+  }
+}

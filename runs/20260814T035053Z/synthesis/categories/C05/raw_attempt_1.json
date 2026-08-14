@@ -1,0 +1,94 @@
+{
+  "category": "模型压缩与低精度计算",
+  "overview": "本类别聚焦通过低精度量化与压缩技术降低大语言模型推理中的KV Cache显存占用和注意力计算开销，以提升推理吞吐与效率。P07提出KIVI无微调2bit非对称量化，P08提出INT-FlashAttention将INT8量化与FlashAttention融合，P10通过编码压缩与流式传输优化KV Cache网络带宽，P25提出MiniKV结合2bit量化与金字塔逐层预算分配，P26提出Oaken在线-离线混合量化以加速硬件。它们构成两条技术演化主线：KV Cache低精度量化与内存优化，以及注意力内核的低精度量化。",
+  "paper_ids": [
+    "P07",
+    "P08",
+    "P10",
+    "P25",
+    "P26"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "KV Cache低精度量化与内存优化",
+      "question": "如何通过低精度KV Cache量化与调度策略在保持模型质量的同时提升LLM推理效率？",
+      "narrative": "该线程从KV Cache量化基础方法出发，逐步发展出结合压缩、流式传输、逐层分配和硬件协同的优化方案。P07作为基础工作，提出无微调2bit非对称量化并保留全精度滑动窗口，显著降低内存占用。P10作为正交工作，通过编码压缩与流式传输优化网络带宽和TTFT。P25直接改进P07，引入金字塔逐层KV预算分配和FlashAttention兼容内核，在相同缓存大小下提高准确率并支持更长序列。P26在P07和P25基础上扩展机制，提出在线-离线混合量化与融合编码，进一步降低位宽并优化硬件实现。",
+      "ordered_steps": [
+        {
+          "task_id": "P07",
+          "relation_to_previous": "foundation",
+          "predecessor_problem": "KV Cache内存占用过大，限制批处理大小和推理吞吐。",
+          "contribution_or_improvement": "提出KIVI，一种无需微调的2bit非对称量化方法：按通道量化Key、按token量化Value，并保留全精度滑动窗口，在几乎不损失生成质量的情况下将KV Cache压缩至2bit，降低峰值内存并提升吞吐。",
+          "tradeoffs": "对于Falcon-7B等多查询注意力模型，2bit量化可能导致较大精度下降，需使用4bit；困难生成任务上依赖全精度滑动窗口缓解精度损失。",
+          "remaining_gap": "吞吐提升可通过进一步融合量化过程与前序算子来增大，尚未实现。",
+          "relationship_evidence": "P07作为KV Cache量化领域的基础工作，首次提出无微调的2bit非对称量化方法（Key按通道、Value按token），并保留全精度滑动窗口，在几乎不损失生成质量的情况下显著降低KV Cache内存占用，为后续KV Cache量化研究提供了算法基础和性能基准。 [P07]",
+          "builds_on": []
+        },
+        {
+          "task_id": "P10",
+          "relation_to_previous": "orthogonal",
+          "predecessor_problem": "KV Cache传输带宽高，导致上下文加载延迟（TTFT）过大。",
+          "contribution_or_improvement": "CacheGen利用KV Cache分布特性进行delta编码、分层量化和算术编码压缩，并通过流式传输与带宽自适应调整压缩级别，显著减少传输带宽和TTFT。",
+          "tradeoffs": "未在超大模型（如OPT-175B）上评估；未广泛评估自由文本生成任务；极高带宽条件下改进有限。",
+          "remaining_gap": "缺乏公开产业数据集验证上下文复用；高带宽场景下性能提升受限。",
+          "relationship_evidence": "P10关注KV Cache的编码压缩与流式传输优化（目标在于降低网络带宽和TTFT），与P07的量化方案在目标、方法和应用场景上不同，属于并行优化路径，二者可互补但无直接改进关系。 [P07] [P10]",
+          "builds_on": [
+            "P07"
+          ]
+        },
+        {
+          "task_id": "P25",
+          "relation_to_previous": "direct_improvement",
+          "predecessor_problem": "P07的均匀2bit量化未考虑不同层对KV Cache的敏感度差异，导致在长上下文任务中准确率下降或内存利用率不足。",
+          "contribution_or_improvement": "MiniKV在2bit量化基础上引入金字塔逐层KV预算分配，并设计兼容FlashAttention的两遍注意力内核，在相同KV Cache大小下达到更高准确率（LLaMA2-7B-chat上98.5%全模型准确率），且支持更长序列和更高吞吐。",
+          "tradeoffs": "尚未与模型压缩等其他优化技术组合；组合SnapKV与KIVI时出现精度下降，表明不同淘汰策略对2bit量化的敏感度不同，需要更鲁棒的组合框架。",
+          "remaining_gap": "缺乏与多种KV淘汰策略和量化方法的统一兼容框架，以同时实现高压缩比和高准确率。",
+          "relationship_evidence": "P25在P07的2bit量化基础上引入逐层金字塔KV预算分配，并设计兼容FlashAttention的两遍注意力内核，在相同KV Cache大小下达到更高准确率（LLaMA2-7B-chat上98.5%全模型准确率），且支持更长序列和更高吞吐，是对P07量化方法的直接改进和系统级拓展。 [P07] [P25]",
+          "builds_on": [
+            "P07"
+          ]
+        },
+        {
+          "task_id": "P26",
+          "relation_to_previous": "mechanism_extension",
+          "predecessor_problem": "P07和P25的在线量化需要实时检测异常值或逐层决策，引入较高计算开销，且未充分利用硬件特性。",
+          "contribution_or_improvement": "Oaken提出在线-离线混合量化：离线确定异常值阈值，在线仅计算量化scale，避免高开销检测；结合group-shift量化与融合编码进一步降低位宽，并设计定制引擎和内存管理单元加速推理。",
+          "tradeoffs": "当总序列长度低于8K时，计算密集场景下GPU上的QServe和vLLM吞吐可能超过Oaken；对于使用分组查询注意力的模型（如Mixtral-8x7B），KV Cache较小，量化增益有限。",
+          "remaining_gap": "需要针对大模型（如Llama2-70B）和更长序列优化内存容量，以扩展Oaken-HBM的适用性。",
+          "relationship_evidence": "P26提出在线-离线混合量化，通过离线确定异常值阈值避免在线高开销检测，结合group-shift量化与融合编码进一步降低位宽，并在加速器上实现定制引擎。它继承了P07的量化思想和P25的KV缓存优化目标，但引入新的机制（离线阈值、硬件协同）以解决在线量化开销问题，属于机制扩展而非直接改进。 [P07] [P25] [P26]",
+          "builds_on": [
+            "P07",
+            "P25"
+          ]
+        }
+      ]
+    },
+    {
+      "thread_name": "注意力内核的低精度量化",
+      "question": "如何将INT8量化与FlashAttention内核高效结合以提升注意力计算速度？",
+      "narrative": "该线程从注意力算子的低精度量化出发，P08提出首个与FlashAttention前向流程兼容的token级INT8量化架构，用INT8 GEMM替换所有矩阵乘法，在Ampere GPU上显著提升推理速度并降低量化误差，为注意力内核的低精度优化奠定基础。",
+      "ordered_steps": [
+        {
+          "task_id": "P08",
+          "relation_to_previous": "foundation",
+          "predecessor_problem": "FlashAttention使用FP16/FP8计算，推理速度受限于高精度矩阵乘法，且量化方案与FlashAttention的tiling和online softmax不兼容。",
+          "contribution_or_improvement": "INT-FlashAttention提出首个与FlashAttention前向流程兼容的token-level INT8量化架构，将Q、K、V全部量化为INT8，并用INT8 GEMM替换所有矩阵乘法，在RTX4090上相比FlashAttention-FP16推理时间最多降低73%，且比FP8量化误差更小。",
+          "tradeoffs": "V矩阵目前仅实现tensor-level量化，尚未实现per-token量化，可能限制量化精度提升。",
+          "remaining_gap": "未来需实现per-block量化优化V矩阵，并探索与Hadamard变换结合以进一步加速推理。",
+          "relationship_evidence": "P08作为该线程的基础工作，提出首个与FlashAttention前向流程兼容的token级INT8量化架构，用INT8 GEMM替换所有矩阵乘法，在Ampere GPU上显著提升推理速度并降低量化误差，为注意力算子的低精度优化奠定基础。 [P08]",
+          "builds_on": []
+        }
+      ]
+    }
+  ],
+  "lateral_connections": [
+    "P01的PagedAttention通过分页内存管理减少KV Cache碎片，与P07/P25/P26的量化方法正交，可叠加使用以进一步降低显存占用。",
+    "P02的RadixAttention通过前缀缓存复用提高KV Cache利用率，与P10的压缩传输在长上下文共享场景下有潜在协同。",
+    "P29的系统评估量化、内核和缓存配置对能耗与准确率的影响，为P07/P08/P25/P26的部署权衡提供参考。"
+  ],
+  "trends": [
+    "从统一量化方案（P07）向逐层自适应与硬件协同设计（P25、P26）演进，以在保持准确率的同时进一步压缩KV Cache。",
+    "量化与FlashAttention等高效内核的融合（P08、P25）成为提升注意力计算效率的关键路径。",
+    "压缩目标从内存占用扩展到网络带宽（P10）和端到端延迟（P26），反映LLM服务系统级优化的需求。"
+  ]
+}

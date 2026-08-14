@@ -1,0 +1,657 @@
+{
+  "title": "以 vLLM 为代表的 AI Infra Systems 论文综述",
+  "abstract": "本综述系统梳理了 AI Infra 系统中以大模型在线推理为核心的技术演进，涵盖内存管理、请求调度、并行执行、低精度计算及可靠性等核心优化维度。通过分析 32 篇通过验证的学术论文，我们构建了各领域的技术演化脉络，揭示了从基础分页内存管理到动态跨实例调度、从均匀量化到自适应低精度计算、从静态配置到可靠性与能耗感知的系统级优化趋势。综述强调了跨层协同设计的重要性，并指出了当前研究在分布式确定性、长上下文效率、多维度权衡及实测负载覆盖等方面的不足，为未来 AI Infra Systems 的研究提供了系统性参考。",
+  "scope_and_method": "本综述以 vLLM 引领的 AI Infra Systems 为对象，围绕内存管理、请求调度、并行执行、低精度计算、软硬件协同等核心问题，对 32 篇经验证的论文报告进行了结构化综合分析。我们根据论文的技术贡献与演化关系，将其划分为六大类别：推理服务与请求调度、KV Cache 与内存管理、并行计算与分布式执行、训练系统与优化、模型压缩与低精度计算、性能评测与成本分析、以及可靠性、弹性与可观测性。通过在每个类别内构建技术进化线程，明确区分直接改进、机制扩展、替代方案、正交工作和评估研究，并在类别间建立横向关联与全局趋势，最终综合形成对 AI Infra Systems 技术发展脉络的全面叙事。",
+  "category_syntheses": [
+    {
+      "category": "推理服务与请求调度",
+      "overview": "该类别聚焦于LLM推理服务中的请求调度与资源分配优化，覆盖从单GPU内部到跨实例的调度机制演进，旨在提升吞吐、降低延迟并满足SLO。早期工作通过单机内细粒度并行与nano-batch重叠提升吞吐 [P05]，后续研究扩展至单机内的prefill/decode解耦 [P15]、混合实时/尽力而为请求调度 [P16]、公平性感知的上下文切换优化 [P12]、以及前缀缓存局部性感知的公平调度 [P13]。跨实例层面，动态请求迁移与全局队列管理等机制被提出以应对负载不均和SLO达成 [P06][P27]，并进一步统一共置与分离式执行 [P14]。整体上，调度从静态粗粒度向动态细粒度、从吞吐中心向SLO和公平性敏感演进。",
+      "paper_ids": [
+        "P05",
+        "P06",
+        "P12",
+        "P13",
+        "P14",
+        "P15",
+        "P16",
+        "P27"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "单机内请求调度优化",
+          "question": "如何通过单机内的调度与资源分配机制优化LLM推理服务的吞吐与延迟？",
+          "narrative": "该线程从P05的nano-batch流水线与intra-device parallelism奠定高吞吐基础 [P05]，随后通过机制扩展引入prefill/decode解耦 [P15]、混合请求优先级调度 [P16]、公平性感知的上下文切换优化 [P12]和前缀缓存局部性感知的公平调度 [P13]。其中，P15针对混合批次干扰问题动态划分SM，实现阶段逻辑分离 [P15]；P16提出迭代级优先级调度与双向KV块共享，平衡实时与尽力而为请求 [P16]；P12通过块组KV缓存和异步交换降低抢占式切换开销 [P12]；P13则在公平调度中纳入前缀缓存局部性，以赤字机制保障公平性与缓存复用 [P13]。这些工作共同丰富了单机内调度策略，在吞吐、延迟、公平性等维度上形成互补。",
+          "ordered_steps": [
+            {
+              "task_id": "P05",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "predecessor_problem": "LLM在线推理服务中，单GPU内计算、内存和网络操作顺序执行，导致资源利用率低、吞吐远低于理论最优。",
+              "contribution_or_improvement": "提出NanoFlow框架，通过nano-batch流水线与intra-device parallelism重叠异构资源操作，自动搜索最优执行管线，显著提升端到端吞吐并接近理论最优。",
+              "tradeoffs": "收益依赖精确的调度与资源分配；仅拆分nano-batch而不重叠会导致性能下降；KV-cache分层卸载引入约3%的pipeline开销。",
+              "remaining_gap": "未覆盖prefill/decode混合干扰问题，未处理异构QoS需求，未优化上下文切换开销。",
+              "relationship_evidence": "作为基础工作，P05提出了单机内资源重叠与细粒度并行的核心机制，为后续调度优化提供了性能基准和机制起点 [P05]。"
+            },
+            {
+              "task_id": "P15",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P05"
+              ],
+              "predecessor_problem": "P05虽提升了吞吐，但未解决prefill与decode在混批时的细粒度干扰，导致TBT延迟显著升高。",
+              "contribution_or_improvement": "在单GPU内通过动态SM分区实现prefill/decode的逻辑解耦，结合成本模型和滞回控制，同时降低TTFT/TBT并保持高吞吐。",
+              "tradeoffs": "需要离线profiling标定模型参数；在输入长度多样性高或均匀的特定工作负载下，延迟改善不显著。",
+              "remaining_gap": "仍未针对混合实时/尽力而为请求的优先级调度需求进行优化。",
+              "relationship_evidence": "P15扩展了P05的单机内资源重叠思想，通过动态SM分区将并行性从单纯的计算/内存重叠延伸到prefill/decode阶段解耦，是对P05机制的进一步延伸 [P05] [P15]。"
+            },
+            {
+              "task_id": "P16",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P05"
+              ],
+              "predecessor_problem": "P05假设请求优先级均匀，但实际服务中需同时服务实时（RT）与尽力而为（BE）请求，存在异构QoS需求。",
+              "contribution_or_improvement": "提出BROS，通过迭代级动态优先级调度与双向KV缓存块共享，在共置RT/BE请求的同时降低RT延迟、提升SLO达成率，并保持BE吞吐。",
+              "tradeoffs": "BE吞吐有约10-18%的下降；BE请求数据集为合成，可能不完全反映真实分布。",
+              "remaining_gap": "未解决上下文切换开销问题，且未结合前缀缓存局部性。",
+              "relationship_evidence": "P16与P05在单机调度空间内正交：P05优化均匀优先级下的吞吐，P16则面向混合QoS的调度与缓存共享，两者无直接改进关系 [P05] [P16]。"
+            },
+            {
+              "task_id": "P12",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P05",
+                "P16"
+              ],
+              "predecessor_problem": "公平性驱动的LLM服务中，优先级调整导致上下文切换开销大，I/O利用率低、GPU空闲，且多轮对话存在冗余I/O。",
+              "contribution_or_improvement": "提出FastSwitch，通过动态块组KV缓存管理、多线程异步交换和跨轮次KV缓存复用，显著降低抢占式上下文切换开销，改进TTFT/TBT。",
+              "tradeoffs": "实验覆盖模型和硬件有限，优先级在线生成和真实trace验证不足。",
+              "remaining_gap": "未将前缀缓存局部性纳入公平调度考量。",
+              "relationship_evidence": "P12针对上下文切换这一特定瓶颈进行优化，与P05的nano-batch重叠和P16的混合请求调度均正交，无直接改进关系 [P05] [P12] [P16]。"
+            },
+            {
+              "task_id": "P13",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P12",
+                "P16"
+              ],
+              "predecessor_problem": "P12优化了上下文切换效率，但未考虑前缀缓存局部性；P16处理了优先级调度但未提供公平性保证。",
+              "contribution_or_improvement": "提出局部性感知的公平调度算法DLPM及其分布式版本D2LPM，通过赤字机制在保持前缀缓存局部性的同时提供公平性保证，提升吞吐并降低客户端延迟。",
+              "tradeoffs": "仅考虑同一客户端内部的前缀共享，忽略跨客户端共享；未处理程序内请求间数据依赖。",
+              "remaining_gap": "分布式场景下公平性与局部性的权衡仍需进一步优化。",
+              "relationship_evidence": "P13在公平调度思想上是P12的机制扩展，将前缀缓存局部性纳入公平调度；同时与P16的优先级调度互补，但通过结合局部性提升整体性能，无直接改进关系 [P12] [P13] [P16]。"
+            }
+          ]
+        },
+        {
+          "thread_name": "跨实例动态请求调度",
+          "question": "如何通过跨实例的动态请求调度与迁移优化LLM推理服务的负载均衡、SLO达成与成本效率？",
+          "narrative": "该线程从P06的KV cache实时迁移与虚拟用量调度奠定基础 [P06]，随后P27提出基于请求等待时间估计的全局队列管理作为替代方案 [P27]，P14则通过micro-request抽象与两级调度统一共置与分离式执行，融合了前两者思想并进一步扩展 [P06][P14][P27]。整体从最初的迁移机制演进到更细粒度的请求切分与全局优化，不断提升SLO达成率和资源利用率。",
+          "ordered_steps": [
+            {
+              "task_id": "P06",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "predecessor_problem": "LLM推理服务中异构、不可预测请求导致负载不均、内存碎片和优先级干扰，传统一次性分发无法动态应对。",
+              "contribution_or_improvement": "提出Llumnix，通过KV cache实时迁移实现跨实例请求重调度，统一负载均衡、去碎片化、优先级隔离和自动扩缩容，显著改善尾延迟、高优先级加速和成本效率。",
+              "tradeoffs": "仅支持vLLM后端，优先级仅分两类，virtual usage规则简单。",
+              "remaining_gap": "未探索基于队列等待时间的全局调度方法，且缺乏更细粒度的请求切分机制。",
+              "relationship_evidence": "P06开创了基于KV cache迁移的跨实例动态调度，是该线程的基础性工作 [P06]。"
+            },
+            {
+              "task_id": "P27",
+              "relation_to_previous": "alternative",
+              "builds_on": [
+                "P06"
+              ],
+              "predecessor_problem": "P06通过迁移实现调度，但可能带来迁移开销和复杂度；需要一种更轻量、基于队列的SLO导向调度方法。",
+              "contribution_or_improvement": "提出QLM，通过请求等待时间（RWT）估计器预测队列等待时间，由全局调度器执行请求拉取、驱逐、负载均衡和模型切换，提升SLO达成率与吞吐。",
+              "tradeoffs": "RWT估计器在请求组较少时会高估等待时间；输出长度极端值下可能低估完成时间；不支持抢占式负载均衡。",
+              "remaining_gap": "缺乏请求的动态迁移能力，无法在任意token边界灵活切分请求。",
+              "relationship_evidence": "P27采用基于队列管理的替代方法实现SLO导向调度，与P06的KV cache迁移机制形成替代关系，两者无直接改进关系 [P06] [P27]。"
+            },
+            {
+              "task_id": "P14",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P06",
+                "P27"
+              ],
+              "predecessor_problem": "P06的迁移粒度为整个请求，P27的队列管理粒度较粗，均无法在任意token边界灵活切分请求以实现最优资源利用。",
+              "contribution_or_improvement": "提出DynaServe，通过micro-request抽象（可在任意token边界切分请求）和两级调度，统一共置与分离式执行，在满足SLO的同时最大化GPU利用率。",
+              "tradeoffs": "未专门评估超长上下文或大规模集群；输出长度预测依赖现有方法，极端误差下SLO保证不充分。",
+              "remaining_gap": "对超长上下文和更大规模集群的扩展性仍需研究。",
+              "relationship_evidence": "P14扩展了P06的跨实例调度灵活性，利用类似迁移的思想进行chunk-based KV传输，同时结合P27的队列与调度控制思想，通过更细粒度的请求切分和统一放置机制提升了能力 [P06] [P14] [P27]。"
+            }
+          ]
+        }
+      ],
+      "lateral_connections": [
+        "P01的PagedAttention提供了KV cache分页管理基础，被P05、P06等调度系统广泛采用 [P01]。",
+        "P02的RadixAttention前缀缓存复用与P13的前缀缓存局部性调度直接相关 [P02][P13]。",
+        "P03的vAttention虚拟内存管理为单机内KV cache分配提供了替代方案，与P05等资源重叠方法互补 [P03][P05]。",
+        "P04的BurstGPT真实负载数据集被P06、P14等用于驱动动态调度评估 [P04][P06][P14]。",
+        "P11的Pensieve多级KV缓存保存与P16的双向KV共享相关 [P11][P16]。",
+        "P23的OrbitFlow细粒度KV重配置与P14的micro-request切分类似，均面向动态长上下文服务 [P23][P14]。"
+      ],
+      "trends": [
+        "从单机内吞吐优化向跨实例SLO和公平性敏感调度演进 [P05][P06][P13]。",
+        "调度粒度不断细化：从nano-batch到micro-request，支持任意边界切分 [P05][P14]。",
+        "prefill/decode解耦成为降低延迟的关键技术路径，从跨实例分离式发展到单GPU内动态SM分区 [P06][P15]。",
+        "KV缓存管理与调度深度耦合，从简单复用发展到双向共享和局部性感知公平调度 [P01][P16][P13]。",
+        "越来越多系统采用动态、运行时反馈驱动的调度策略，以应对不可预测负载 [P06][P15][P27]。"
+      ]
+    },
+    {
+      "category": "KV Cache与内存管理",
+      "overview": "KV Cache与内存管理领域聚焦于大语言模型推理中键值缓存的高效存储、分配、压缩与复用，核心挑战包括消除碎片、扩展容量、提升带宽利用率，并协同调度以优化吞吐与延迟 [P01] [P11] [P19]。",
+      "paper_ids": [
+        "P01",
+        "P02",
+        "P03",
+        "P09",
+        "P11",
+        "P17",
+        "P18",
+        "P19",
+        "P20",
+        "P21",
+        "P22",
+        "P23",
+        "P24"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "GPU内存动态管理与分页机制",
+          "question": "如何高效管理GPU上的KV缓存内存以减少空闲并支持动态分配？",
+          "narrative": "该线程从PagedAttention引入分页思想开始，通过非连续物理块和块表管理KV缓存，实现近零碎片并支持共享 [P01]。随后vAttention利用CUDA虚拟内存保留虚拟连续性，避免内核重写，成为替代路线 [P03]。vToken则在块管理之上增加token级虚拟化，通过间接寻址回收块内碎片，是对PagedAttention的机制扩展 [P24]。",
+          "ordered_steps": [
+            {
+              "task_id": "P01",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "predecessor_problem": "LLM serving中KV缓存采用连续预分配，导致大量内存浪费（仅20.4%-38.2%被有效使用），且无法动态共享。",
+              "contribution_or_improvement": "提出PagedAttention，将KV缓存划分为固定大小的非连续物理块，通过块表映射实现按需分配和块粒度共享，几乎消除内部和外部碎片。",
+              "tradeoffs": "引入块表间接寻址和内核重写，使注意力内核延迟比FasterTransformer高20-26%；对计算密集型负载可能不带来性能提升。",
+              "remaining_gap": "块映射增加内核开销，且未解决token级驱逐导致的块内碎片问题。",
+              "relationship_evidence": "P01是首个系统化解决KV缓存内存浪费的工作，为后续研究奠定基础 [P01]。"
+            },
+            {
+              "task_id": "P03",
+              "relation_to_previous": "alternative",
+              "builds_on": [
+                "P01"
+              ],
+              "predecessor_problem": "PagedAttention需要重写注意力内核并维护块表，增加编程复杂性和运行时开销，且难以直接利用新型内核。",
+              "contribution_or_improvement": "vAttention利用CUDA虚拟内存管理API解耦虚拟与物理内存，保留KV缓存虚拟连续性，按需映射物理页，避免内核重写和块表。",
+              "tradeoffs": "需要修改NVIDIA驱动以支持小页（64KB），否则需使用2MB页导致内部碎片；未实现CPU换出。",
+              "remaining_gap": "仅优化GPU内存，未涉及多级存储或token级碎片回收。",
+              "relationship_evidence": "P03明确针对PagedAttention的缺点提出替代方案，通过系统级虚拟内存管理实现动态分配，与P01形成技术路线对比 [P01] [P03]。"
+            },
+            {
+              "task_id": "P24",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P01",
+                "P03"
+              ],
+              "predecessor_problem": "在PagedAttention块管理下，token级驱逐导致大量部分存活块无法回收，块内浪费达40-60%。",
+              "contribution_or_improvement": "vToken在块管理之上引入token-table间接寻址，解耦逻辑token活跃性与物理块放置，通过异步重打包回收块内碎片，无需修改注意力内核。",
+              "tradeoffs": "异步拷贝可能竞争HBM带宽；仅支持单节点单GPU；保守跳过共享前缀块。",
+              "remaining_gap": "未结合量化等表示层优化，且未扩展到分布式场景。",
+              "relationship_evidence": "P24在P01的块管理基础上进行机制扩展，解决token级驱逐与块粒度管理的失配；同时与P03的虚拟内存方法正交，因为它仍使用块级物理管理 [P01] [P03] [P24]。"
+            }
+          ]
+        },
+        {
+          "thread_name": "跨存储层级与设备间KV缓存管理",
+          "question": "如何利用CPU、SSD和共享内存等多级存储扩展KV缓存容量并优化数据移动？",
+          "narrative": "Pensieve首先提出GPU/CPU多级缓存并扩展PagedAttention支持多token注意力，奠定基础 [P11]。随后Strata通过GPU辅助I/O和缓存感知调度优化碎片化分层加载 [P19]。AdaptCache引入有损压缩和自适应设备放置 [P20]，EVICPRESS联合优化压缩与驱逐 [P21]，VeriCache用压缩草稿+全量验证实现无损输出 [P22]。Tutti将KV缓存扩展到SSD并消除CPU干预 [P17]，TraCT利用CXL共享内存实现机架级缓存 [P18]，OrbitFlow精细优化请求级放置以保障SLO [P23]。",
+          "ordered_steps": [
+            {
+              "task_id": "P11",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "predecessor_problem": "多轮对话中反复重算历史导致低效，且GPU内存不足以容纳所有KV缓存。",
+              "contribution_or_improvement": "Pensieve提出状态化服务，利用GPU/CPU多级KV缓存跨请求复用，并扩展PagedAttention支持非连续内存上的多token注意力。",
+              "tradeoffs": "CPU缓存引入PCIe传输延迟，需流水线隐藏；未覆盖远程存储或流式传输。",
+              "remaining_gap": "仅利用本地GPU/CPU内存，未扩展到SSD或共享内存。",
+              "relationship_evidence": "P11是首个系统化利用多级存储扩展KV缓存容量的工作，为后续跨层级管理提供基础 [P11]。"
+            },
+            {
+              "task_id": "P19",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P11"
+              ],
+              "predecessor_problem": "长上下文服务中，碎片化KV缓存从CPU/外部存储加载带宽利用率低，且调度未将I/O视为一等资源。",
+              "contribution_or_improvement": "Strata提出GPU辅助I/O内核和缓存感知调度，将碎片化加载与计算重叠，提升带宽利用并降低TTFT。",
+              "tradeoffs": "GPU辅助I/O仍有开销；未充分评估磁盘缓存；仅限单实例。",
+              "remaining_gap": "未跨实例整合KV缓存池。",
+              "relationship_evidence": "P19在P11的多级缓存思想基础上，针对碎片化加载和调度进行优化，是对P11的机制扩展 [P11] [P19]。"
+            },
+            {
+              "task_id": "P20",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P11",
+                "P19"
+              ],
+              "predecessor_problem": "多层存储中固定压缩策略导致部分KV缓存被迫放置于慢速SSD，增加延迟。",
+              "contribution_or_improvement": "AdaptCache提出有损KV缓存压缩，自适应选择压缩算法、压缩率和设备放置，提高DRAM命中率。",
+              "tradeoffs": "贪婪算法不保证最优；尚未大规模部署评估。",
+              "remaining_gap": "压缩与驱逐决策独立，未联合优化。",
+              "relationship_evidence": "P20在P11和P19多级存储基础上引入有损压缩维度，扩展了管理手段 [P11] [P19] [P20]。"
+            },
+            {
+              "task_id": "P21",
+              "relation_to_previous": "direct_improvement",
+              "builds_on": [
+                "P20"
+              ],
+              "predecessor_problem": "AdaptCache固定压缩策略且驱逐与压缩独立决策，无法根据上下文敏感度优化质量与延迟。",
+              "contribution_or_improvement": "EVICPRESS提出统一效用函数，联合优化压缩与驱逐决策，显著降低TTFT或提升质量。",
+              "tradeoffs": "依赖带宽稳定假设；仅单节点评估；压缩方法有限。",
+              "remaining_gap": "未扩展到多节点或量化等更丰富压缩方法。",
+              "relationship_evidence": "P21直接针对P20的固定压缩和独立决策的缺点进行改进，实现联合优化，是对P20的直接改进 [P20] [P21]。"
+            },
+            {
+              "task_id": "P22",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P20",
+                "P21"
+              ],
+              "predecessor_problem": "有损压缩会破坏输出质量，无法保证与全量KV解码一致。",
+              "contribution_or_improvement": "VeriCache将有损压缩KV缓存作为草稿生成器，再用全量KV验证，实现无损输出并提升吞吐。",
+              "tradeoffs": "需要保留全量KV缓存，增加存储开销；固定草稿长度。",
+              "remaining_gap": "未扩展到其他有损技术或自适应草稿长度。",
+              "relationship_evidence": "P22在P20/P21的有损压缩基础上引入验证机制，保证输出无损，是对该路线的机制扩展 [P20] [P21] [P22]。"
+            },
+            {
+              "task_id": "P17",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P11"
+              ],
+              "predecessor_problem": "现有SSD-backed缓存依赖CPU进行I/O控制，限制带宽并增加延迟。",
+              "contribution_or_improvement": "Tutti提出GPU中心化的SSD对象存储，通过GPU io_uring和slack-aware调度消除CPU干预，接近DRAM性能。",
+              "tradeoffs": "跨节点远程路径尚未优化；分布式评估有限。",
+              "remaining_gap": "未实现GPU-initiated RDMA直通远程路径。",
+              "relationship_evidence": "P17将P11的设备扩展思想推进到SSD层级，并优化I/O路径，是P11的机制扩展 [P11] [P17]。"
+            },
+            {
+              "task_id": "P18",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P11"
+              ],
+              "predecessor_problem": "机架级解耦服务中KV缓存跨节点传输依赖RDMA，引入高延迟和网络跳数。",
+              "contribution_or_improvement": "TraCT利用CXL共享内存作为机架级KV缓存和传输层，通过load/store和DMA直接访问，消除RDMA跳数。",
+              "tradeoffs": "依赖CXL Type-3硬件且缺乏硬件原子操作；仅两节点评估；朴素LRU。",
+              "remaining_gap": "需更复杂替换策略和生产级多节点验证。",
+              "relationship_evidence": "P18采用共享内存方法，与P11基于本地存储层级的思路正交，但其扩展了设备边界 [P11] [P18]。"
+            },
+            {
+              "task_id": "P23",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P11",
+                "P19"
+              ],
+              "predecessor_problem": "长上下文推理中，请求级KV缓存放置未依据SLO动态优化，导致SLO违规和吞吐下降。",
+              "contribution_or_improvement": "OrbitFlow通过轻量级ILP求解器为每个请求按层动态决定GPU/CPU放置，结合Token-Deposit和Pause-Resume提升SLO达成率。",
+              "tradeoffs": "仅支持单节点多GPU；严重过载时无法保证所有SLO；搜索剪枝有微小性能损失。",
+              "remaining_gap": "未扩展跨节点流水线并行。",
+              "relationship_evidence": "P23结合P11的多级缓存和P19的调度思想，在请求级精细优化放置，是两者的机制扩展 [P11] [P19] [P23]。"
+            }
+          ]
+        },
+        {
+          "thread_name": "结构化复用与请求调度优化",
+          "question": "如何通过缓存共享与调度策略提升多请求场景下的吞吐和延迟？",
+          "narrative": "SGLang的RadixAttention通过radix-tree管理KV缓存，实现自动前缀复用并影响调度，成为该线程基础 [P02]。CacheBlend则通过选择性重计算融合非前缀缓存，扩展了复用范围 [P09]。",
+          "ordered_steps": [
+            {
+              "task_id": "P02",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "predecessor_problem": "多调用LM程序中存在大量共享前缀，但现有系统无法有效复用KV缓存，导致冗余prefill。",
+              "contribution_or_improvement": "提出RadixAttention，将KV缓存组织为radix tree的LRU缓存，支持自动前缀复用和缓存感知调度。",
+              "tradeoffs": "缓存感知调度可能导致饥饿；无复用机会时管理开销小于0.3%。",
+              "remaining_gap": "尚未与非前缀复用有效结合。",
+              "relationship_evidence": "P02首次将KV缓存作为结构化缓存管理，为前缀复用和调度优化奠定基础 [P02]。"
+            },
+            {
+              "task_id": "P09",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P02"
+              ],
+              "predecessor_problem": "RAG场景中多个非前缀文本块无法直接复用KV缓存，需完整prefill，导致高TTFT。",
+              "contribution_or_improvement": "CacheBlend通过选择性KV重计算融合预计算的非前缀KV缓存，恢复cross-attention并降低TTFT。",
+              "tradeoffs": "仅适用于transformer架构；未在最新serving引擎上测试。",
+              "remaining_gap": "未处理跨节点共享或量化设置。",
+              "relationship_evidence": "P09扩展了P02的前缀复用思想，通过选择性重计算支持非前缀缓存融合 [P02] [P09]。"
+            }
+          ]
+        }
+      ],
+      "lateral_connections": [
+        "P04的BurstGPT提供真实工作负载数据集，可用于评估KV缓存管理策略在实际负载下的效果 [P04]。",
+        "P10的CacheGen针对KV缓存传输进行压缩和流式传输，与多级存储中的压缩技术互补 [P10]。",
+        "P07的KIVI提出2bit量化KV缓存，可进一步减少内存占用，与有损压缩策略形成权衡 [P07]。",
+        "P25的MiniKV通过逐层差异化量化，与P20/P21的有损压缩思路相关但更侧重准确率保持 [P25]。",
+        "P26的Oaken提出混合量化与定制引擎，是KV缓存压缩的另一个软硬件协同方向 [P26]。",
+        "P12的FastSwitch关注抢占式调度中的上下文切换，其KV缓存管理策略与调度优化密切相关 [P12]。",
+        "P13的局部性感知公平调度利用前缀缓存局部性，与RadixAttention的缓存感知调度思想呼应 [P13]。",
+        "P06的Llumnix通过跨实例KV缓存迁移实现负载均衡，扩展了KV缓存管理的分布式维度 [P06]。",
+        "P27的QLM专注于SLO队列管理，可与OrbitFlow等SLO感知的KV管理方法结合 [P27]。"
+      ],
+      "trends": [
+        "从固定连续分配到分页、虚拟内存、token级虚拟化，粒度不断细化以消除碎片 [P01] [P03] [P24]。",
+        "存储层级从GPU扩展到CPU、SSD、CXL共享内存，形成多级缓存体系 [P11] [P17] [P18] [P19] [P23]。",
+        "有损压缩被引入以提升容量和带宽利用率，并逐步发展为联合优化与无损验证 [P20] [P21] [P22]。",
+        "缓存管理逐渐与请求调度、SLO保障深度融合，形成协同优化 [P02] [P09] [P13] [P23]。",
+        "针对长上下文和RAG等场景的专用KV复用策略不断涌现 [P09] [P19] [P23]。"
+      ]
+    },
+    {
+      "category": "并行计算与分布式执行",
+      "overview": "本类别聚焦于并行计算与分布式执行技术在大语言模型推理系统中的应用，核心挑战包括张量并行中的非确定性、资源利用效率与训练-推理一致性 [P31]。",
+      "paper_ids": [
+        "P31"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "确定性张量并行推理",
+          "question": "如何消除不同张量并行大小导致的非确定性，实现训练与推理的概率匹配？",
+          "narrative": "不同张量并行大小会引入浮点运算顺序差异，导致同一输入在不同 TP 配置下产生不同的推理结果，进而造成训练与推理之间的概率失配，影响强化学习等场景的稳定性和可复现性 [P31]。",
+          "ordered_steps": [
+            {
+              "task_id": "P31",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "predecessor_problem": "张量并行大小的变化导致浮点归约顺序不一致，使得推理结果非确定，且训练和推理的概率分布不匹配。",
+              "contribution_or_improvement": "提出 Tree-Based Invariant Kernels (TBIK)，通过固定二叉树归约顺序统一 GPU 内 MatMul 与 GPU 间 All-Reduce，实现跨张量并行大小的逐位确定性推理，并集成到 vLLM 和 FSDP 中消除 RL 管线的概率失配。",
+              "tradeoffs": "确定性推理带来显著延迟开销，端到端 22%–63%；Tree-Based MatMul 在小 M 时吞吐低于 cuBLAS。",
+              "remaining_gap": "当前实现尚未达到生产级性能，且未支持量化数据类型。",
+              "relationship_evidence": "该工作 [P31] 提出了 Tree-Based Invariant Kernels (TBIK)，通过固定二叉树归约顺序统一 GPU 内 MatMul 与 GPU 间 All-Reduce，实现跨张量并行大小的逐位确定性推理，并解决 RL 管线中 vLLM 与 FSDP 的概率失配问题。作为首个系统性消除 TP 非确定性的方案，本步骤为后续研究奠定了基础。"
+            }
+          ]
+        }
+      ],
+      "lateral_connections": [],
+      "trends": [
+        "从通用张量并行优化转向针对特定应用（如强化学习）的确定性执行保证，以解决训练-推理不一致问题 [P31]。",
+        "确定性推理的实现依赖于软硬件协同设计，包括定制内核与通信原语的联合优化 [P31]。"
+      ]
+    },
+    {
+      "category": "训练系统与优化",
+      "overview": "本类目聚焦大语言模型服务中的训练系统与优化，尤其关注在不增加硬件资源的前提下，将空闲推理容量转化为微调吞吐的协同服务设计。核心论文 DeltaServe [P32] 提出主机无关的推理与微调协同方案，通过 SLO 感知调度、CUDA-graph 感知延迟模型及独立反向子进程，在保持推理延迟目标的同时提升 LoRA 微调吞吐。",
+      "paper_ids": [
+        "P32"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "推理与微调协同服务",
+          "question": "如何在不增加硬件的前提下，利用空闲推理容量进行 LoRA 微调，同时保持推理 SLO 合规？",
+          "narrative": "该线程围绕推理与微调的协同服务展开。DeltaServe [P32] 作为基础工作，将空闲推理 GPU 容量转化为 LoRA 微调吞吐，通过 SLO 感知准入调度、CUDA-graph 感知延迟模型和独立反向子进程，在主流推理引擎上实现 SLO 合规下的微调吞吐提升。",
+          "ordered_steps": [
+            {
+              "task_id": "P32",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "predecessor_problem": "现有方法通常需要额外专用 GPU 进行微调，或牺牲推理 SLO 来换取微调吞吐，导致资源利用率低或服务质量下降。",
+              "contribution_or_improvement": "DeltaServe [P32] 提出主机无关的协同服务设计，将空闲推理容量转化为 LoRA 微调吞吐。其核心创新包括：SLO-aware 微调准入调度，利用 LoRA 前向与推理 prefill 的结构一致性将微调作为 prefill-only 请求并入推理 batch；CUDA-graph-aware 延迟模型离线校准、在线精修以区分 graph 与 eager 执行模式的延迟差异；以及解耦反向执行器在独立 GPU 子进程中进行反向传播和优化器更新，支持抢占。",
+              "tradeoffs": "需要宿主引擎支持 multi-LoRA batching；混合 batch 因激活捕获 hooks 无法在回放的 CUDA graph 内运行而被迫使用 eager 执行，可能损失 CUDA graph 回放优势；反向子进程在 prefill 请求到达时会被抢占，突发推理负载下微调吞吐会明显下降。",
+              "remaining_gap": "缺少对其他模型架构、更大模型或不同类型数据集上的行为评估；未解决混合 batch 中 CUDA graph 回放无法使用的问题；突发负载下微调吞吐下降问题有待优化。",
+              "relationship_evidence": "P32 是本文线程的起始工作，提出 DeltaServe 这一主机无关的协同服务设计，将空闲推理 GPU 容量转化为 LoRA 微调吞吐 [P32]。"
+            }
+          ]
+        }
+      ],
+      "lateral_connections": [
+        "P01 提出 PagedAttention 内存管理，可支持 multi-LoRA batching，为 DeltaServe [P32] 的宿主引擎集成提供基础。",
+        "P02 中 SGLang 作为 DeltaServe [P32] 验证的宿主引擎之一，其 RadixAttention 缓存复用可能影响协同服务时的 KV cache 行为。",
+        "P27 的队列管理同样关注 SLO 达成率，与 DeltaServe [P32] 的 SLO-aware 调度思路相关，但前者面向通用推理队列，后者针对微调与推理协同场景。"
+      ],
+      "trends": [
+        "推理与微调协同服务成为提高 GPU 利用率、降低微调成本的新趋势，通过复用空闲推理容量避免额外硬件投入 [P32]。",
+        "SLO 感知调度在协同服务中愈发重要，将推理延迟预算动态分配给微调任务，以保障服务质量 [P32]。",
+        "硬件与软件协同设计，如 CUDA-graph 感知延迟模型和独立反向子进程，用于优化混合工作负载的执行效率 [P32]。"
+      ]
+    },
+    {
+      "category": "模型压缩与低精度计算",
+      "overview": "本类别涵盖KV Cache量化、注意力内核低精度化以及面向LLM推理的模型压缩技术。P07提出2bit非对称KV Cache量化方法，显著降低内存占用并提升吞吐 [P07]；P08将INT8量化与FlashAttention结合，加速注意力计算 [P08]；P10通过编码压缩KV Cache传输，降低网络延迟 [P10]；P25在2bit量化基础上引入逐层金字塔预算分配，进一步压缩KV Cache [P25]；P26提出在线-离线混合量化，结合硬件协同设计提升推理效率 [P26]。这些工作共同推动LLM推理中低精度计算与模型压缩的发展。",
+      "paper_ids": [
+        "P07",
+        "P08",
+        "P10",
+        "P25",
+        "P26"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "KV Cache低精度量化与内存优化",
+          "question": "如何通过低精度KV Cache量化与调度策略在保持模型质量的同时提升LLM推理效率？",
+          "narrative": "本线程以KV Cache量化为主线，从P07的基础2bit非对称量化方法出发 [P07]，P10提出正交的编码压缩与流式传输优化 [P10]，P25在P07基础上进行直接改进，引入逐层金字塔预算分配与两遍注意力内核 [P25]，P26进一步扩展机制，提出在线-离线混合量化与硬件协同设计 [P26]。",
+          "ordered_steps": [
+            {
+              "task_id": "P07",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "predecessor_problem": "KV Cache占用大量GPU内存，限制LLM推理的batch size和吞吐。",
+              "contribution_or_improvement": "提出KIVI，一种无需微调的2bit非对称量化方法，按通道量化key cache、按token量化value cache，显著降低KV Cache内存占用。",
+              "tradeoffs": "对multi-query attention模型（如Falcon-7B）2bit量化可能导致较大精度下降，需要4bit量化；在困难生成任务上依赖全精度滑动窗口。",
+              "remaining_gap": "吞吐提升还可通过将KV Cache量化过程与前序算子融合进一步增大，该优化留作未来工作。",
+              "relationship_evidence": "P07作为KV Cache量化领域的基础工作，首次提出无微调的2bit非对称量化方法，为后续研究提供算法基础和性能基准 [P07]。"
+            },
+            {
+              "task_id": "P10",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P07"
+              ],
+              "predecessor_problem": "KV Cache传输带宽高，导致LLM服务的TTFT较大，在带宽受限环境下尤为严重。",
+              "contribution_or_improvement": "提出CacheGen，利用KV Cache分布特性进行delta编码、分层量化和算术编码，压缩为bitstream并流式传输，自适应带宽调整压缩级别。",
+              "tradeoffs": "未在超大模型上评估；网络模型未包含极高带宽条件；真实场景上下文复用缺乏公开数据集支撑。",
+              "remaining_gap": "需要进一步在超大模型和复杂网络条件下验证，并集成更多真实工作负载。",
+              "relationship_evidence": "P10关注KV Cache的编码压缩与流式传输优化，目标在于降低网络带宽和TTFT，与P07的量化方案在目标、方法和应用场景上不同，属于并行优化路径，二者可互补但无直接改进关系 [P07] [P10]。"
+            },
+            {
+              "task_id": "P25",
+              "relation_to_previous": "direct_improvement",
+              "builds_on": [
+                "P07"
+              ],
+              "predecessor_problem": "P07的2bit量化方法未考虑层间差异，KV Cache预算分配均匀，长上下文任务中准确率可能下降。",
+              "contribution_or_improvement": "提出MiniKV，在2bit量化基础上引入金字塔逐层KV预算分配，设计兼容FlashAttention的两遍注意力内核，实现更高准确率和更长序列支持。",
+              "tradeoffs": "尝试组合SnapKV与KIVI时准确率下降，需要更鲁棒的组合框架；尚未与模型压缩等其他优化技术组合。",
+              "remaining_gap": "需要探索更鲁棒的KV淘汰与量化组合方法，并与其他模型压缩技术集成。",
+              "relationship_evidence": "P25在P07的2bit量化基础上引入逐层金字塔KV预算分配，并设计兼容FlashAttention的两遍注意力内核，在相同KV Cache大小下达到更高准确率，是对P07量化方法的直接改进和系统级拓展 [P07] [P25]。"
+            },
+            {
+              "task_id": "P26",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P07",
+                "P25"
+              ],
+              "predecessor_problem": "现有KV Cache量化方法（如P07、P25）需要在线进行异常值检测或复杂量化，增加在线推理开销。",
+              "contribution_or_improvement": "提出Oaken，在线-离线混合量化算法，离线确定异常值阈值，在线仅计算量化scale，结合group-shift量化与融合编码，降低位宽并提升吞吐。",
+              "tradeoffs": "当总序列长度低于8K时，GPU上的其他方案可能超过Oaken；对grouped-query attention模型，KV Cache较小，性能增益有限。",
+              "remaining_gap": "需要进一步优化短序列场景下的性能，并扩展到更多模型架构。",
+              "relationship_evidence": "P26提出在线-离线混合量化，通过离线确定异常值阈值避免在线高开销检测，结合group-shift量化与融合编码进一步降低位宽，继承P07的量化思想和P25的KV缓存优化目标，但引入新的机制（离线阈值、硬件协同），属于机制扩展 [P07] [P25] [P26]。"
+            }
+          ]
+        },
+        {
+          "thread_name": "注意力内核的低精度量化",
+          "question": "如何将INT8量化与FlashAttention内核高效结合以提升注意力计算速度？",
+          "narrative": "本线程以注意力算子的低精度优化为核心，P08作为基础工作，提出首个与FlashAttention兼容的INT8量化架构 [P08]。",
+          "ordered_steps": [
+            {
+              "task_id": "P08",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "predecessor_problem": "注意力计算在LLM推理中占用大量时间，FlashAttention虽优化了内存访问，但计算仍为FP16/FP8，速度提升有限。",
+              "contribution_or_improvement": "提出INT-FlashAttention，首个与FlashAttention前向流程兼容的token-level INT8量化架构，用INT8 GEMM替换所有矩阵乘法，显著提升推理速度并降低量化误差。",
+              "tradeoffs": "V矩阵仅实现tensor-level量化，尚未实现per-token量化；未来需per-block量化和Hadamard变换进一步优化。",
+              "remaining_gap": "需要实现per-token/per-block量化V矩阵，并探索与变换结合以进一步提升速度和精度。",
+              "relationship_evidence": "P08作为该线程的基础工作，提出首个与FlashAttention前向流程兼容的token级INT8量化架构，用INT8 GEMM替换所有矩阵乘法，在Ampere GPU上显著提升推理速度并降低量化误差，为注意力算子的低精度优化奠定基础 [P08]。"
+            }
+          ]
+        }
+      ],
+      "lateral_connections": [
+        "KV Cache量化工作（P07、P25、P26）可与vLLM的PagedAttention内存管理技术结合，进一步降低显存占用并提升吞吐 [P01]。",
+        "CacheGen的KV Cache流式压缩方法可与vLLM等推理服务系统集成，降低TTFT [P10]。",
+        "MiniKV的自定义注意力内核与vLLM的PagedAttention内核优化方向一致，可相互借鉴 [P03]。",
+        "Oaken的硬件协同设计思路与Tutti的SSD-backed KV Cache存储优化可互补，共同提升长上下文推理效率 [P17]。"
+      ],
+      "trends": [
+        "KV Cache量化从基础2bit非对称方法向逐层自适应预算分配和在线-离线混合量化演进，压缩率不断提高且精度损失可控 [P07] [P25] [P26]。",
+        "低精度计算从KV Cache扩展至注意力内核，INT8量化与FlashAttention结合实现端到端加速 [P08]。",
+        "KV Cache优化不仅关注单卡内存，还扩展到网络传输和异构存储，通过编码压缩和硬件协同设计提升系统整体效率 [P10] [P26]。",
+        "量化方法逐渐与系统级调度、内存管理技术融合，形成软硬件一体的LLM推理优化方案 [P25] [P26]。"
+      ]
+    },
+    {
+      "category": "性能评测与成本分析",
+      "overview": "本类别聚焦于对 LLM 服务系统进行系统性的性能、能耗与成本评估，以及真实工作负载的刻画与生成。P04 发布了首个大规模真实世界 LLM 服务数据集 BurstGPT [P04]，为后续研究提供了真实负载依据。P28 对生产环境多模态与推理模型工作负载进行了深入刻画，并提出了 ServeGen 生成框架 [P28]。P29 则针对 vLLM 推理引擎的配置空间进行了全面的能耗、性能与准确率权衡评估 [P29]。",
+      "paper_ids": [
+        "P04",
+        "P28",
+        "P29"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "LLM 服务性能评测与成本分析",
+          "question": "如何系统评估和优化 LLM 服务系统的性能、能耗与成本，并确保评测负载和配置空间反映真实生产环境？",
+          "narrative": "该线程从真实工作负载数据集的构建出发，逐步扩展到多模态与推理模型负载的生成，最终深入到推理引擎配置空间的系统评测。P04 提供了 BurstGPT 数据集，揭示了突发性、短对话和高失败率等真实特征 [P04]。P28 在此基础上进一步覆盖多模态和推理模型，提出 ServeGen 框架 [P28]。P29 则转向 vLLM 配置的能耗与性能权衡，为配置优化提供实证依据 [P29]。",
+          "ordered_steps": [
+            {
+              "task_id": "P04",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "predecessor_problem": "缺乏大规模真实世界 LLM 服务工作负载数据集，导致系统评估使用合成负载而偏离实际。",
+              "contribution_or_improvement": "发布了 BurstGPT 数据集和基准套件，刻画了用户并发突发性、对话模式、响应长度和失败特征。",
+              "tradeoffs": "数据集仅来自单一提供商，可能不完全代表所有部署形态；对 Llama-2 的对比使用非真实对话提示。",
+              "remaining_gap": "未覆盖多模态和推理模型工作负载，需要进一步扩展负载类型和部署多样性。",
+              "relationship_evidence": "P04 作为线程基础，提供了首个大规模真实工作负载数据集 [P04] [P04] [P04] [P04]"
+            },
+            {
+              "task_id": "P28",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P04"
+              ],
+              "predecessor_problem": "P04 的数据集主要覆盖语言模型，未涵盖多模态和推理模型的工作负载特征。",
+              "contribution_or_improvement": "扩展了工作负载特征刻画范围，并提出按客户端生成的 ServeGen 框架，更真实地模拟生产负载。",
+              "tradeoffs": "未覆盖插件调用和前缀缓存分析；单个工作负载时间跨度有限。",
+              "remaining_gap": "尚未将生成的工作负载用于系统性能与能耗的评测。",
+              "relationship_evidence": "P28 在 P04 的基础上扩展了负载类型和生成机制 [P04] [P28] [P04] [P28]"
+            },
+            {
+              "task_id": "P29",
+              "relation_to_previous": "evaluation",
+              "builds_on": [
+                "P04",
+                "P28"
+              ],
+              "predecessor_problem": "缺乏对 vLLM 配置空间（注意力内核、前缀缓存、分块预填）的能耗、性能与准确率权衡的系统性评测。",
+              "contribution_or_improvement": "通过 9000 次受控运行揭示了配置间交互效应和任务相关性，并发现配置可能影响准确率。",
+              "tradeoffs": "仅使用单一 GPU 和有限配置选项，硬件和负载覆盖有限；能耗测量存在误差。",
+              "remaining_gap": "评测结果尚未扩展到其他推理引擎、硬件平台和更广泛的配置空间。",
+              "relationship_evidence": "P29 利用 P04 和 P28 提供的真实负载认知，对配置空间进行系统评测 [P04] [P28] [P29] [P04] [P28] [P29]"
+            }
+          ]
+        }
+      ],
+      "lateral_connections": [
+        "P01 提出的 PagedAttention 通过 KV cache 分页管理显著提升内存利用率和吞吐，与 P29 评测的前缀缓存和分块预填配置密切相关 [P01] [P29]",
+        "P02 的 SGLang 采用 RadixAttention 实现 KV 缓存复用，与 P29 评测的前缀缓存效果互为补充 [P02] [P29]",
+        "P03 的 vAttention 通过虚拟内存管理动态分配 KV cache，可作为 P29 配置优化的替代方案 [P03] [P29]",
+        "P07 的 KIVI 通过 2bit 量化压缩 KV cache，与 P29 的能耗优化目标一致 [P07] [P29]",
+        "P06 的 Llumnix 通过动态调度提升服务效率，与 P04 和 P28 的负载特征研究相关 [P06] [P04] [P28]"
+      ],
+      "trends": [
+        "从真实负载数据集的构建向更全面的负载生成与配置评测演进 [P04] [P28]",
+        "评估视角从单一的吞吐和延迟扩展到能耗、准确率等多维度权衡 [P29]",
+        "评测方法日益系统化，强调配置间交互和任务类型的影响 [P29]"
+      ]
+    },
+    {
+      "category": "可靠性、弹性与可观测性",
+      "overview": "本类别关注 LLM 推理服务在并发请求下的可靠性挑战，涵盖 KV 缓存隔离失效、跨请求性能干扰与崩溃/存活问题。P30 提出的 GRIEF 通过灰盒模糊测试系统性地发现此类服务层漏洞，将并发请求轨迹作为测试输入，验证了内存管理（KV cache）与请求调度（并发批处理、适配器调度、前缀共享）的工程决策会引入安全与可靠性风险 [P30]。",
+      "paper_ids": [
+        "P30"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "LLM 推理服务可靠性模糊测试",
+          "question": "如何系统性地发现 LLM 推理服务中的可靠性漏洞？",
+          "narrative": "该线程以 GRIEF 为起点，为 LLM 推理服务建立了面向并发请求轨迹的灰盒模糊测试范式。此前工作主要集中在性能优化或单请求正确性，而并发负载下的服务层缺陷（如 KV 缓存污染、调度饥饿、延迟崩溃）缺少系统化测试方法 [P30]。",
+          "ordered_steps": [
+            {
+              "task_id": "P30",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "predecessor_problem": "LLM 推理服务中存在由并发请求交互引发的可靠性漏洞，如 KV 缓存隔离失效、跨请求性能干扰和崩溃/存活问题，但缺乏专门针对此类服务层缺陷的测试工具，现有模糊测试方法未考虑多请求时间轨迹与共享状态竞争。",
+              "contribution_or_improvement": "GRIEF 提出了一种面向 LLM 推理引擎的灰盒模糊测试工具，以带时间戳的多请求轨迹为输入，通过时序、事件、拼接变异及定向拼接生成测试用例，并设计行为、结构与关系预言机及受控重放确认管线，在 vLLM 和 SGLang 中发现 15 个潜在漏洞（10 个开发者确认，含 2 个 CVE）。",
+              "tradeoffs": "当前评估限于 vLLM 和 SGLang 及代表性服务模式与硬件，扩展到其他引擎或部署需要额外适配器与遥测钩子；GRIEF 不能证明无 bug，效果受种子、变异、反馈和模糊测试预算影响；最强结构预言机依赖引擎级可观测性，确认策略保守可能漏报低置信度候选。",
+              "remaining_gap": "尚未覆盖分布式部署、异构硬件后端和不同模型架构；无法保证完备性；对低置信度漏洞可能漏报；漏洞的实际可利用性取决于具体生产环境的租户隔离、批处理策略、限流、监控和恢复机制，仍需进一步评估。",
+              "relationship_evidence": "P30 作为该线程的首个也是基础工作，提出了 GRIEF 工具并验证了其在 LLM 推理服务可靠性模糊测试中的有效性 [P30]。"
+            }
+          ]
+        }
+      ],
+      "lateral_connections": [
+        "P01 提出的 PagedAttention 通过分页管理 KV 缓存降低内存浪费，而 P30 发现 KV 缓存隔离缺陷可导致跨请求输出污染，两者分别从性能和可靠性角度关注 KV 缓存管理 [P01][P30]。",
+        "P02 的 SGLang 采用 RadixAttention 进行 KV 缓存复用，但 P30 在 SGLang 中发现 LoRA 调度器崩溃，表明高效缓存与调度设计可能引入新的可靠性风险 [P02][P30]。",
+        "P29 系统评估了 vLLM 配置对能耗、延迟和准确率的权衡，而 P30 揭示 vLLM 在并发负载下的服务层漏洞，两者共同强调推理服务配置与实现的可靠性影响 [P29][P30]。"
+      ],
+      "trends": [
+        "从单请求性能优化转向并发负载下的可靠性与安全测试 [P30]。",
+        "将模糊测试思想扩展到推理服务，以时间轨迹捕捉共享状态竞争 [P30]。",
+        "强调服务层缺陷的静默性与延迟性（如 KV 污染、性能饥饿、延迟崩溃），需要专门预言机与取证方法 [P30]。"
+      ]
+    }
+  ],
+  "cross_paper_findings": [
+    "PagedAttention 通过分页式 KV 缓存管理几乎消除了内部和外部碎片，成为 vLLM 及众多调度系统的内存管理基石，并支持了高效的跨请求复用与共享 [P01]。",
+    "KV 缓存管理从固定连续分配演进到分页、虚拟内存、token 级虚拟化，粒度不断细化以回收任何层级的内存浪费 [P01] [P03] [P24]。",
+    "多级存储层次（GPU、CPU、SSD、CXL 共享内存）被广泛采用以扩展 KV 缓存容量，并需要配套的 I/O 优化和缓存感知调度来隐藏数据移动延迟 [P11] [P17] [P18] [P19] [P23]。",
+    "KV 缓存有损压缩通过量化或编码技术显著降低内存占用和传输带宽，但需要联合优化或验证机制来维持模型质量 [P07] [P10] [P20] [P21] [P22] [P25] [P26]。",
+    "请求调度从单机内的 nano-batch 流水线和 intra-device 并行逐步演进到跨实例的动态请求迁移与全局队列管理，调度粒度不断细化至任意 token 边界 [P05] [P06] [P14] [P27]。",
+    "prefill/decode 解耦是降低延迟的关键技术路径，从跨实例分离式执行发展到单 GPU 内动态 SM 分区，同时保持高吞吐 [P06] [P15]。",
+    "SLO 感知和公平性成为调度策略的核心目标，系统通过动态优先级、赤字机制和局部性感知来兼顾吞吐与服务质量 [P12] [P13] [P16] [P27] [P32]。",
+    "低精度计算从 KV 缓存量化扩展到注意力内核，INT8/2bit 量化与 FlashAttention 等高效算子结合，实现端到端加速 [P07] [P08] [P25] [P26]。",
+    "真实工作负载刻画显示出强烈的突发性和异构性，驱动了动态调度和弹性资源管理的研究 [P04] [P06] [P28]。",
+    "推理服务中的并发请求交互可能引发 KV 缓存污染、调度饥饿和延迟崩溃等可靠性问题，需要专门的灰盒模糊测试来系统发现 [P30]。"
+  ],
+  "technical_comparisons": [
+    "在 GPU 内存管理上，PagedAttention 采用块表间接寻址，而 vAttention 通过虚拟内存保留连续地址空间，避免了内核重写，形成替代技术路线 [P01] [P03]，vToken 则在块管理之上增加 token 级间接寻址，进一步回收块内碎片，扩展了 PagedAttention 的能力 [P24]。",
+    "跨实例调度中，Llumnix 依赖 KV cache 迁移实现负载均衡，而 QLM 通过请求等待时间估计和全局队列管理避免迁移开销，两者为实现 SLO 达成提供了不同取舍 [P06] [P27]。",
+    "KV 缓存压缩方面，AdaptCache 采用固定压缩策略与独立设备放置，而 EVICPRESS 通过统一效用函数联合优化压缩与驱逐决策，直接改进了压缩质量与延迟的权衡 [P20] [P21]，VeriCache 则通过有损压缩加验证机制保证无损输出，属于机制扩展 [P22]。",
+    "KV 缓存量化中，KIVI 提出基础 2bit 非对称量化，MiniKV 通过逐层金字塔预算分配提升长上下文准确率，是对前者的直接改进 [P07] [P25]；Oaken 引入离线阈值确定与硬件协同编码，属于机制扩展 [P26]；CacheGen 则专注于编码压缩与流式传输，与量化方法正交 [P10]。",
+    "调度粒度上，NanoFlow 使用 nano-batch 重叠资源操作 [P05]，DynaServe 引入 micro-request 在任意 token 边界切分，极大细化了跨实例调度单元，并统一了共置与分离式执行 [P14]。",
+    "张量并行确定性上，TBIK 通过固定二叉树归约顺序实现跨 TP 大小的逐位确定性，与多数推理系统的非确定性浮点累积形成对比 [P31]。",
+    "在推理与微调协同上，DeltaServe 利用 SLO 感知调度和独立反向子进程复用空闲推理容量，与传统专用 GPU 微调相比显著提高了资源利用率 [P32]。"
+  ],
+  "research_gaps": [
+    "大规模集群和超长上下文场景下的动态调度与请求切分方法缺乏验证，DynaServe 和 OrbitFlow 等系统在分布式、多节点以及极端 SLO 压力下的表现尚待研究 [P14] [P23]。",
+    "注意力内核的低精度量化仍不完善，INT-FlashAttention 尚未实现对 V 矩阵的 per-token 或 per-block 量化，也未探索 Hadamard 变换等进一步优化 [P08]。",
+    "KV 缓存有损压缩与量化在大规模部署中的鲁棒性和泛化能力不足，现有方法多在小模型或单节点验证，且组合不同压缩技术时可能出现准确率下降 [P20] [P21] [P25]。",
+    "张量并行确定性推理的延迟开销高达 22%–63%，且未支持量化数据类型，距离生产级性能仍有显著差距 [P31]。",
+    "混合负载下的推理与微调协同服务仍面临 CUDA graph 回放限制和突发负载抢占导致微调吞吐骤降的问题，需要进一步优化 [P32]。",
+    "可靠性模糊测试目前仅覆盖 vLLM 和 SGLang 及单节点部署，对分布式、异构硬件和多模型架构的覆盖不足，且无法保证完备性 [P30]。",
+    "真实工作负载数据集主要来源于单一提供商或有限时间跨度，难以全面反映多模态、插件调用及长期生产环境的变化 [P04] [P28]。",
+    "vLLM 配置空间的能耗与性能评测局限于单 GPU 和少量配置项，缺乏对其他推理引擎、硬件平台及更大配置空间的全面分析 [P29]。"
+  ],
+  "conclusion": "本综述梳理了 AI Infra Systems 在内存管理、调度、并行执行、低精度计算和可靠性方面的关键技术演进，揭示了从单体优化到系统级协同设计的总体趋势。PagedAttention 开启的分页内存管理成为调度与共享的基础，多级存储和压缩技术不断扩展 KV 缓存的容量与效率，动态调度和 SLO 感知从单机延伸到跨实例并细化至微请求粒度，低精度计算与软硬件协同持续压缩推理成本。然而，现有研究在分布式确定性、超长上下文效率、压缩鲁棒性、实测负载覆盖和可靠性保障等方面仍存在显著空白。未来工作应加强跨层协同、引入更精细的运行时反馈机制，并在真实部署环境中验证系统优化，以满足日益增长的大模型推理需求。"
+}

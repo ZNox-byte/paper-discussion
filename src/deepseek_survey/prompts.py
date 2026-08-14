@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from .models import Paper, ResearchResult, ScreeningItem
+from .models import CategoryPlan, CategorySynthesis, Paper, ResearchResult, ScreeningItem
 from .papers import PaperContent
 
 SCREENING_SYSTEM = """You are the senior editor of a rigorous AI infrastructure systems literature survey.
@@ -111,35 +111,203 @@ SUPPLIED PAPER TEXT START
 SUPPLIED PAPER TEXT END"""
 
 
-SYNTHESIS_SYSTEM = """You are the chief editor synthesizing the supplied independently validated
-paper reports into a rigorous literature survey. Use only supplied reports. Return one JSON object
-without Markdown. Every paper-specific or comparative claim must cite one or more supplied task
-IDs in square brackets, for example [P03] or [P03, P17]. Do not create citations or facts."""
+SYNTHESIS_SYSTEM = """You are the chief systems-literature editor synthesizing independently
+validated paper reports. Build explicit technical evolution threads, not folders of loosely related
+papers. Distinguish direct improvement, mechanism extension, alternative, orthogonal work, and
+evaluation. Never claim that one paper improves another unless the supplied reports support that
+relationship; use alternative or orthogonal when causality is not established. Use only supplied
+reports, return one JSON object without Markdown, and cite task IDs in square brackets. Do not
+create citations or facts."""
 
 
-def synthesis_prompt(
+def _compact_result(result: ResearchResult) -> dict:
+    return {
+        "task_id": result.task_id,
+        "paper_id": result.paper_id,
+        "title": result.title,
+        "one_sentence_summary": result.one_sentence_summary,
+        "main_contributions": result.main_contributions,
+        "key_findings": result.key_findings,
+        "limitations": result.limitations,
+        "relation_to_topic": result.relation_to_topic,
+        "reader_categories": result.categories,
+        "evidence_claims": [evidence.claim for evidence in result.evidence],
+        "confidence": result.confidence,
+    }
+
+
+def primary_classification_prompt(
+    *,
+    research_question: str,
+    categories: tuple[str, ...],
+    results: list[ResearchResult],
+) -> str:
+    from .models import PrimaryClassification
+
+    return f"""Research question: {research_question}
+Allowed primary categories: {json.dumps(categories, ensure_ascii=False)}
+
+Assign each supplied task ID to exactly one primary category. Return exactly one assignment per
+task ID, with no duplicates or omissions. Choose the category that best represents the paper's
+main systems contribution; secondary relevance does not justify duplicate placement. Each concise
+rationale must cite its own task ID in brackets. Return JSON matching this schema:
+{json.dumps(PrimaryClassification.model_json_schema(), ensure_ascii=False)}
+
+VALIDATED PAPER CARDS:
+{json.dumps([_compact_result(result) for result in results], ensure_ascii=False)}"""
+
+
+def category_plan_prompt(
+    *,
+    category: str,
+    task_ids: list[str],
+    results: list[ResearchResult],
+    papers_by_id: dict[str, Paper] | None = None,
+) -> str:
+    relevant = [result for result in results if result.task_id in set(task_ids)]
+    metadata = [
+        {
+            "task_id": result.task_id,
+            "title": result.title,
+            "published": (
+                papers_by_id[result.paper_id].published
+                if papers_by_id and result.paper_id in papers_by_id
+                else None
+            ),
+        }
+        for result in relevant
+    ]
+    return f"""Primary category: {category}
+Exact task-ID whitelist for this category: {json.dumps(task_ids)}
+
+Create a concise evolution plan only for this category. `paper_ids` must exactly equal the
+whitelist. Put every task into exactly one thread and one ordered step. Each thread starts with a
+foundation step; later steps build only on earlier IDs in the same thread. A direct improvement
+must be supported by the cards; otherwise use mechanism_extension, alternative, orthogonal, or
+evaluation. Each relationship_rationale must cite its current task and all builds_on tasks. Return
+one CategoryPlan instance matching this schema. Do not echo or return the schema itself:
+{json.dumps(CategoryPlan.model_json_schema(), ensure_ascii=False)}
+
+PAPER METADATA:
+{json.dumps(metadata, ensure_ascii=False)}
+
+VALIDATED CATEGORY CARDS:
+{json.dumps([_compact_result(result) for result in relevant], ensure_ascii=False)}"""
+
+
+def synthesis_planning_prompt(
+    *,
+    research_question: str,
+    categories: tuple[str, ...],
+    results: list[ResearchResult],
+    papers_by_id: dict[str, Paper] | None = None,
+) -> str:
+    from .models import SynthesisPlan
+
+    compact_results = [_compact_result(result) for result in results]
+    allowed_task_ids = sorted(result.task_id for result in results)
+    paper_metadata = [
+        {
+            "task_id": result.task_id,
+            "paper_id": result.paper_id,
+            "title": result.title,
+            "published": (
+                papers_by_id[result.paper_id].published
+                if papers_by_id and result.paper_id in papers_by_id
+                else None
+            ),
+        }
+        for result in results
+    ]
+
+    return f"""Research question: {research_question}
+Taxonomy: {json.dumps(categories, ensure_ascii=False)}
+Allowed citation task IDs (complete whitelist): {json.dumps(allowed_task_ids)}
+
+Create only a concise classification and evolution plan; do not write the survey prose yet.
+1. Assign every allowed task ID to exactly one primary category. Category paper_ids must form an
+   exact partition of the whitelist.
+2. Within each category, put every primary paper into exactly one ordered evolution thread.
+3. Each thread begins with a foundation step. Every later step names earlier IDs in the same thread
+   in builds_on and labels the relationship accurately.
+4. `relationship_rationale` must be one concise sentence citing the current ID and every builds_on
+   ID. Use alternative or orthogonal when the reports do not establish direct improvement.
+5. Use publication dates only as ordering hints. Keep the plan compact.
+
+Publication dates are ordering hints only; relationship claims must still come from the validated
+reports. The output must match this JSON Schema:
+{json.dumps(SynthesisPlan.model_json_schema(), ensure_ascii=False)}
+
+PAPER METADATA JSON:
+{json.dumps(paper_metadata, ensure_ascii=False)}
+
+VALIDATED RESEARCH REPORTS JSON:
+{json.dumps(compact_results, ensure_ascii=False)}"""
+
+
+def category_synthesis_prompt(
+    *,
+    plan: CategoryPlan,
+    results: list[ResearchResult],
+    language: str,
+) -> str:
+    planned_ids = set(plan.paper_ids)
+    detailed_cards = [
+        _compact_result(result) for result in results if result.task_id in planned_ids
+    ]
+    catalog = [
+        {
+            "task_id": result.task_id,
+            "title": result.title,
+            "summary": result.one_sentence_summary,
+        }
+        for result in results
+    ]
+    return f"""Output language: {language}
+Write one category synthesis that follows the validated plan exactly. Do not change its category,
+paper_ids, thread names, step order, relation types, or builds_on IDs.
+
+For every step, concisely state predecessor_problem, contribution_or_improvement, tradeoffs,
+remaining_gap, and relationship_evidence. The evidence sentence must cite the current task and all
+builds_on tasks. Do not call an alternative or orthogonal paper a direct improvement. Use
+lateral_connections for relevant links outside the primary threads. Every prose list item must use
+bracketed task-ID citations. Return one CategorySynthesis instance; do not echo the schema:
+{json.dumps(CategorySynthesis.model_json_schema(), ensure_ascii=False)}
+
+VALIDATED CATEGORY PLAN:
+{json.dumps(plan.model_dump(mode="json"), ensure_ascii=False)}
+
+DETAILED PRIMARY PAPER CARDS:
+{json.dumps(detailed_cards, ensure_ascii=False)}
+
+ALL-PAPER CATALOG FOR LATERAL CONNECTIONS:
+{json.dumps(catalog, ensure_ascii=False)}"""
+
+
+def survey_narrative_prompt(
     *,
     title: str,
     research_question: str,
     language: str,
-    categories: tuple[str, ...],
-    results: list[ResearchResult],
     planned_total: int,
+    result_count: int,
+    task_ids: list[str],
+    category_syntheses: list[CategorySynthesis],
 ) -> str:
-    compact_results = [result.model_dump(mode="json") for result in results]
-    from .models import SurveySynthesis
+    from .models import SurveyNarrative
 
     return f"""Survey title: {title}
 Research question: {research_question}
 Output language: {language}
-Taxonomy: {json.dumps(categories, ensure_ascii=False)}
+Validated reports: {result_count}/{planned_total}
+Allowed citation task IDs: {json.dumps(task_ids)}
 
-Synthesize all {len(results)} validated reports from a planned set of {planned_total}. Explicitly
-state the coverage gap when fewer than {planned_total} reports are supplied. Represent every
-taxonomy category that has relevant papers, compare systems and methods instead of merely listing
-summaries, identify evidence-backed gaps, and retain task-ID citations. Never infer findings from
-missing or failed reports. The output must match this JSON Schema:
-{json.dumps(SurveySynthesis.model_json_schema(), ensure_ascii=False)}
+Using only the validated category syntheses below, write the global survey narrative. Compare
+technical lines instead of listing papers. Explicitly state a coverage gap when result_count is
+below planned_total. Every cross-paper finding, technical comparison, and research gap must contain
+bracketed citations from the whitelist. Do not invent citations or facts. Write p99 percentiles in
+lowercase. Return JSON matching this schema:
+{json.dumps(SurveyNarrative.model_json_schema(), ensure_ascii=False)}
 
-VALIDATED RESEARCH REPORTS JSON:
-{json.dumps(compact_results, ensure_ascii=False)}"""
+VALIDATED CATEGORY SYNTHESES:
+{json.dumps([section.model_dump(mode="json") for section in category_syntheses], ensure_ascii=False)}"""

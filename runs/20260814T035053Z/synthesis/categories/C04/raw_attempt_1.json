@@ -1,0 +1,33 @@
+{
+  "category": "训练系统与优化",
+  "overview": "本类别聚焦于训练系统与优化，以 DeltaServe [P32] 为代表，探索在推理服务资源上高效执行 LoRA 微调、同时维持推理 SLO 合规的方法。核心思想是利用空闲推理容量进行微调，并通过调度、延迟建模与反向执行隔离等技术提升资源利用率，避免额外硬件投入。",
+  "paper_ids": [
+    "P32"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "推理与微调协同服务",
+      "question": "如何在不增加硬件的前提下，利用空闲推理容量进行 LoRA 微调，同时保持推理 SLO 合规？",
+      "narrative": "该线程从 DeltaServe 开始，提出主机无关的协同服务设计，将空闲推理 GPU 容量转化为 LoRA 微调吞吐。DeltaServe 通过 SLO 感知调度、CUDA-graph 感知延迟模型和独立反向子进程维持推理延迟目标，在多个推理引擎上验证了有效性与可移植性。",
+      "ordered_steps": [
+        {
+          "task_id": "P32",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "predecessor_problem": "现有系统在推理与微调之间缺乏高效协同，空闲推理资源未被充分利用，且微调可能干扰推理 SLO。",
+          "contribution_or_improvement": "DeltaServe 提出主机无关的协同服务设计，通过 SLO 感知调度将 LoRA 微调建模为 prefill-only 请求并入推理 batch，利用 CUDA-graph 感知延迟模型精确预测延迟，并通过独立反向子进程隔离反向传播和优化器更新，从而在不增加硬件的情况下提升微调吞吐并保持 SLO 合规 [P32]。",
+          "tradeoffs": "在 burst-dense 负载下微调吞吐下降；要求宿主引擎支持 multi-LoRA batching；混合 batch 可能被迫使用 eager 执行而损失 CUDA graph 回放优势 [P32]。",
+          "remaining_gap": "尚未评估其他模型架构、更大模型或不同数据集上的行为；突发推理负载下的微调吞吐稳定性有待改进 [P32]。",
+          "relationship_evidence": "P32 是本文线程的起始工作，提出 DeltaServe 这一主机无关的协同服务设计，将空闲推理 GPU 容量转化为 LoRA 微调吞吐 [P32]。"
+        }
+      ]
+    }
+  ],
+  "lateral_connections": [
+    "与推理服务调度相关的工作如 LLMStation（文中基线）和 vLLM、SGLang、S-LoRA 等宿主引擎在 multi-LoRA batching 能力上存在关联 [P32]；但本综述中未包含这些基线工作的详细报告。"
+  ],
+  "trends": [
+    "训练与推理的融合成为趋势，通过协同服务充分利用已有推理资源进行微调，降低额外硬件成本 [P32]。",
+    "SLO 感知的资源调度与延迟建模在混合负载下越来越重要，以保障服务质量的同时提升资源利用率 [P32]。"
+  ]
+}

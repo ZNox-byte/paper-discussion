@@ -11,6 +11,7 @@ def test_default_config_targets_ai_infra_and_allows_partial_synthesis() -> None:
     assert config.validation.minimum_results_for_synthesis == 28
     assert config.deepseek.reader_model == "deepseek-v4-flash"
     assert config.deepseek.synthesis_model == "deepseek-v4-pro"
+    assert config.deepseek.synthesis_thinking == "disabled"
     assert "all:vLLM" in config.search.queries
     assert "推理服务与请求调度" in config.categories
 

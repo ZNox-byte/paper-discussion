@@ -1,0 +1,164 @@
+{
+  "assignments": [
+    {
+      "task_id": "P01",
+      "category": "KV Cache与内存管理",
+      "rationale": "提出 PagedAttention，通过分页管理 KV cache 实现近零内存浪费并提升吞吐 [P01]"
+    },
+    {
+      "task_id": "P02",
+      "category": "KV Cache与内存管理",
+      "rationale": "RadixAttention 将 KV cache 组织为 radix tree 的 LRU 缓存，实现自动前缀复用 [P02]"
+    },
+    {
+      "task_id": "P03",
+      "category": "KV Cache与内存管理",
+      "rationale": "利用 CUDA 虚拟内存管理解耦虚拟与物理内存，实现动态 KV cache 管理且无需修改注意力内核 [P03]"
+    },
+    {
+      "task_id": "P04",
+      "category": "性能评测与成本分析",
+      "rationale": "提供真实 LLM 服务工作负载数据集并分析突发性、失败率等特征，用于评估和优化服务系统 [P04]"
+    },
+    {
+      "task_id": "P05",
+      "category": "推理服务与请求调度",
+      "rationale": "通过 nano-batches 和操作重叠优化请求调度，提升端到端服务吞吐 [P05]"
+    },
+    {
+      "task_id": "P06",
+      "category": "推理服务与请求调度",
+      "rationale": "提出基于 KV cache 迁移的动态请求重调度，统一负载均衡、去碎片化和优先级隔离 [P06]"
+    },
+    {
+      "task_id": "P07",
+      "category": "模型压缩与低精度计算",
+      "rationale": "提出 2bit KV cache 非对称量化方法，压缩内存并提升吞吐 [P07]"
+    },
+    {
+      "task_id": "P08",
+      "category": "模型压缩与低精度计算",
+      "rationale": "提出 INT8 量化 FlashAttention，以低精度 GEMM 加速注意力计算 [P08]"
+    },
+    {
+      "task_id": "P09",
+      "category": "KV Cache与内存管理",
+      "rationale": "通过选择性重算和 KV cache 融合优化 RAG 场景下的缓存复用 [P09]"
+    },
+    {
+      "task_id": "P10",
+      "category": "模型压缩与低精度计算",
+      "rationale": "使用 delta 编码、量化和算术编码压缩 KV cache 以降低传输带宽和 TTFT [P10]"
+    },
+    {
+      "task_id": "P11",
+      "category": "KV Cache与内存管理",
+      "rationale": "实现多级 GPU/CPU KV 缓存，跨请求保存和复用历史上下文 [P11]"
+    },
+    {
+      "task_id": "P12",
+      "category": "推理服务与请求调度",
+      "rationale": "优化公平性感知调度中的上下文切换效率，降低抢占式调度开销 [P12]"
+    },
+    {
+      "task_id": "P13",
+      "category": "推理服务与请求调度",
+      "rationale": "提出局部性感知的公平调度算法，在保持前缀缓存局部性的同时保证公平 [P13]"
+    },
+    {
+      "task_id": "P14",
+      "category": "推理服务与请求调度",
+      "rationale": "通过 micro-request 抽象和两级调度统一 prefill/decode 放置，动态优化负载均衡 [P14]"
+    },
+    {
+      "task_id": "P15",
+      "category": "推理服务与请求调度",
+      "rationale": "在单 GPU 内动态划分 SM 实现 prefill 与 decode 的逻辑解耦和调度优化 [P15]"
+    },
+    {
+      "task_id": "P16",
+      "category": "推理服务与请求调度",
+      "rationale": "针对混合实时/尽力而为请求提出迭代级动态优先级调度和双向 KV cache 共享 [P16]"
+    },
+    {
+      "task_id": "P17",
+      "category": "KV Cache与内存管理",
+      "rationale": "将 SSD 纳入 KV cache 存储层次，利用 GPU 直接 I/O 和调度提升长上下文服务性能 [P17]"
+    },
+    {
+      "task_id": "P18",
+      "category": "KV Cache与内存管理",
+      "rationale": "基于 CXL 共享内存实现机架级 KV cache 和传输，消除网络跳数 [P18]"
+    },
+    {
+      "task_id": "P19",
+      "category": "KV Cache与内存管理",
+      "rationale": "通过层次化上下文缓存、GPU 辅助 I/O 和缓存感知调度优化长上下文 KV cache 加载 [P19]"
+    },
+    {
+      "task_id": "P20",
+      "category": "KV Cache与内存管理",
+      "rationale": "自适应选择 KV cache 的压缩算法、比例和放置设备，提升分层存储下的命中率 [P20]"
+    },
+    {
+      "task_id": "P21",
+      "category": "KV Cache与内存管理",
+      "rationale": "联合优化 KV cache 的压缩与驱逐决策，提高多层存储下的服务效率 [P21]"
+    },
+    {
+      "task_id": "P22",
+      "category": "KV Cache与内存管理",
+      "rationale": "将压缩 KV 缓存作为草稿、全量 KV 验证，在无输出损失下提升解码吞吐 [P22]"
+    },
+    {
+      "task_id": "P23",
+      "category": "KV Cache与内存管理",
+      "rationale": "按请求逐层动态决定 KV cache 在 GPU/CPU 间的放置，提升 SLO 达成率 [P23]"
+    },
+    {
+      "task_id": "P24",
+      "category": "KV Cache与内存管理",
+      "rationale": "引入 token 级虚拟化层和异步重打包，解决 token 级驱逐与块级管理的粒度失配 [P24]"
+    },
+    {
+      "task_id": "P25",
+      "category": "模型压缩与低精度计算",
+      "rationale": "结合 2bit KV 量化和金字塔逐层预算分配，实现高压缩比并保持准确率 [P25]"
+    },
+    {
+      "task_id": "P26",
+      "category": "模型压缩与低精度计算",
+      "rationale": "提出在线-离线混合 KV cache 量化算法，降低量化开销并提升吞吐 [P26]"
+    },
+    {
+      "task_id": "P27",
+      "category": "推理服务与请求调度",
+      "rationale": "通过请求等待时间估计驱动全局队列管理，优化 SLO 达成率和吞吐 [P27]"
+    },
+    {
+      "task_id": "P28",
+      "category": "性能评测与成本分析",
+      "rationale": "刻画生产级 LLM 服务工作负载特征并提供生成框架，用于基准测试和系统优化 [P28]"
+    },
+    {
+      "task_id": "P29",
+      "category": "性能评测与成本分析",
+      "rationale": "系统评估 vLLM 配置选项对能耗、延迟和准确率的交互影响 [P29]"
+    },
+    {
+      "task_id": "P30",
+      "category": "可靠性、弹性与可观测性",
+      "rationale": "通过模糊测试发现 LLM 服务系统在并发负载下的隔离、性能和存活漏洞 [P30]"
+    },
+    {
+      "task_id": "P31",
+      "category": "并行计算与分布式执行",
+      "rationale": "通过固定归约顺序实现跨张量并行大小的确定性推理，消除并行导致的非确定性 [P31]"
+    },
+    {
+      "task_id": "P32",
+      "category": "训练系统与优化",
+      "rationale": "在推理 GPU 上协同执行 LoRA 微调，利用空闲容量提升微调吞吐而不影响推理 SLO [P32]"
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "category": "KV Cache与内存管理",
+  "paper_ids": [
+    "P01",
+    "P02",
+    "P03",
+    "P09",
+    "P11",
+    "P17",
+    "P18",
+    "P19",
+    "P20",
+    "P21",
+    "P22",
+    "P23",
+    "P24"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "GPU内存动态管理与分页机制",
+      "question": "如何高效管理GPU上的KV缓存内存以减少空闲并支持动态分配？",
+      "ordered_steps": [
+        {
+          "task_id": "P01",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "relationship_rationale": "P01 引入 PagedAttention，将 KV cache 划分为非连续物理块并支持按需分配与共享，是该领域的基础框架。"
+        },
+        {
+          "task_id": "P03",
+          "relation_to_previous": "alternative",
+          "builds_on": [
+            "P01"
+          ],
+          "relationship_rationale": "P03 提出 vAttention，利用 CUDA 虚拟内存管理保留 KV 虚拟连续性，避免 PagedAttention 的内核重写和块表维护，是 P01 的替代方案。"
+        },
+        {
+          "task_id": "P24",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P01",
+            "P03"
+          ],
+          "relationship_rationale": "P24 在 PagedAttention 块管理基础上引入 token 级虚拟化层，通过 token-table 间接寻址回收块内碎片，是对 P01 的机制扩展，同时与 P03 的虚拟内存方法正交。"
+        }
+      ]
+    },
+    {
+      "thread_name": "跨存储层级与设备间KV缓存管理",
+      "question": "如何利用CPU、SSD和共享内存等多级存储扩展KV缓存容量并优化数据移动？",
+      "ordered_steps": [
+        {
+          "task_id": "P11",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "relationship_rationale": "P11 提出 Pensieve，使用 GPU-CPU 多级缓存并扩展 PagedAttention 支持多 token 注意力，为后续跨层级管理提供基础。"
+        },
+        {
+          "task_id": "P19",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P11"
+          ],
+          "relationship_rationale": "P19 提出 Strata，通过 GPU 辅助 I/O 和缓存感知调度，进一步优化碎片化 KV 缓存分层加载，是对 P11 多级缓存思想的扩展。"
+        },
+        {
+          "task_id": "P20",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P11",
+            "P19"
+          ],
+          "relationship_rationale": "P20 提出 AdaptCache，通过有损压缩和自适应设备放置提升 DRAM/SSD 分层缓存效率，在 P11 和 P19 的基础上引入压缩维度。"
+        },
+        {
+          "task_id": "P21",
+          "relation_to_previous": "direct_improvement",
+          "builds_on": [
+            "P20"
+          ],
+          "relationship_rationale": "P21 提出 EVICPRESS，联合优化压缩与驱逐决策，相比 P20 的固定压缩策略实现更高性能和灵活性，是对 P20 的直接改进。"
+        },
+        {
+          "task_id": "P22",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P20",
+            "P21"
+          ],
+          "relationship_rationale": "P22 提出 VeriCache，将有损压缩作为草稿生成、全量 KV 验证，在 P20/P21 有损压缩基础上实现无损输出保证。"
+        },
+        {
+          "task_id": "P17",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P11"
+          ],
+          "relationship_rationale": "P17 提出 Tutti，通过 GPU 中心化 I/O 将 KV 缓存扩展至 SSD，是对 P11 设备扩展的进一步深化。"
+        },
+        {
+          "task_id": "P18",
+          "relation_to_previous": "orthogonal",
+          "builds_on": [
+            "P11"
+          ],
+          "relationship_rationale": "P18 提出 TraCT，利用 CXL 共享内存管理机架级 KV 缓存，与基于本地存储层级的 P11 方法正交。"
+        },
+        {
+          "task_id": "P23",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P11",
+            "P19"
+          ],
+          "relationship_rationale": "P23 提出 OrbitFlow，通过细粒度请求级 KV 放置优化多级存储中的 SLO 达成率，结合了 P11 的多级缓存和 P19 的调度思想。"
+        }
+      ]
+    },
+    {
+      "thread_name": "结构化复用与请求调度优化",
+      "question": "如何通过缓存共享与调度策略提升多请求场景下的吞吐和延迟？",
+      "ordered_steps": [
+        {
+          "task_id": "P02",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "relationship_rationale": "P02 提出 SGLang 的 RadixAttention，利用 radix-tree 结构管理 KV 缓存复用，是结构化复用和缓存感知调度的先导工作。"
+        },
+        {
+          "task_id": "P09",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P02"
+          ],
+          "relationship_rationale": "P09 提出 CacheBlend，通过选择性 KV 重计算融合非前缀缓存，扩展了 P02 的前缀复用思想。"
+        }
+      ]
+    }
+  ]
+}

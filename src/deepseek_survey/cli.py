@@ -10,6 +10,7 @@ from .artifacts import new_run_directory
 from .config import load_config
 from .deepseek import DeepSeekClient
 from .pipeline import discover, run_pipeline
+from .review import finalize_codex_review
 from .rounds import load_next_round_context
 
 
@@ -32,6 +33,11 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         help="以上一轮目录为父轮次，排除全部历史入选论文并启动新一轮",
     )
+    finalize_parser = subparsers.add_parser(
+        "finalize-review",
+        help="合并 Codex 审查稿与 Flash 阅读卡片，并完成本轮（不需要 API Key）",
+    )
+    finalize_parser.add_argument("--run", type=Path, required=True, help="运行目录")
     return parser
 
 
@@ -43,6 +49,7 @@ def _doctor(config_path: str) -> int:
     print(f"筛选模型: {config.deepseek.screening_model}")
     print(f"阅读模型: {config.deepseek.reader_model}")
     print(f"汇总模型: {config.deepseek.synthesis_model}")
+    print(f"汇总 thinking: {config.deepseek.synthesis_thinking}")
     print(f"阅读任务: {config.project.target_papers}")
     print(f"部分汇总阈值: {config.validation.minimum_results_for_synthesis}")
     print(f"最大并发: {config.deepseek.reader_concurrency}")
@@ -59,6 +66,10 @@ async def _async_main(args: argparse.Namespace) -> int:
             directory = new_run_directory(config.project.output_dir)
             destination = directory / "candidates.json"
         await discover(config, destination)
+        return 0
+    if args.command == "finalize-review":
+        final_report = finalize_codex_review(args.run)
+        print(f"[review] Codex 审查已完成：{final_report}")
         return 0
 
     api_key = os.getenv("DEEPSEEK_API_KEY", "").strip()

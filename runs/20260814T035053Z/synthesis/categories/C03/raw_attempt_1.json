@@ -1,0 +1,33 @@
+{
+  "category": "并行计算与分布式执行",
+  "overview": "本类别关注大语言模型推理系统中并行计算与分布式执行的关键技术，特别是张量并行（Tensor Parallelism）下的计算确定性问题。P31 提出 Tree-Based Invariant Kernels（TBIK），通过固定二叉树归约顺序统一 GPU 内 MatMul 与 GPU 间 All-Reduce，消除了不同张量并行大小导致的浮点非确定性，并解决了强化学习管线中训练和推理的概率失配。",
+  "paper_ids": [
+    "P31"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "确定性张量并行推理",
+      "question": "如何消除不同张量并行大小导致的非确定性，实现训练与推理的概率匹配？",
+      "narrative": "该线程以 P31 为唯一基础工作，提出 Tree-Based Invariant Kernels（TBIK），通过固定二叉树归约顺序统一 GPU 内 MatMul 与 GPU 间 All-Reduce，实现跨张量并行大小的逐位确定性推理，并解决 RL 管线中 vLLM 与 FSDP 的概率失配问题。",
+      "ordered_steps": [
+        {
+          "task_id": "P31",
+          "relation_to_previous": "foundation",
+          "predecessor_problem": "不同张量并行大小导致推理输出非确定性，造成训练与推理概率失配，影响基准评测和强化学习训练。",
+          "contribution_or_improvement": "提出 Tree-Based Invariant Kernels（TBIK），通过固定二叉树归约顺序同时约束 GPU 内 MatMul 与 GPU 间 All-Reduce，实现跨不同张量并行大小的逐位确定性推理，并集成到 vLLM 和 FSDP 中消除 RL 管线概率失配。",
+          "tradeoffs": "确定性推理引入显著延迟开销（22%–63%）；Tree-Based MatMul 在小 M 时吞吐低于 cuBLAS；当前实现尚未达到生产级性能。",
+          "remaining_gap": "确定性推理开销较高，需进一步优化性能；尚未支持量化数据类型，未来需将确定性保证扩展到量化设置。",
+          "relationship_evidence": "该工作 [P31] 提出了 Tree-Based Invariant Kernels (TBIK)，作为首个系统性消除 TP 非确定性的方案，为后续确定性推理研究奠定了基础。",
+          "builds_on": []
+        }
+      ]
+    }
+  ],
+  "trends": [
+    "并行计算与分布式执行的研究开始关注张量并行中的数值确定性问题，旨在通过软硬件协同设计消除浮点非确定性，从而支持训练-推理一致性。"
+  ],
+  "lateral_connections": [
+    "P31 与 P29 相关：P29 评估 vLLM 配置对准确率的影响，而 P31 进一步通过确定性推理从根源上消除配置相关的输出差异 [P29][P31]。",
+    "P31 与 P30 相关：P30 发现推理系统中的漏洞，而 P31 关注推理系统可靠性中的确定性问题 [P30][P31]。"
+  ]
+}

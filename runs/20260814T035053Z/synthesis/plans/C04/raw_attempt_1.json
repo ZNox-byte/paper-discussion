@@ -1,0 +1,20 @@
+{
+  "category": "训练系统与优化",
+  "paper_ids": [
+    "P32"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "推理-微调协同服务的训练优化",
+      "question": "如何在不增加硬件的前提下，将空闲推理容量转化为 LoRA 微调吞吐并保持推理 SLO？",
+      "ordered_steps": [
+        {
+          "task_id": "P32",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "relationship_rationale": "P32 是训练系统与优化分类中的唯一任务，提出了 host-agnostic 的协同服务设计，作为该方向的基础工作。"
+        }
+      ]
+    }
+  ]
+}

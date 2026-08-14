@@ -1,12 +1,8 @@
 {
-  "valid": false,
-  "errors": [
-    "evidence[1] quote is not verbatim in supplied text",
-    "evidence[2] quote is not verbatim in supplied text",
-    "only 0 grounded evidence items; at least 2 required"
-  ],
+  "valid": true,
+  "errors": [],
   "warnings": [],
-  "grounded_evidence_count": 0,
+  "grounded_evidence_count": 2,
   "total_evidence_count": 2,
-  "dropped_evidence_count": 2
+  "dropped_evidence_count": 0
 }

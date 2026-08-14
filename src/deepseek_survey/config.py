@@ -29,6 +29,7 @@ class DeepSeekConfig:
     max_tokens_synthesis: int
     request_timeout_seconds: float
     max_retries: int
+    synthesis_thinking: str = "disabled"
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,6 +98,7 @@ def load_config(path: str | Path) -> AppConfig:
         max_tokens_synthesis=int(deepseek.get("max_tokens_synthesis", 16_000)),
         request_timeout_seconds=float(deepseek.get("request_timeout_seconds", 900)),
         max_retries=int(deepseek.get("max_retries", 5)),
+        synthesis_thinking=str(deepseek.get("synthesis_thinking", "disabled")),
     )
     search_config = SearchConfig(
         endpoint=str(search.get("endpoint", "https://export.arxiv.org/api/query")),
@@ -128,6 +130,8 @@ def load_config(path: str | Path) -> AppConfig:
         )
     if deepseek_config.thinking not in {"enabled", "disabled"}:
         raise ValueError("deepseek.thinking 只能是 enabled 或 disabled")
+    if deepseek_config.synthesis_thinking not in {"enabled", "disabled"}:
+        raise ValueError("deepseek.synthesis_thinking 只能是 enabled 或 disabled")
     for field_name, model in (
         ("screening_model", deepseek_config.screening_model),
         ("reader_model", deepseek_config.reader_model),

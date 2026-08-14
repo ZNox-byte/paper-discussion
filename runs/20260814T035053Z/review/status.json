@@ -1,0 +1,10 @@
+{
+  "status": "completed",
+  "reviewer": "Codex GPT",
+  "pro_report": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z\\report_pro.md",
+  "review_bundle": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z\\review\\review_bundle.json",
+  "completed_at": "2026-08-14T09:05:26.959114+00:00",
+  "codex_main": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z\\review\\codex_main.md",
+  "codex_review": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z\\review\\codex_review.md",
+  "final_report": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z\\report_final.md"
+}

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 
@@ -68,11 +70,74 @@ class ResearchResult(StrictModel):
         return list(dict.fromkeys(value))
 
 
+RelationType = Literal[
+    "foundation",
+    "direct_improvement",
+    "mechanism_extension",
+    "alternative",
+    "orthogonal",
+    "evaluation",
+]
+
+
+class PrimaryAssignment(StrictModel):
+    task_id: str
+    category: str
+    rationale: str
+
+
+class PrimaryClassification(StrictModel):
+    assignments: list[PrimaryAssignment] = Field(min_length=1)
+
+
+class EvolutionPlanStep(StrictModel):
+    task_id: str
+    relation_to_previous: RelationType
+    builds_on: list[str] = Field(default_factory=list)
+    relationship_rationale: str
+
+
+class EvolutionPlanThread(StrictModel):
+    thread_name: str
+    question: str
+    ordered_steps: list[EvolutionPlanStep] = Field(min_length=1)
+
+
+class CategoryPlan(StrictModel):
+    category: str
+    paper_ids: list[str] = Field(min_length=1)
+    evolution_threads: list[EvolutionPlanThread] = Field(min_length=1)
+
+
+class SynthesisPlan(StrictModel):
+    categories: list[CategoryPlan] = Field(min_length=1)
+
+
+class EvolutionStep(StrictModel):
+    task_id: str
+    relation_to_previous: RelationType
+    builds_on: list[str] = Field(default_factory=list)
+    predecessor_problem: str
+    contribution_or_improvement: str
+    tradeoffs: str
+    remaining_gap: str
+    relationship_evidence: str
+
+
+class EvolutionThread(StrictModel):
+    thread_name: str
+    question: str
+    narrative: str
+    ordered_steps: list[EvolutionStep] = Field(min_length=1)
+
+
 class CategorySynthesis(StrictModel):
     category: str
     overview: str
-    paper_ids: list[str]
-    trends: list[str]
+    paper_ids: list[str] = Field(min_length=1)
+    evolution_threads: list[EvolutionThread] = Field(min_length=1)
+    lateral_connections: list[str] = Field(default_factory=list)
+    trends: list[str] = Field(min_length=1)
 
 
 class SurveySynthesis(StrictModel):
@@ -80,6 +145,16 @@ class SurveySynthesis(StrictModel):
     abstract: str
     scope_and_method: str
     category_syntheses: list[CategorySynthesis]
+    cross_paper_findings: list[str]
+    technical_comparisons: list[str]
+    research_gaps: list[str]
+    conclusion: str
+
+
+class SurveyNarrative(StrictModel):
+    title: str
+    abstract: str
+    scope_and_method: str
     cross_paper_findings: list[str]
     technical_comparisons: list[str]
     research_gaps: list[str]

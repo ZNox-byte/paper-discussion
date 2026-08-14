@@ -1,0 +1,61 @@
+{
+  "category": "模型压缩与低精度计算",
+  "paper_ids": [
+    "P07",
+    "P08",
+    "P10",
+    "P25",
+    "P26"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "KV Cache低精度量化与内存优化",
+      "question": "如何通过低精度KV Cache量化与调度策略在保持模型质量的同时提升LLM推理效率？",
+      "ordered_steps": [
+        {
+          "task_id": "P07",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "relationship_rationale": "P07作为KV Cache量化领域的基础工作，首次提出无微调的2bit非对称量化方法（Key按通道、Value按token），并保留全精度滑动窗口，在几乎不损失生成质量的情况下显著降低KV Cache内存占用，为后续KV Cache量化研究提供了算法基础和性能基准。 [P07]"
+        },
+        {
+          "task_id": "P10",
+          "relation_to_previous": "orthogonal",
+          "builds_on": [
+            "P07"
+          ],
+          "relationship_rationale": "P10关注KV Cache的编码压缩与流式传输优化（目标在于降低网络带宽和TTFT），与P07的量化方案在目标、方法和应用场景上不同，属于并行优化路径，二者可互补但无直接改进关系。 [P07] [P10]"
+        },
+        {
+          "task_id": "P25",
+          "relation_to_previous": "direct_improvement",
+          "builds_on": [
+            "P07"
+          ],
+          "relationship_rationale": "P25在P07的2bit量化基础上引入逐层金字塔KV预算分配，并设计兼容FlashAttention的两遍注意力内核，在相同KV Cache大小下达到更高准确率（LLaMA2-7B-chat上98.5%全模型准确率），且支持更长序列和更高吞吐，是对P07量化方法的直接改进和系统级拓展。 [P07] [P25]"
+        },
+        {
+          "task_id": "P26",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P07",
+            "P25"
+          ],
+          "relationship_rationale": "P26提出在线-离线混合量化，通过离线确定异常值阈值避免在线高开销检测，结合group-shift量化与融合编码进一步降低位宽，并在加速器上实现定制引擎。它继承了P07的量化思想和P25的KV缓存优化目标，但引入新的机制（离线阈值、硬件协同）以解决在线量化开销问题，属于机制扩展而非直接改进。 [P07] [P25] [P26]"
+        }
+      ]
+    },
+    {
+      "thread_name": "注意力内核的低精度量化",
+      "question": "如何将INT8量化与FlashAttention内核高效结合以提升注意力计算速度？",
+      "ordered_steps": [
+        {
+          "task_id": "P08",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "relationship_rationale": "P08作为该线程的基础工作，提出首个与FlashAttention前向流程兼容的token级INT8量化架构，用INT8 GEMM替换所有矩阵乘法，在Ampere GPU上显著提升推理速度并降低量化误差，为注意力算子的低精度优化奠定基础。 [P08]"
+        }
+      ]
+    }
+  ]
+}

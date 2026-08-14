@@ -1,0 +1,140 @@
+{
+  "category": "推理服务与请求调度",
+  "overview": "该类别聚焦于LLM推理服务中的请求调度与资源分配优化，覆盖从单GPU内部到跨实例的调度机制演进，旨在提升吞吐、降低延迟并满足SLO。早期工作通过单机内细粒度并行与nano-batch重叠提升吞吐 [P05]，后续研究扩展至单机内的prefill/decode解耦 [P15]、混合实时/尽力而为请求调度 [P16]、公平性感知的上下文切换优化 [P12]、以及前缀缓存局部性感知的公平调度 [P13]。跨实例层面，动态请求迁移与全局队列管理等机制被提出以应对负载不均和SLO达成 [P06][P27]，并进一步统一共置与分离式执行 [P14]。整体上，调度从静态粗粒度向动态细粒度、从吞吐中心向SLO和公平性敏感演进。",
+  "paper_ids": [
+    "P05",
+    "P06",
+    "P12",
+    "P13",
+    "P14",
+    "P15",
+    "P16",
+    "P27"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "单机内请求调度优化",
+      "question": "如何通过单机内的调度与资源分配机制优化LLM推理服务的吞吐与延迟？",
+      "narrative": "该线程从P05的nano-batch流水线与intra-device parallelism奠定高吞吐基础 [P05]，随后通过机制扩展引入prefill/decode解耦 [P15]、混合请求优先级调度 [P16]、公平性感知的上下文切换优化 [P12]和前缀缓存局部性感知的公平调度 [P13]。其中，P15针对混合批次干扰问题动态划分SM，实现阶段逻辑分离 [P15]；P16提出迭代级优先级调度与双向KV块共享，平衡实时与尽力而为请求 [P16]；P12通过块组KV缓存和异步交换降低抢占式切换开销 [P12]；P13则在公平调度中纳入前缀缓存局部性，以赤字机制保障公平性与缓存复用 [P13]。这些工作共同丰富了单机内调度策略，在吞吐、延迟、公平性等维度上形成互补。",
+      "ordered_steps": [
+        {
+          "task_id": "P05",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "predecessor_problem": "LLM在线推理服务中，单GPU内计算、内存和网络操作顺序执行，导致资源利用率低、吞吐远低于理论最优。",
+          "contribution_or_improvement": "提出NanoFlow框架，通过nano-batch流水线与intra-device parallelism重叠异构资源操作，自动搜索最优执行管线，显著提升端到端吞吐并接近理论最优。",
+          "tradeoffs": "收益依赖精确的调度与资源分配；仅拆分nano-batch而不重叠会导致性能下降；KV-cache分层卸载引入约3%的pipeline开销。",
+          "remaining_gap": "未覆盖prefill/decode混合干扰问题，未处理异构QoS需求，未优化上下文切换开销。",
+          "relationship_evidence": "作为基础工作，P05提出了单机内资源重叠与细粒度并行的核心机制，为后续调度优化提供了性能基准和机制起点 [P05]。"
+        },
+        {
+          "task_id": "P15",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P05"
+          ],
+          "predecessor_problem": "P05虽提升了吞吐，但未解决prefill与decode在混批时的细粒度干扰，导致TBT延迟显著升高。",
+          "contribution_or_improvement": "在单GPU内通过动态SM分区实现prefill/decode的逻辑解耦，结合成本模型和滞回控制，同时降低TTFT/TBT并保持高吞吐。",
+          "tradeoffs": "需要离线profiling标定模型参数；在输入长度多样性高或均匀的特定工作负载下，延迟改善不显著。",
+          "remaining_gap": "仍未针对混合实时/尽力而为请求的优先级调度需求进行优化。",
+          "relationship_evidence": "P15扩展了P05的单机内资源重叠思想，通过动态SM分区将并行性从单纯的计算/内存重叠延伸到prefill/decode阶段解耦，是对P05机制的进一步延伸 [P05] [P15]。"
+        },
+        {
+          "task_id": "P16",
+          "relation_to_previous": "orthogonal",
+          "builds_on": [
+            "P05"
+          ],
+          "predecessor_problem": "P05假设请求优先级均匀，但实际服务中需同时服务实时（RT）与尽力而为（BE）请求，存在异构QoS需求。",
+          "contribution_or_improvement": "提出BROS，通过迭代级动态优先级调度与双向KV缓存块共享，在共置RT/BE请求的同时降低RT延迟、提升SLO达成率，并保持BE吞吐。",
+          "tradeoffs": "BE吞吐有约10-18%的下降；BE请求数据集为合成，可能不完全反映真实分布。",
+          "remaining_gap": "未解决上下文切换开销问题，且未结合前缀缓存局部性。",
+          "relationship_evidence": "P16与P05在单机调度空间内正交：P05优化均匀优先级下的吞吐，P16则面向混合QoS的调度与缓存共享，两者无直接改进关系 [P05] [P16]。"
+        },
+        {
+          "task_id": "P12",
+          "relation_to_previous": "orthogonal",
+          "builds_on": [
+            "P05",
+            "P16"
+          ],
+          "predecessor_problem": "公平性驱动的LLM服务中，优先级调整导致上下文切换开销大，I/O利用率低、GPU空闲，且多轮对话存在冗余I/O。",
+          "contribution_or_improvement": "提出FastSwitch，通过动态块组KV缓存管理、多线程异步交换和跨轮次KV缓存复用，显著降低抢占式上下文切换开销，改进TTFT/TBT。",
+          "tradeoffs": "实验覆盖模型和硬件有限，优先级在线生成和真实trace验证不足。",
+          "remaining_gap": "未将前缀缓存局部性纳入公平调度考量。",
+          "relationship_evidence": "P12针对上下文切换这一特定瓶颈进行优化，与P05的nano-batch重叠和P16的混合请求调度均正交，无直接改进关系 [P05] [P12] [P16]。"
+        },
+        {
+          "task_id": "P13",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P12",
+            "P16"
+          ],
+          "predecessor_problem": "P12优化了上下文切换效率，但未考虑前缀缓存局部性；P16处理了优先级调度但未提供公平性保证。",
+          "contribution_or_improvement": "提出局部性感知的公平调度算法DLPM及其分布式版本D2LPM，通过赤字机制在保持前缀缓存局部性的同时提供公平性保证，提升吞吐并降低客户端延迟。",
+          "tradeoffs": "仅考虑同一客户端内部的前缀共享，忽略跨客户端共享；未处理程序内请求间数据依赖。",
+          "remaining_gap": "分布式场景下公平性与局部性的权衡仍需进一步优化。",
+          "relationship_evidence": "P13在公平调度思想上是P12的机制扩展，将前缀缓存局部性纳入公平调度；同时与P16的优先级调度互补，但通过结合局部性提升整体性能，无直接改进关系 [P12] [P13] [P16]。"
+        }
+      ]
+    },
+    {
+      "thread_name": "跨实例动态请求调度",
+      "question": "如何通过跨实例的动态请求调度与迁移优化LLM推理服务的负载均衡、SLO达成与成本效率？",
+      "narrative": "该线程从P06的KV cache实时迁移与虚拟用量调度奠定基础 [P06]，随后P27提出基于请求等待时间估计的全局队列管理作为替代方案 [P27]，P14则通过micro-request抽象与两级调度统一共置与分离式执行，融合了前两者思想并进一步扩展 [P06][P14][P27]。整体从最初的迁移机制演进到更细粒度的请求切分与全局优化，不断提升SLO达成率和资源利用率。",
+      "ordered_steps": [
+        {
+          "task_id": "P06",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "predecessor_problem": "LLM推理服务中异构、不可预测请求导致负载不均、内存碎片和优先级干扰，传统一次性分发无法动态应对。",
+          "contribution_or_improvement": "提出Llumnix，通过KV cache实时迁移实现跨实例请求重调度，统一负载均衡、去碎片化、优先级隔离和自动扩缩容，显著改善尾延迟、高优先级加速和成本效率。",
+          "tradeoffs": "仅支持vLLM后端，优先级仅分两类，virtual usage规则简单。",
+          "remaining_gap": "未探索基于队列等待时间的全局调度方法，且缺乏更细粒度的请求切分机制。",
+          "relationship_evidence": "P06开创了基于KV cache迁移的跨实例动态调度，是该线程的基础性工作 [P06]。"
+        },
+        {
+          "task_id": "P27",
+          "relation_to_previous": "alternative",
+          "builds_on": [
+            "P06"
+          ],
+          "predecessor_problem": "P06通过迁移实现调度，但可能带来迁移开销和复杂度；需要一种更轻量、基于队列的SLO导向调度方法。",
+          "contribution_or_improvement": "提出QLM，通过请求等待时间（RWT）估计器预测队列等待时间，由全局调度器执行请求拉取、驱逐、负载均衡和模型切换，提升SLO达成率与吞吐。",
+          "tradeoffs": "RWT估计器在请求组较少时会高估等待时间；输出长度极端值下可能低估完成时间；不支持抢占式负载均衡。",
+          "remaining_gap": "缺乏请求的动态迁移能力，无法在任意token边界灵活切分请求。",
+          "relationship_evidence": "P27采用基于队列管理的替代方法实现SLO导向调度，与P06的KV cache迁移机制形成替代关系，两者无直接改进关系 [P06] [P27]。"
+        },
+        {
+          "task_id": "P14",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P06",
+            "P27"
+          ],
+          "predecessor_problem": "P06的迁移粒度为整个请求，P27的队列管理粒度较粗，均无法在任意token边界灵活切分请求以实现最优资源利用。",
+          "contribution_or_improvement": "提出DynaServe，通过micro-request抽象（可在任意token边界切分请求）和两级调度，统一共置与分离式执行，在满足SLO的同时最大化GPU利用率。",
+          "tradeoffs": "未专门评估超长上下文或大规模集群；输出长度预测依赖现有方法，极端误差下SLO保证不充分。",
+          "remaining_gap": "对超长上下文和更大规模集群的扩展性仍需研究。",
+          "relationship_evidence": "P14扩展了P06的跨实例调度灵活性，利用类似迁移的思想进行chunk-based KV传输，同时结合P27的队列与调度控制思想，通过更细粒度的请求切分和统一放置机制提升了能力 [P06] [P14] [P27]。"
+        }
+      ]
+    }
+  ],
+  "lateral_connections": [
+    "P01的PagedAttention提供了KV cache分页管理基础，被P05、P06等调度系统广泛采用 [P01]。",
+    "P02的RadixAttention前缀缓存复用与P13的前缀缓存局部性调度直接相关 [P02][P13]。",
+    "P03的vAttention虚拟内存管理为单机内KV cache分配提供了替代方案，与P05等资源重叠方法互补 [P03][P05]。",
+    "P04的BurstGPT真实负载数据集被P06、P14等用于驱动动态调度评估 [P04][P06][P14]。",
+    "P11的Pensieve多级KV缓存保存与P16的双向KV共享相关 [P11][P16]。",
+    "P23的OrbitFlow细粒度KV重配置与P14的micro-request切分类似，均面向动态长上下文服务 [P23][P14]。"
+  ],
+  "trends": [
+    "从单机内吞吐优化向跨实例SLO和公平性敏感调度演进 [P05][P06][P13]。",
+    "调度粒度不断细化：从nano-batch到micro-request，支持任意边界切分 [P05][P14]。",
+    "prefill/decode解耦成为降低延迟的关键技术路径，从跨实例分离式发展到单GPU内动态SM分区 [P06][P15]。",
+    "KV缓存管理与调度深度耦合，从简单复用发展到双向共享和局部性感知公平调度 [P01][P16][P13]。",
+    "越来越多系统采用动态、运行时反馈驱动的调度策略，以应对不可预测负载 [P06][P15][P27]。"
+  ]
+}

@@ -1,0 +1,8 @@
+[
+  "plan.模型压缩与低精度计算.thread[1].step[1] relationship_rationale omits citations: ['P07']",
+  "plan.模型压缩与低精度计算.thread[1].step[2] must name at least one earlier builds_on ID",
+  "plan.模型压缩与低精度计算.thread[1].step[2] relationship_rationale omits citations: ['P10']",
+  "plan.模型压缩与低精度计算.thread[1].step[3] relationship_rationale omits citations: ['P07', 'P25']",
+  "plan.模型压缩与低精度计算.thread[1].step[4] relationship_rationale omits citations: ['P07', 'P25', 'P26']",
+  "plan.模型压缩与低精度计算.thread[2].step[1] relationship_rationale omits citations: ['P08']"
+]

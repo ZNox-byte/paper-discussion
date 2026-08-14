@@ -1,0 +1,90 @@
+{
+  "category": "推理服务与请求调度",
+  "paper_ids": [
+    "P05",
+    "P06",
+    "P12",
+    "P13",
+    "P14",
+    "P15",
+    "P16",
+    "P27"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "单机内请求调度优化",
+      "question": "如何通过单机内的调度与资源分配机制优化LLM推理服务的吞吐与延迟？",
+      "ordered_steps": [
+        {
+          "task_id": "P05",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "relationship_rationale": "P05 (NanoFlow) 作为基础性工作，提出 nano-batch 流水线与 intra-device parallelism 来重叠计算、内存和网络操作，达到接近理论最优的吞吐。它为后续单机内调度优化（如 prefill/decode 解耦、混合请求调度）提供了基础机制和性能基准。 [P05]"
+        },
+        {
+          "task_id": "P15",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P05"
+          ],
+          "relationship_rationale": "P15 (Nexus) 在单 GPU 内扩展了 P05 的资源重叠思想，通过动态 SM 分区将 prefill 与 decode 进行逻辑解耦。与 P05 针对 compute-bound 的 nano-batch 重叠不同，P15 针对 prefill/decode 混合批次的干扰问题，利用成本模型和动态 SM 分配来同时降低 TTFT/TBT 并保持吞吐。其贡献是对 P05 单机内并行性思想的机制延伸（面向阶段解耦），而非直接改进。 [P05] [P15]"
+        },
+        {
+          "task_id": "P16",
+          "relation_to_previous": "orthogonal",
+          "builds_on": [
+            "P05"
+          ],
+          "relationship_rationale": "P16 (BROS) 关注混合实时/尽力而为请求的迭代级调度与双向 KV 缓存块共享。与 P05 的可预测、均匀优先级负载不同，P16 面向异构 QoS 需求，引入了优先级调度和缓存共享机制。其优化目标（RT 延迟与 BE 吞吐的权衡）与 P05 的纯吞吐优化正交，仅在单机调度空间内并行贡献。 [P05] [P16]"
+        },
+        {
+          "task_id": "P12",
+          "relation_to_previous": "orthogonal",
+          "builds_on": [
+            "P05",
+            "P16"
+          ],
+          "relationship_rationale": "P12 (FastSwitch) 专注于公平性感知的抢占式上下文切换效率，通过动态块组 KV 缓存管理、多线程异步交换和跨轮次复用降低切换开销。它与 P05 的 nano-batch 重叠和 P16 的混合请求调度均无直接改进关系，而是在单机调度中针对上下文切换这一特定瓶颈进行优化，属于正交工作。 [P05] [P12] [P16]"
+        },
+        {
+          "task_id": "P13",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P12",
+            "P16"
+          ],
+          "relationship_rationale": "P13 (DLPM/D2LPM) 在单机调度中引入前缀缓存局部性感知的公平调度。它继承了 P12 对公平性和上下文切换的关注，并通过赤字机制在保持前缀缓存局部性的同时提供公平性保证，是对公平调度思想的机制扩展。同时，它也与 P16 的优先级调度思想正交，但通过结合局部性来提升整体性能。 [P12] [P13] [P16]"
+        }
+      ]
+    },
+    {
+      "thread_name": "跨实例动态请求调度",
+      "question": "如何通过跨实例的动态请求调度与迁移优化LLM推理服务的负载均衡、SLO达成与成本效率？",
+      "ordered_steps": [
+        {
+          "task_id": "P06",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "relationship_rationale": "P06 (Llumnix) 开创了基于 KV cache 实时迁移的跨实例动态调度，通过运行时请求重调度解决负载不均、内存碎片和优先级隔离问题。它是跨实例调度线程的基础，提供了 KV cache 迁移和虚拟用量抽象等核心机制。 [P06]"
+        },
+        {
+          "task_id": "P27",
+          "relation_to_previous": "alternative",
+          "builds_on": [
+            "P06"
+          ],
+          "relationship_rationale": "P27 (QLM) 采用基于请求等待时间估计的全局队列管理，而非 KV cache 迁移，来实现 SLO 导向的请求调度。它通过请求拉取、驱逐、负载均衡和模型切换来提高 SLO 达成率，与 P06 的迁移方法形成替代方案。尽管两者都解决动态负载下的调度，但机制不同，且论文未建立直接改进关系。 [P06] [P27]"
+        },
+        {
+          "task_id": "P14",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P06",
+            "P27"
+          ],
+          "relationship_rationale": "P14 (DynaServe) 通过 micro-request 抽象和两级调度统一了共置与分离式 serving，支持在任意 token 边界切分请求并跨 GPU 动态执行。它扩展了 P06 的跨实例调度灵活性，利用类似迁移的思想进行 chunk-based KV 传输，同时结合了 P27 的队列与调度控制思想，但通过更细粒度的请求切分和统一放置机制提升了能力。 [P06] [P14] [P27]"
+        }
+      ]
+    }
+  ]
+}

@@ -42,7 +42,11 @@ class DeepSeekClient:
         user: str,
         max_tokens: int,
         model: str,
+        thinking: str | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
+        thinking_mode = thinking or self.config.thinking
+        if thinking_mode not in {"enabled", "disabled"}:
+            raise ValueError("thinking must be enabled or disabled")
         payload: dict[str, Any] = {
             "model": model,
             "messages": [
@@ -52,7 +56,7 @@ class DeepSeekClient:
             "response_format": {"type": "json_object"},
             "max_tokens": max_tokens,
             "stream": False,
-            "thinking": {"type": self.config.thinking},
+            "thinking": {"type": thinking_mode},
         }
         retryable = {429, 500, 503}
         last_error: Exception | None = None

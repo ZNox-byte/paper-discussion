@@ -1,0 +1,5 @@
+[
+  "plan.性能评测与成本分析.thread[1].step[1] relationship_rationale omits citations: ['P04']",
+  "plan.性能评测与成本分析.thread[1].step[2] relationship_rationale omits citations: ['P04', 'P28']",
+  "plan.性能评测与成本分析.thread[1].step[3] relationship_rationale omits citations: ['P04', 'P28', 'P29']"
+]

@@ -1,0 +1,509 @@
+{
+  "categories": [
+    {
+      "category": "推理服务与请求调度",
+      "paper_ids": [
+        "P04",
+        "P05",
+        "P06",
+        "P12",
+        "P13",
+        "P14",
+        "P15",
+        "P16",
+        "P23",
+        "P27",
+        "P28",
+        "P31",
+        "P32"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "基础调度与队列管理",
+          "question": "如何通过队列管理和基础调度策略提升LLM服务的SLO达成率和吞吐？",
+          "ordered_steps": [
+            {
+              "task_id": "P27",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P27提出基于请求等待时间估计的队列管理框架，是请求调度优化的基础工作。"
+            },
+            {
+              "task_id": "P28",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P27"
+              ],
+              "relationship_rationale": "P28提供生产环境工作负载特征刻画和生成框架，与P27的队列管理机制正交，但为调度系统提供了更真实的评估依据。"
+            }
+          ]
+        },
+        {
+          "thread_name": "细粒度资源调度与并行优化",
+          "question": "如何通过细粒度batching、资源划分和动态调度提高GPU利用率和系统吞吐？",
+          "ordered_steps": [
+            {
+              "task_id": "P05",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P05提出nano-batch流水线实现单GPU内计算、内存和网络操作重叠，是细粒度并行调度的开创性工作。"
+            },
+            {
+              "task_id": "P15",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P05"
+              ],
+              "relationship_rationale": "P15在单GPU内动态划分SM资源以实现prefill和decode的主动解耦，扩展了P05的intra-device并行调度机制。"
+            },
+            {
+              "task_id": "P14",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P05",
+                "P15"
+              ],
+              "relationship_rationale": "P14通过micro-request抽象在任意token边界切分请求，进一步细化了P05和P15的调度粒度，实现更灵活的资源分配。"
+            }
+          ]
+        },
+        {
+          "thread_name": "动态重调度与负载均衡",
+          "question": "如何通过跨实例请求迁移和动态调度解决负载不均衡和碎片化问题？",
+          "ordered_steps": [
+            {
+              "task_id": "P06",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P06提出基于KV cache实时迁移的动态调度框架，是跨实例负载均衡的开创性工作。"
+            },
+            {
+              "task_id": "P12",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P06"
+              ],
+              "relationship_rationale": "P12针对公平性感知的抢占式调度，优化上下文切换效率，扩展了P06的KV迁移机制在公平调度场景中的应用。"
+            },
+            {
+              "task_id": "P13",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P06",
+                "P12"
+              ],
+              "relationship_rationale": "P13提出局部性感知的公平调度算法，在保持前缀缓存局部性的同时提供公平性保证，与P06和P12的迁移调度机制正交但目标相近。"
+            }
+          ]
+        },
+        {
+          "thread_name": "混合负载与SLO感知调度",
+          "question": "如何高效共置实时与尽力而为请求，并满足不同SLO要求？",
+          "ordered_steps": [
+            {
+              "task_id": "P16",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P16通过迭代级动态优先级调度和KV缓存块共享，实现RT/BE请求的高效共置，是混合负载调度的基础工作。"
+            },
+            {
+              "task_id": "P23",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P16"
+              ],
+              "relationship_rationale": "P23通过细粒度KV cache放置优化长上下文推理的SLO达成率，扩展了P16的SLO感知调度思想至长上下文场景。"
+            }
+          ]
+        },
+        {
+          "thread_name": "调度系统可靠性与优化",
+          "question": "如何通过确定性执行和协同服务提升系统可靠性与资源利用率？",
+          "ordered_steps": [
+            {
+              "task_id": "P31",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P31提出确定性推理内核，消除张量并行规模变化导致的非确定性，是推理可靠性的基础工作。"
+            },
+            {
+              "task_id": "P32",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P31"
+              ],
+              "relationship_rationale": "P32将推理与LoRA微调协同调度，与P31的确定性推理无直接改进关系，但同样关注系统资源利用和可靠性。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "KV Cache与内存管理",
+      "paper_ids": [
+        "P01",
+        "P02",
+        "P03",
+        "P09",
+        "P10",
+        "P11",
+        "P17",
+        "18",
+        "P19",
+        "P20",
+        "P21",
+        "P22",
+        "P24"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "基础KV Cache管理机制",
+          "question": "如何通过分页或虚拟内存机制减少KV cache内存浪费并支持灵活共享？",
+          "ordered_steps": [
+            {
+              "task_id": "P01",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P01提出PagedAttention，将KV cache分页管理，是KV cache内存管理的基础工作。"
+            },
+            {
+              "task_id": "P03",
+              "relation_to_previous": "alternative",
+              "builds_on": [
+                "P01"
+              ],
+              "relationship_rationale": "P03提出vAttention，通过虚拟内存API保留KV cache虚拟连续性，作为PagedAttention的替代方案，旨在减少内核修改开销。"
+            },
+            {
+              "task_id": "P24",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P01"
+              ],
+              "relationship_rationale": "P24在PagedAttention之上引入token级虚拟化层，解决token级驱逐与块级管理的粒度失配，扩展了P01的块管理机制。"
+            }
+          ]
+        },
+        {
+          "thread_name": "KV Cache复用与共享",
+          "question": "如何高效复用KV cache以支持多轮对话、RAG和跨请求共享？",
+          "ordered_steps": [
+            {
+              "task_id": "P02",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P02提出RadixAttention，将KV cache组织为radix tree以实现前缀复用，是KV cache复用的基础工作。"
+            },
+            {
+              "task_id": "P09",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P02"
+              ],
+              "relationship_rationale": "P09通过选择性重算少量token的KV cache实现RAG中非前缀块的融合，扩展了P02的前缀复用思想至更通用场景。"
+            },
+            {
+              "task_id": "P11",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P01",
+                "P02"
+              ],
+              "relationship_rationale": "P11引入多级GPU-CPU缓存保存多轮对话的KV cache，融合了P01的分页机制与P02的缓存复用思想，支持跨请求状态保持。"
+            }
+          ]
+        },
+        {
+          "thread_name": "KV Cache压缩与传输",
+          "question": "如何压缩KV cache以降低存储占用和传输开销，同时保持生成质量？",
+          "ordered_steps": [
+            {
+              "task_id": "P10",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P10提出CacheGen，利用KV cache分布特性进行编码压缩和流式传输，是KV cache压缩的基础工作。"
+            },
+            {
+              "task_id": "P21",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P10"
+              ],
+              "relationship_rationale": "P21联合优化压缩和驱逐决策，扩展了P10的压缩思想至多级存储管理场景。"
+            },
+            {
+              "task_id": "P22",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P10",
+                "P21"
+              ],
+              "relationship_rationale": "P22将压缩KV cache作为草稿生成器，用全量KV验证，在保持无损输出的同时利用压缩收益，进一步扩展了压缩应用。"
+            }
+          ]
+        },
+        {
+          "thread_name": "分层存储与I/O优化",
+          "question": "如何利用SSD、CXL等外部存储扩展KV cache容量并优化数据移动？",
+          "ordered_steps": [
+            {
+              "task_id": "P17",
+              "relation_to_previous": "foundation",
+              "builds_on": [
+                "P01"
+              ],
+              "relationship_rationale": "P17提出GPU中心的SSD-backed KV cache，在PagedAttention基础上实现接近DRAM的性能，是分层存储优化的基础工作。"
+            },
+            {
+              "task_id": "P18",
+              "relation_to_previous": "alternative",
+              "builds_on": [
+                "P17"
+              ],
+              "relationship_rationale": "P18利用CXL共享内存替代SSD或RDMA进行机架级KV传输，与P17的SSD方案形成替代路线。"
+            },
+            {
+              "task_id": "P19",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P01",
+                "P17"
+              ],
+              "relationship_rationale": "P19提出层次化上下文缓存和GPU辅助I/O，优化碎片化KV cache加载，扩展了P01的分页管理和P17的存储I/O优化。"
+            },
+            {
+              "task_id": "P20",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P17",
+                "P19"
+              ],
+              "relationship_rationale": "P20引入有损KV压缩的自适应存储分层，与P17和P19的I/O优化正交，通过压缩提高DRAM命中率。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "并行计算与分布式执行",
+      "paper_ids": [
+        "P14",
+        "P15",
+        "P31"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "张量并行与确定性执行",
+          "question": "如何实现跨不同并行配置的确定性推理并优化分布式执行？",
+          "ordered_steps": [
+            {
+              "task_id": "P31",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P31提出基于树不变内核的确定性推理，是并行执行可靠性的基础工作。"
+            },
+            {
+              "task_id": "P15",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P31"
+              ],
+              "relationship_rationale": "P15在单GPU内动态划分SM进行prefill/decode解耦，利用了确定性推理的可靠性，扩展了并行执行优化。"
+            },
+            {
+              "task_id": "P14",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P31",
+                "P15"
+              ],
+              "relationship_rationale": "P14提出micro-request和两级调度实现动态解聚，与P31和P15的并行执行优化正交，但关注分布式资源统一调度。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "训练系统与优化",
+      "paper_ids": [
+        "P32"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "推理与微调协同",
+          "question": "如何将空闲推理容量转化为微调吞吐而不影响推理SLO？",
+          "ordered_steps": [
+            {
+              "task_id": "P32",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P32提出宿主无关的协同服务设计，是训练系统与推理系统协同的基础工作。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "模型压缩与低精度计算",
+      "paper_ids": [
+        "P07",
+        "P08",
+        "P25",
+        "P26"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "KV Cache量化技术演进",
+          "question": "如何通过量化降低KV cache内存占用和加速注意力计算？",
+          "ordered_steps": [
+            {
+              "task_id": "P07",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P07提出KIVI，通过非对称2bit量化KV cache，是低精度KV缓存的基础工作。"
+            },
+            {
+              "task_id": "P25",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P07"
+              ],
+              "relationship_rationale": "P25在KIVI的2bit量化基础上结合逐层KV预算分配和FlashAttention内核，扩展了量化技术的系统级应用。"
+            },
+            {
+              "task_id": "P26",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P07"
+              ],
+              "relationship_rationale": "P26通过在线-离线混合量化降低在线异常值检测开销，进一步扩展了KIVI的量化方法。"
+            },
+            {
+              "task_id": "P08",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P07"
+              ],
+              "relationship_rationale": "P08专注于INT8注意力算子量化，与P07的KV cache量化正交，但同属低精度计算优化。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "异构硬件与内核优化",
+      "paper_ids": [
+        "P17",
+        "P18",
+        "P25",
+        "P26"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "硬件协同KV缓存优化",
+          "question": "如何通过定制硬件和内核设计优化KV cache存储与访问？",
+          "ordered_steps": [
+            {
+              "task_id": "P17",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P17通过GPU io_uring和slack-aware调度优化SSD I/O，是硬件协同KV缓存优化的基础工作。"
+            },
+            {
+              "task_id": "P18",
+              "relation_to_previous": "alternative",
+              "builds_on": [
+                "P17"
+              ],
+              "relationship_rationale": "P18利用CXL共享内存替代SSD，是异构硬件路径的替代方案。"
+            },
+            {
+              "task_id": "P26",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P17"
+              ],
+              "relationship_rationale": "P26在定制加速器上实现量化引擎和内存管理单元，扩展了P17的硬件协同思想至量化场景。"
+            },
+            {
+              "task_id": "P25",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P26"
+              ],
+              "relationship_rationale": "P25通过自定义Triton内核支持2bit量化注意力，与P26的定制加速器正交，但同为内核优化。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "性能评测与成本分析",
+      "paper_ids": [
+        "P04",
+        "P28",
+        "P29"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "评测方法与工作负载特征",
+          "question": "如何通过真实工作负载和系统配置评测指导推理系统优化？",
+          "ordered_steps": [
+            {
+              "task_id": "P04",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P04发布真实LLM服务工作负载数据集BurstGPT，是性能评测的基础工作。"
+            },
+            {
+              "task_id": "P28",
+              "relation_to_previous": "mechanism_extension",
+              "builds_on": [
+                "P04"
+              ],
+              "relationship_rationale": "P28扩展工作负载刻画至多模态和推理模型，并提供生成框架，深化了P04的评测方法。"
+            },
+            {
+              "task_id": "P29",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P04",
+                "P28"
+              ],
+              "relationship_rationale": "P29对vLLM配置进行能耗、性能和准确率权衡评测，是正交的配置评估研究，但同样依赖现实工作负载理解。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "可靠性、弹性与可观测性",
+      "paper_ids": [
+        "P30",
+        "P31"
+      ],
+      "evolution_threads": [
+        {
+          "thread_name": "推理系统可靠性保障",
+          "question": "如何测试和提升LLM推理系统的可靠性与确定性？",
+          "ordered_steps": [
+            {
+              "task_id": "P30",
+              "relation_to_previous": "foundation",
+              "builds_on": [],
+              "relationship_rationale": "P30提出模糊测试框架GRIEF，发现并发请求下的服务层漏洞，是可靠性测试的基础工作。"
+            },
+            {
+              "task_id": "P31",
+              "relation_to_previous": "orthogonal",
+              "builds_on": [
+                "P30"
+              ],
+              "relationship_rationale": "P31通过确定性推理消除浮点非确定性，与P30的漏洞发现正交，但共同提升系统可靠性。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

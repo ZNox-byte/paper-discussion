@@ -1,0 +1,10 @@
+[
+  "plan.推理服务与请求调度.thread[1].step[1] relationship_rationale omits citations: ['P05']",
+  "plan.推理服务与请求调度.thread[1].step[2] relationship_rationale omits citations: ['P05', 'P15']",
+  "plan.推理服务与请求调度.thread[1].step[3] relationship_rationale omits citations: ['P05', 'P16']",
+  "plan.推理服务与请求调度.thread[1].step[4] relationship_rationale omits citations: ['P05', 'P12', 'P16']",
+  "plan.推理服务与请求调度.thread[1].step[5] relationship_rationale omits citations: ['P12', 'P13', 'P16']",
+  "plan.推理服务与请求调度.thread[2].step[1] relationship_rationale omits citations: ['P06']",
+  "plan.推理服务与请求调度.thread[2].step[2] relationship_rationale omits citations: ['P06', 'P27']",
+  "plan.推理服务与请求调度.thread[2].step[3] relationship_rationale omits citations: ['P06', 'P14', 'P27']"
+]

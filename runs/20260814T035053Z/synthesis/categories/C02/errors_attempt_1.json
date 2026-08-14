@@ -1,0 +1,16 @@
+[
+  "category overview lacks a task-ID citation",
+  "lateral_connections[1] lacks a task-ID citation",
+  "lateral_connections[2] lacks a task-ID citation",
+  "lateral_connections[3] lacks a task-ID citation",
+  "lateral_connections[4] lacks a task-ID citation",
+  "lateral_connections[5] lacks a task-ID citation",
+  "trends[1] lacks a task-ID citation",
+  "trends[2] lacks a task-ID citation",
+  "trends[3] lacks a task-ID citation",
+  "trends[4] lacks a task-ID citation",
+  "trends[5] lacks a task-ID citation",
+  "thread 'GPU内存动态管理与分页机制' narrative lacks a task-ID citation",
+  "thread '跨存储层级与设备间KV缓存管理' narrative lacks a task-ID citation",
+  "thread '结构化复用与请求调度优化' narrative lacks a task-ID citation"
+]

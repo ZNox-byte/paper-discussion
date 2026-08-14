@@ -28,10 +28,16 @@ DeepSeek 严格筛选 32 篇并生成逐篇阅读焦点
 JSON Schema + ID + 分类白名单 + 原文逐字证据/页码校验
           │  不通过：任务内最多修复两次
           ▼
-分类索引 + DeepSeek 跨论文综合 + 引用覆盖校验
+Pro 主分类 + 技术演进链 + 跨论文综合 + 引用覆盖校验
           │
           ▼
-report.md 与全套中间审计产物
+report_pro.md + Codex 审查包
+          │
+          ▼
+Codex 核验分类、演进关系、引用和叙事
+          │
+          ▼
+review/codex_review.md + report_final.md
 ```
 
 arXiv 负责可追溯的论文发现和原文获取；DeepSeek 负责语义筛选、阅读和综合。API 模型不会被
@@ -101,7 +107,7 @@ uv run deepseek-survey run --next-round-from runs\<上一轮时间>
 ```
 
 新一轮默认复用上一轮的 `candidates.json`，沿父轮次链排除所有历史入选论文，再用 Flash
-筛选 32 篇新论文、Flash 并发阅读，最后交给 Pro 分类汇总。排除同时比较 arXiv ID、DOI 和
+筛选 32 篇新论文、Flash 并发阅读，最后交给 Pro 分类汇总并等待 Codex 审查。排除同时比较 arXiv ID、DOI 和
 规范化标题，因此论文版本或标识变化也不会轻易造成重复。
 
 第三轮应从第二轮目录启动，而不是再次从第一轮启动：
@@ -129,7 +135,11 @@ CLI 不读取 `.env` 文件，Key 只从环境变量 `DEEPSEEK_API_KEY` 获取�
 - 固定 32 篇目标论文、32 路阅读并发；
 - 官方 OpenAI 兼容 Base URL `https://api.deepseek.com`；
 - 候选筛选和 32 篇逐篇阅读使用 `deepseek-v4-flash`；
-- 分类与跨论文最终综合使用 `deepseek-v4-pro`，thinking mode 为 `enabled`；
+- 主分类、技术演进链与跨论文草稿使用 `deepseek-v4-pro`；Pro 分阶段汇总默认关闭长 thinking，
+  避免每个规划/分类子请求超时；
+- Pro 必须为每篇论文指定唯一主分类，并在分类内输出有序技术主线，区分直接改进、机制扩展、
+  横向替代、正交工作和评测；
+- Pro 草稿完成后生成 Codex 审查包；Codex 核验演进关系和证据后另行输出最终报告；
 - 14 组围绕 vLLM/PagedAttention、SGLang、KV Cache、请求调度、prefill/decode 解耦、
   speculative decoding、FlashAttention、模型并行和训练系统的 arXiv 查询；
 - PDF 最多向单任务提供 180,000 字符，超长论文保留头部、中部和结尾采样；
@@ -164,13 +174,29 @@ results/P01.json ... P32.json  # 通过校验的结构化结果
 reader_classification.json     # Flash 阅读结果的初始分类索引
 classification.json            # Pro 综合阶段确认的最终分类索引
 corpus.json                    # 从第一轮至当前轮的累计唯一论文清单
-synthesis/                     # 跨论文综合原始值与校验结果
+synthesis/evolution_*.json     # Pro 技术演进综合原始值与校验结果
 api_usage.json                 # 请求 ID、模型和 token 用量（不含 Key）
-report.md                      # 最终综述
+report_pro.md                  # Pro 结构化草稿，不是最终报告
+review/review_bundle.json      # Codex 审查包：Pro 结构和全部 Flash 阅读卡片
+review/instructions.md         # Codex 审查清单
+review/codex_main.md           # Codex 修订后的综述正文
+review/codex_review.md         # Codex 审查记录（审查完成后生成）
+report_final.md                # Codex 修订后的最终综述（审查完成后生成）
 ```
 
-32 份阅读结果全部通过时，`run.json` 标记为 `completed`；通过数达到配置阈值（默认 28）但
-不足 32 时，仍会由 Pro 汇总已验证论文并标记为 `completed_with_gaps`。低于阈值才停止汇总。
+Pro 草稿通过结构和引用校验后，`run.json` 标记为 `awaiting_codex_review`。通过数达到配置阈值
+（默认 28）但不足 32 时，Pro 仍会汇总已验证论文并在草稿中声明覆盖缺口；低于阈值才停止。
+Codex 生成 `review/codex_review.md` 与 `report_final.md` 后，整轮才标记为 `completed`。
+
+Codex 审查时先把修订后的正文写入 `review/codex_main.md`，并把审查记录写入
+`review/codex_review.md`。然后执行下面的命令完成收尾（此命令不调用 DeepSeek，也不需要 API Key）：
+
+```powershell
+uv run deepseek-survey finalize-review --run runs\<运行时间>
+```
+
+该命令会将修订正文与 Pro 草稿末尾的 32 篇 Flash 阅读卡片、参考链接合并为
+`report_final.md`，同时把 `review/status.json` 和 `run.json` 原子更新为 `completed`。
 
 ## 测试
 

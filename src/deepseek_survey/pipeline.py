@@ -12,24 +12,41 @@ from .arxiv import deterministic_rank, search_arxiv
 from .config import AppConfig
 from .deepseek import DeepSeekClient
 from .models import (
+    CategoryPlan,
+    CategorySynthesis,
     Paper,
+    PrimaryClassification,
     ResearchResult,
     ScreeningDecision,
     ScreeningItem,
+    SurveyNarrative,
     SurveySynthesis,
+    SynthesisPlan,
 )
 from .papers import PaperContent, fetch_all_papers
 from .prompts import (
     READER_SYSTEM,
     SCREENING_SYSTEM,
     SYNTHESIS_SYSTEM,
+    category_plan_prompt,
+    category_synthesis_prompt,
+    primary_classification_prompt,
     reader_prompt,
     screening_prompt,
-    synthesis_prompt,
+    survey_narrative_prompt,
 )
 from .report import render_report
+from .review import build_review_bundle, render_review_instructions
 from .rounds import RoundContext, filter_previously_selected, load_saved_round_context
-from .validation import validate_research_result, validate_synthesis
+from .validation import (
+    validate_category_plan,
+    validate_category_synthesis,
+    validate_primary_classification,
+    validate_research_result,
+    validate_survey_narrative,
+    validate_synthesis,
+    validate_synthesis_plan,
+)
 
 Progress = Callable[[str], None]
 
@@ -274,41 +291,370 @@ async def _synthesize(
     run_dir: Path,
     results: list[ResearchResult],
     usage: list[dict[str, Any]],
+    papers_by_id: dict[str, Paper] | None = None,
+    progress: Progress | None = None,
 ) -> SurveySynthesis:
-    prompt = synthesis_prompt(
-        title=config.project.title,
-        research_question=config.project.research_question,
-        language=config.project.language,
-        categories=config.categories,
-        results=results,
-        planned_total=config.project.target_papers,
-    )
-    errors: list[str] = []
+    report_progress = progress or (lambda _message: None)
     task_ids = {result.task_id for result in results}
-    for attempt in range(2):
-        attempt_prompt = prompt
-        if errors:
-            attempt_prompt += (
-                "\n\nPrevious synthesis failed validation. Correct these errors:\n- "
-                + "\n- ".join(errors)
+    final_path = run_dir / "synthesis" / "evolution_validated.json"
+    if final_path.exists():
+        saved, saved_errors = validate_synthesis(
+            read_json(final_path),
+            task_ids=task_ids,
+            allowed_categories=config.categories,
+        )
+        if saved is not None and not saved_errors:
+            report_progress("[synthesis] reusing complete validated Pro evolution synthesis")
+            return saved
+
+    plan_path = run_dir / "synthesis" / "plan_validated.json"
+    plan: SynthesisPlan | None = None
+    if plan_path.exists():
+        plan, plan_errors = validate_synthesis_plan(
+            read_json(plan_path),
+            task_ids=task_ids,
+            allowed_categories=config.categories,
+        )
+        if plan_errors:
+            plan = None
+    if plan is None:
+        classification_path = (
+            run_dir / "synthesis" / "primary_classification_validated.json"
+        )
+        classification: PrimaryClassification | None = None
+        if classification_path.exists():
+            classification, classification_errors = validate_primary_classification(
+                read_json(classification_path),
+                task_ids=task_ids,
+                allowed_categories=config.categories,
             )
-        raw, metadata = await client.complete_json(
-            system=SYNTHESIS_SYSTEM,
-            user=attempt_prompt,
-            max_tokens=config.deepseek.max_tokens_synthesis,
-            model=config.deepseek.synthesis_model,
+            if classification_errors:
+                classification = None
+        if classification is None:
+            base_classification_prompt = primary_classification_prompt(
+                research_question=config.project.research_question,
+                categories=config.categories,
+                results=results,
+            )
+            classification_errors: list[str] = []
+            for attempt in range(2):
+                prompt = base_classification_prompt
+                if classification_errors:
+                    prompt += (
+                        "\n\nPrevious classification failed validation. Correct every error:\n- "
+                        + "\n- ".join(classification_errors)
+                    )
+                report_progress(
+                    f"[synthesis-classify] requesting {config.deepseek.synthesis_model} "
+                    f"(attempt {attempt + 1}/2)"
+                )
+                raw, metadata = await client.complete_json(
+                    system=SYNTHESIS_SYSTEM,
+                    user=prompt,
+                    max_tokens=min(config.deepseek.max_tokens_synthesis, 5_000),
+                    model=config.deepseek.synthesis_model,
+                    thinking=config.deepseek.synthesis_thinking,
+                )
+                metadata.update(
+                    {
+                        "stage": "synthesis_primary_classification",
+                        "schema_version": 2,
+                        "attempt": attempt + 1,
+                    }
+                )
+                usage.append(metadata)
+                write_json(
+                    run_dir
+                    / "synthesis"
+                    / f"primary_classification_raw_attempt_{attempt + 1}.json",
+                    raw,
+                )
+                classification, classification_errors = (
+                    validate_primary_classification(
+                        raw,
+                        task_ids=task_ids,
+                        allowed_categories=config.categories,
+                    )
+                )
+                write_json(
+                    run_dir
+                    / "synthesis"
+                    / f"primary_classification_errors_attempt_{attempt + 1}.json",
+                    classification_errors,
+                )
+                if classification is not None and not classification_errors:
+                    write_json(classification_path, classification)
+                    break
+            else:
+                raise RuntimeError(
+                    "Primary classification failed validation twice: "
+                    f"{classification_errors}"
+                )
+        else:
+            report_progress("[synthesis-classify] reusing validated primary assignments")
+        assert classification is not None
+
+        assignments_by_category: dict[str, list[str]] = {
+            category: [] for category in config.categories
+        }
+        for assignment in classification.assignments:
+            assignments_by_category[assignment.category].append(assignment.task_id)
+        active_assignments = [
+            (category, assignments_by_category[category])
+            for category in config.categories
+            if assignments_by_category[category]
+        ]
+        plan_semaphore = asyncio.Semaphore(4)
+
+        async def plan_category(
+            index: int, category: str, assigned_ids: list[str]
+        ) -> CategoryPlan:
+            category_dir = run_dir / "synthesis" / "plans" / f"C{index:02d}"
+            validated_path = category_dir / "validated.json"
+            expected_ids = set(assigned_ids)
+            saved_plan_candidates = [validated_path]
+            saved_plan_candidates.extend(
+                sorted(category_dir.glob("raw_attempt_*.json"), reverse=True)
+            )
+            for saved_path in saved_plan_candidates:
+                if not saved_path.exists():
+                    continue
+                saved_category_plan, saved_errors = validate_category_plan(
+                    read_json(saved_path),
+                    category=category,
+                    expected_task_ids=expected_ids,
+                )
+                if saved_category_plan is not None and not saved_errors:
+                    write_json(validated_path, saved_category_plan)
+                    report_progress(f"[synthesis-plan] reusing {category}")
+                    return saved_category_plan
+            base_prompt = category_plan_prompt(
+                category=category,
+                task_ids=assigned_ids,
+                results=results,
+                papers_by_id=papers_by_id,
+            )
+            errors: list[str] = []
+            existing_attempts = len(list(category_dir.glob("raw_attempt_*.json")))
+            async with plan_semaphore:
+                for attempt in range(2):
+                    artifact_attempt = existing_attempts + attempt + 1
+                    prompt = base_prompt
+                    if errors:
+                        prompt += (
+                            "\n\nPrevious category plan failed validation. "
+                            "Correct every error:\n- "
+                            + "\n- ".join(errors)
+                        )
+                    report_progress(
+                        f"[synthesis-plan] {category} (attempt {attempt + 1}/2)"
+                    )
+                    raw, metadata = await client.complete_json(
+                        system=SYNTHESIS_SYSTEM,
+                        user=prompt,
+                        max_tokens=min(config.deepseek.max_tokens_synthesis, 4_000),
+                        model=config.deepseek.synthesis_model,
+                        thinking=config.deepseek.synthesis_thinking,
+                    )
+                    metadata.update(
+                        {
+                            "stage": "synthesis_category_plan",
+                            "schema_version": 2,
+                            "category": category,
+                            "attempt": attempt + 1,
+                            "artifact_attempt": artifact_attempt,
+                        }
+                    )
+                    usage.append(metadata)
+                    write_json(category_dir / f"raw_attempt_{artifact_attempt}.json", raw)
+                    category_plan, errors = validate_category_plan(
+                        raw,
+                        category=category,
+                        expected_task_ids=expected_ids,
+                    )
+                    write_json(
+                        category_dir / f"errors_attempt_{artifact_attempt}.json", errors
+                    )
+                    if category_plan is not None and not errors:
+                        write_json(validated_path, category_plan)
+                        return category_plan
+            raise RuntimeError(f"Category planning failed twice for {category}: {errors}")
+
+        category_plans = await asyncio.gather(
+            *[
+                plan_category(index, category, assigned_ids)
+                for index, (category, assigned_ids) in enumerate(
+                    active_assignments, start=1
+                )
+            ]
         )
-        metadata.update({"stage": "synthesis", "attempt": attempt + 1})
-        usage.append(metadata)
-        write_json(run_dir / "synthesis" / f"raw_attempt_{attempt + 1}.json", raw)
-        synthesis, errors = validate_synthesis(
-            raw, task_ids=task_ids, allowed_categories=config.categories
+        assembled_plan = SynthesisPlan(categories=category_plans)
+        plan, plan_errors = validate_synthesis_plan(
+            assembled_plan.model_dump(mode="json"),
+            task_ids=task_ids,
+            allowed_categories=config.categories,
         )
-        write_json(run_dir / "synthesis" / f"errors_attempt_{attempt + 1}.json", errors)
-        if synthesis is not None and not errors:
-            write_json(run_dir / "synthesis" / "validated.json", synthesis)
-            return synthesis
-    raise RuntimeError(f"Synthesis failed validation twice: {errors}")
+        if plan is None or plan_errors:
+            raise RuntimeError(f"Assembled synthesis plan failed validation: {plan_errors}")
+        write_json(plan_path, plan)
+    else:
+        report_progress("[synthesis-plan] reusing validated classification/evolution plan")
+    assert plan is not None
+
+    category_semaphore = asyncio.Semaphore(4)
+
+    async def synthesize_category(
+        index: int, category_plan: CategoryPlan
+    ) -> CategorySynthesis:
+        category_dir = run_dir / "synthesis" / "categories" / f"C{index:02d}"
+        validated_path = category_dir / "validated.json"
+        if validated_path.exists():
+            saved_category, saved_errors = validate_category_synthesis(
+                read_json(validated_path),
+                plan=category_plan,
+                task_ids=task_ids,
+            )
+            if saved_category is not None and not saved_errors:
+                report_progress(
+                    f"[synthesis-category] reusing {category_plan.category}"
+                )
+                return saved_category
+
+        base_prompt = category_synthesis_prompt(
+            plan=category_plan,
+            results=results,
+            language=config.project.language,
+        )
+        errors: list[str] = []
+        async with category_semaphore:
+            for attempt in range(2):
+                prompt = base_prompt
+                if errors:
+                    prompt += (
+                        "\n\nPrevious category output failed validation. Correct every error:\n- "
+                        + "\n- ".join(errors)
+                    )
+                report_progress(
+                    f"[synthesis-category] {category_plan.category} "
+                    f"(attempt {attempt + 1}/2)"
+                )
+                raw, metadata = await client.complete_json(
+                    system=SYNTHESIS_SYSTEM,
+                    user=prompt,
+                    max_tokens=min(config.deepseek.max_tokens_synthesis, 6_000),
+                    model=config.deepseek.synthesis_model,
+                    thinking=config.deepseek.synthesis_thinking,
+                )
+                metadata.update(
+                    {
+                        "stage": "synthesis_category",
+                        "schema_version": 2,
+                        "category": category_plan.category,
+                        "attempt": attempt + 1,
+                    }
+                )
+                usage.append(metadata)
+                write_json(category_dir / f"raw_attempt_{attempt + 1}.json", raw)
+                section, errors = validate_category_synthesis(
+                    raw,
+                    plan=category_plan,
+                    task_ids=task_ids,
+                )
+                write_json(category_dir / f"errors_attempt_{attempt + 1}.json", errors)
+                if section is not None and not errors:
+                    write_json(validated_path, section)
+                    return section
+        raise RuntimeError(
+            f"Category synthesis failed twice for {category_plan.category}: {errors}"
+        )
+
+    category_syntheses = await asyncio.gather(
+        *[
+            synthesize_category(index, category_plan)
+            for index, category_plan in enumerate(plan.categories, start=1)
+        ]
+    )
+
+    narrative_path = run_dir / "synthesis" / "narrative_validated.json"
+    narrative: SurveyNarrative | None = None
+    if narrative_path.exists():
+        narrative, narrative_errors = validate_survey_narrative(
+            read_json(narrative_path), task_ids=task_ids
+        )
+        if narrative_errors:
+            narrative = None
+    if narrative is None:
+        base_narrative_prompt = survey_narrative_prompt(
+            title=config.project.title,
+            research_question=config.project.research_question,
+            language=config.project.language,
+            planned_total=config.project.target_papers,
+            result_count=len(results),
+            task_ids=sorted(task_ids),
+            category_syntheses=category_syntheses,
+        )
+        narrative_errors: list[str] = []
+        for attempt in range(2):
+            prompt = base_narrative_prompt
+            if narrative_errors:
+                prompt += (
+                    "\n\nPrevious narrative failed validation. Correct every error:\n- "
+                    + "\n- ".join(narrative_errors)
+                )
+            report_progress(
+                f"[synthesis-narrative] requesting {config.deepseek.synthesis_model} "
+                f"(attempt {attempt + 1}/2)"
+            )
+            raw, metadata = await client.complete_json(
+                system=SYNTHESIS_SYSTEM,
+                user=prompt,
+                max_tokens=min(config.deepseek.max_tokens_synthesis, 8_000),
+                model=config.deepseek.synthesis_model,
+                thinking=config.deepseek.synthesis_thinking,
+            )
+            metadata.update(
+                {
+                    "stage": "synthesis_narrative",
+                    "schema_version": 2,
+                    "attempt": attempt + 1,
+                }
+            )
+            usage.append(metadata)
+            write_json(
+                run_dir / "synthesis" / f"narrative_raw_attempt_{attempt + 1}.json",
+                raw,
+            )
+            narrative, narrative_errors = validate_survey_narrative(
+                raw, task_ids=task_ids
+            )
+            write_json(
+                run_dir / "synthesis" / f"narrative_errors_attempt_{attempt + 1}.json",
+                narrative_errors,
+            )
+            if narrative is not None and not narrative_errors:
+                write_json(narrative_path, narrative)
+                break
+        else:
+            raise RuntimeError(
+                f"Survey narrative failed validation twice: {narrative_errors}"
+            )
+    else:
+        report_progress("[synthesis-narrative] reusing validated global narrative")
+    assert narrative is not None
+
+    synthesis = SurveySynthesis(
+        **narrative.model_dump(mode="python"),
+        category_syntheses=category_syntheses,
+    )
+    validated, errors = validate_synthesis(
+        synthesis.model_dump(mode="json"),
+        task_ids=task_ids,
+        allowed_categories=config.categories,
+    )
+    if validated is None or errors:
+        raise RuntimeError(f"Assembled synthesis failed validation: {errors}")
+    write_json(final_path, validated)
+    return validated
 
 
 async def run_pipeline(
@@ -334,7 +680,10 @@ async def run_pipeline(
         round_context = load_saved_round_context(run_dir)
     elif round_context is None:
         round_context = RoundContext.first()
-    usage: list[dict[str, Any]] = []
+    usage_path = run_dir / "api_usage.json"
+    usage: list[dict[str, Any]] = (
+        list(read_json(usage_path)) if resume_dir and usage_path.exists() else []
+    )
     manifest: dict[str, Any] = {
         "status": "running",
         "title": config.project.title,
@@ -493,22 +842,20 @@ async def run_pipeline(
             for category in config.categories
         }
         write_json(run_dir / "reader_classification.json", reader_classification)
-        progress(
-            f"[synthesis] requesting {config.deepseek.synthesis_model} for classification "
-            "and cross-paper survey"
-        )
         synthesis = await _synthesize(
             client=client,
             config=config,
             run_dir=run_dir,
             results=results,
             usage=usage,
+            papers_by_id=papers_by_id,
+            progress=progress,
         )
         final_classification = {
             section.category: section.paper_ids for section in synthesis.category_syntheses
         }
         write_json(run_dir / "classification.json", final_classification)
-        report = render_report(
+        pro_report = render_report(
             synthesis,
             results,
             papers_by_id,
@@ -517,14 +864,48 @@ async def run_pipeline(
             planned_paper_count=len(task_specs),
             failed_task_count=len(failures),
         )
-        write_text(run_dir / "report.md", report)
+        pro_report_path = run_dir / "report_pro.md"
+        write_text(pro_report_path, pro_report)
+        review_bundle = build_review_bundle(
+            title=config.project.title,
+            research_question=config.project.research_question,
+            synthesis=synthesis,
+            results=results,
+            papers_by_id=papers_by_id,
+            pro_report_path=pro_report_path,
+        )
+        review_bundle_path = run_dir / "review" / "review_bundle.json"
+        write_json(review_bundle_path, review_bundle)
+        write_text(
+            run_dir / "review" / "instructions.md",
+            render_review_instructions(pro_report_path),
+        )
+        write_json(
+            run_dir / "review" / "status.json",
+            {
+                "status": "awaiting_codex_review",
+                "reviewer": "Codex GPT",
+                "pro_report": str(pro_report_path),
+                "review_bundle": str(review_bundle_path),
+            },
+        )
         write_json(run_dir / "api_usage.json", usage)
-        manifest["status"] = "completed_with_gaps" if failures else "completed"
+        manifest["status"] = "awaiting_codex_review"
+        manifest["pro_synthesis_status"] = (
+            "completed_with_gaps" if failures else "completed"
+        )
         manifest["validated_results"] = len(results)
         manifest["failed_results"] = len(failures)
-        manifest["report"] = str(run_dir / "report.md")
+        manifest["synthesis_schema_version"] = 2
+        manifest["pro_report"] = str(pro_report_path)
+        manifest["review_bundle"] = str(review_bundle_path)
+        if (run_dir / "report.md").exists():
+            manifest["legacy_report"] = str(run_dir / "report.md")
         write_json(run_dir / "run.json", manifest)
-        progress(f"[done] report written to {run_dir / 'report.md'}")
+        progress(
+            f"[pro-done] structured draft written to {pro_report_path}; "
+            "awaiting Codex review"
+        )
         return run_dir
     except Exception as exc:
         manifest["status"] = "failed"

@@ -1,0 +1,20 @@
+{
+  "category": "可靠性、弹性与可观测性",
+  "paper_ids": [
+    "P30"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "LLM 推理服务可靠性模糊测试",
+      "question": "如何系统性地发现 LLM 推理服务中的可靠性漏洞？",
+      "ordered_steps": [
+        {
+          "task_id": "P30",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "relationship_rationale": "P30 提出了 GRIEF，一种面向 LLM 推理引擎的灰盒模糊测试工具，作为该线程的基础，首次将并发请求轨迹引入推理服务可靠性测试。 [P30]"
+        }
+      ]
+    }
+  ]
+}

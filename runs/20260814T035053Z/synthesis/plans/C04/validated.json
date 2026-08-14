@@ -1,0 +1,20 @@
+{
+  "category": "训练系统与优化",
+  "paper_ids": [
+    "P32"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "推理与微调协同服务",
+      "question": "如何在不增加硬件的前提下，利用空闲推理容量进行 LoRA 微调，同时保持推理 SLO 合规？",
+      "ordered_steps": [
+        {
+          "task_id": "P32",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "relationship_rationale": "P32 是本文线程的起始工作，提出 DeltaServe 这一主机无关的协同服务设计，将空闲推理 GPU 容量转化为 LoRA 微调吞吐 [P32]。"
+        }
+      ]
+    }
+  ]
+}

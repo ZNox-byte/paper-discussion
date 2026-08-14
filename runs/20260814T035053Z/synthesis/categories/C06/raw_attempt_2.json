@@ -1,0 +1,65 @@
+{
+  "category": "性能评测与成本分析",
+  "overview": "本类别聚焦于对 LLM 服务系统进行系统性的性能、能耗与成本评估，以及真实工作负载的刻画与生成。P04 发布了首个大规模真实世界 LLM 服务数据集 BurstGPT [P04]，为后续研究提供了真实负载依据。P28 对生产环境多模态与推理模型工作负载进行了深入刻画，并提出了 ServeGen 生成框架 [P28]。P29 则针对 vLLM 推理引擎的配置空间进行了全面的能耗、性能与准确率权衡评估 [P29]。",
+  "paper_ids": [
+    "P04",
+    "P28",
+    "P29"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "LLM 服务性能评测与成本分析",
+      "question": "如何系统评估和优化 LLM 服务系统的性能、能耗与成本，并确保评测负载和配置空间反映真实生产环境？",
+      "narrative": "该线程从真实工作负载数据集的构建出发，逐步扩展到多模态与推理模型负载的生成，最终深入到推理引擎配置空间的系统评测。P04 提供了 BurstGPT 数据集，揭示了突发性、短对话和高失败率等真实特征 [P04]。P28 在此基础上进一步覆盖多模态和推理模型，提出 ServeGen 框架 [P28]。P29 则转向 vLLM 配置的能耗与性能权衡，为配置优化提供实证依据 [P29]。",
+      "ordered_steps": [
+        {
+          "task_id": "P04",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "predecessor_problem": "缺乏大规模真实世界 LLM 服务工作负载数据集，导致系统评估使用合成负载而偏离实际。",
+          "contribution_or_improvement": "发布了 BurstGPT 数据集和基准套件，刻画了用户并发突发性、对话模式、响应长度和失败特征。",
+          "tradeoffs": "数据集仅来自单一提供商，可能不完全代表所有部署形态；对 Llama-2 的对比使用非真实对话提示。",
+          "remaining_gap": "未覆盖多模态和推理模型工作负载，需要进一步扩展负载类型和部署多样性。",
+          "relationship_evidence": "P04 作为线程基础，提供了首个大规模真实工作负载数据集 [P04] [P04] [P04] [P04]"
+        },
+        {
+          "task_id": "P28",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P04"
+          ],
+          "predecessor_problem": "P04 的数据集主要覆盖语言模型，未涵盖多模态和推理模型的工作负载特征。",
+          "contribution_or_improvement": "扩展了工作负载特征刻画范围，并提出按客户端生成的 ServeGen 框架，更真实地模拟生产负载。",
+          "tradeoffs": "未覆盖插件调用和前缀缓存分析；单个工作负载时间跨度有限。",
+          "remaining_gap": "尚未将生成的工作负载用于系统性能与能耗的评测。",
+          "relationship_evidence": "P28 在 P04 的基础上扩展了负载类型和生成机制 [P04] [P28] [P04] [P28]"
+        },
+        {
+          "task_id": "P29",
+          "relation_to_previous": "evaluation",
+          "builds_on": [
+            "P04",
+            "P28"
+          ],
+          "predecessor_problem": "缺乏对 vLLM 配置空间（注意力内核、前缀缓存、分块预填）的能耗、性能与准确率权衡的系统性评测。",
+          "contribution_or_improvement": "通过 9000 次受控运行揭示了配置间交互效应和任务相关性，并发现配置可能影响准确率。",
+          "tradeoffs": "仅使用单一 GPU 和有限配置选项，硬件和负载覆盖有限；能耗测量存在误差。",
+          "remaining_gap": "评测结果尚未扩展到其他推理引擎、硬件平台和更广泛的配置空间。",
+          "relationship_evidence": "P29 利用 P04 和 P28 提供的真实负载认知，对配置空间进行系统评测 [P04] [P28] [P29] [P04] [P28] [P29]"
+        }
+      ]
+    }
+  ],
+  "lateral_connections": [
+    "P01 提出的 PagedAttention 通过 KV cache 分页管理显著提升内存利用率和吞吐，与 P29 评测的前缀缓存和分块预填配置密切相关 [P01] [P29]",
+    "P02 的 SGLang 采用 RadixAttention 实现 KV 缓存复用，与 P29 评测的前缀缓存效果互为补充 [P02] [P29]",
+    "P03 的 vAttention 通过虚拟内存管理动态分配 KV cache，可作为 P29 配置优化的替代方案 [P03] [P29]",
+    "P07 的 KIVI 通过 2bit 量化压缩 KV cache，与 P29 的能耗优化目标一致 [P07] [P29]",
+    "P06 的 Llumnix 通过动态调度提升服务效率，与 P04 和 P28 的负载特征研究相关 [P06] [P04] [P28]"
+  ],
+  "trends": [
+    "从真实负载数据集的构建向更全面的负载生成与配置评测演进 [P04] [P28]",
+    "评估视角从单一的吞吐和延迟扩展到能耗、准确率等多维度权衡 [P29]",
+    "评测方法日益系统化，强调配置间交互和任务类型的影响 [P29]"
+  ]
+}

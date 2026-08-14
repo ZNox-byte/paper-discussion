@@ -1,0 +1,39 @@
+{
+  "category": "性能评测与成本分析",
+  "paper_ids": [
+    "P04",
+    "P28",
+    "P29"
+  ],
+  "evolution_threads": [
+    {
+      "thread_name": "LLM 服务性能评测与成本分析",
+      "question": "如何系统评估和优化 LLM 服务系统的性能、能耗与成本，并确保评测负载和配置空间反映真实生产环境？",
+      "ordered_steps": [
+        {
+          "task_id": "P04",
+          "relation_to_previous": "foundation",
+          "builds_on": [],
+          "relationship_rationale": "P04 作为该线程的基础步骤，提出了首个大规模真实世界 LLM 服务工作负载数据集 BurstGPT，并提供了基准测试套件，为后续评测工作提供了真实负载依据和评测方法基础。 [P04]"
+        },
+        {
+          "task_id": "P28",
+          "relation_to_previous": "mechanism_extension",
+          "builds_on": [
+            "P04"
+          ],
+          "relationship_rationale": "P28 在 P04 的基础上扩展了工作负载特征刻画的范围（覆盖多模态和推理模型），并提出了按客户端分解的生成框架 ServeGen，是对真实工作负载表征和生成机制的进一步丰富，但并非直接改进 P04 的特定算法，而是机制上的扩展。 [P04] [P28]"
+        },
+        {
+          "task_id": "P29",
+          "relation_to_previous": "evaluation",
+          "builds_on": [
+            "P04",
+            "P28"
+          ],
+          "relationship_rationale": "P29 不再专注于工作负载表征，而是针对 vLLM 推理引擎的配置空间进行系统性评测，评估注意力内核、前缀缓存和分块预填对能耗、性能和准确率的影响。它利用并补充了前两步建立的真实负载和配置认知（如 P04 和 P28 中强调的负载特征对系统行为的影响），为系统配置优化提供实证依据，因此是对该线程主题的评测深化。 [P04] [P28] [P29]"
+        }
+      ]
+    }
+  ]
+}
