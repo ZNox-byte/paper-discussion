@@ -1,0 +1,16 @@
+{
+  "status": "failed",
+  "title": "DeepSeek 技术论文全景综述",
+  "round_number": 1,
+  "parent_run": null,
+  "previous_paper_count": 0,
+  "target_papers": 32,
+  "models": {
+    "screening": "deepseek-v4-flash",
+    "reading": "deepseek-v4-flash",
+    "synthesis": "deepseek-v4-pro"
+  },
+  "reader_concurrency": 32,
+  "run_directory": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+  "error": "2 reading tasks failed; see failures.json"
+}

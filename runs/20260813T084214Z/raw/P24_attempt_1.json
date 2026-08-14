@@ -1,0 +1,49 @@
+{
+  "task_id": "P24",
+  "paper_id": "2503.16529",
+  "title": "Safety Evaluation and Enhancement of DeepSeek Models in Chinese Contexts",
+  "one_sentence_summary": "该论文使用 CHiSafetyBench 对 DeepSeek-R1 系列蒸馏模型进行中文安全评估，发现蒸馏会削弱安全能力，并通过构建包含安全指令和思维链的数据集进行监督微调，在保持推理能力的同时显著提升了安全性。",
+  "research_question": "蒸馏如何影响 DeepSeek-R1 系列模型的中文安全能力，以及如何通过安全增强在保持推理能力的同时提升安全性？",
+  "methodology": "首先使用 CHiSafetyBench 对六个蒸馏模型进行安全评估，分析蒸馏前后的安全变化；然后构建约 50K 样本的微调数据集，包含安全指令和思维链推理样本，对全部 DeepSeek-R1 系列模型进行全参数监督微调；最后在 CHiSafetyBench（安全）和 MATH-500、GPQA、LiveCodeBench（推理）上进行评估。",
+  "data_and_training": "微调数据集包含约 50K 样本，分为安全指令和思维链推理样本两部分；模型覆盖 DeepSeek-R1 全系列（6个蒸馏模型+671B模型）；使用全参数监督微调；评估基准包括 CHiSafetyBench（安全）和 MATH-500、GPQA、LiveCodeBench（推理）。",
+  "main_contributions": [
+    "首次对 DeepSeek-R1 全系列蒸馏模型进行中文安全评估。",
+    "定量分析了蒸馏对安全能力的负面影响，尤其发现歧视领域安全下降明显。",
+    "构建了包含安全指令和思维链推理的微调数据集，实施全参数监督微调，显著提升安全性且保持推理能力。",
+    "开源了安全增强后的模型（DeepSeek-R1-Safe 系列），供研究社区使用。"
+  ],
+  "key_findings": [
+    "蒸馏后模型的安全能力总体下降，如风险内容识别准确率平均下降2.17%，拒绝回答任务中RR-1、RR-2、HR分别下降1.29%、4.93%、2.45%。",
+    "安全增强后，全部模型的安全指标显著提升：整体ACC提升10.72%，RR-1提升18.39%，RR-2提升14.72%，HR降低1.45%。",
+    "安全增强模型不仅优于非增强模型，还优于原始基础模型（如ACC超出6.95%）。",
+    "安全增强没有显著损害推理能力，部分模型推理性能还有提升。"
+  ],
+  "limitations": [
+    "论文仅聚焦中文语境下的安全评估，未涉及其他语言或跨语言安全。",
+    "安全增强方法基于监督微调，可能受限于微调数据的覆盖范围和质量。",
+    "推理能力评估仅使用了三个基准，可能不足以全面反映模型所有推理能力。"
+  ],
+  "relation_to_deepseek": "该论文直接针对 DeepSeek-R1 系列模型的安全评估与增强，属于对齐、安全与评测方向，为 DeepSeek 系列在安全对齐方面的技术路线提供了实证和开源资源。",
+  "categories": [
+    "对齐、安全与评测",
+    "训练数据与训练方法"
+  ],
+  "evidence": [
+    {
+      "claim": "安全增强模型在 CHiSafetyBench 风险内容识别任务上整体准确率提升 10.72%，拒绝回答任务中的拒绝率和责任率分别提升 18.39% 和 14.72%，伤害率下降 1.45%。",
+      "quote": "Evaluation results demonstrate that the safety-enhanced models achieve a 10.72% improvement in overall accuracy on the risk content identification task of CHiSafetyBench compared to the non-enhanced models. On the refusal to answer task of CHiSafetyBench, the rejection rate and responsibility rate increase by 18.39% and 14.72%, respectively, while the harm rate decreases by 1.45%, marking a comprehensive enhancement in safety capabilities.",
+      "page": 1
+    },
+    {
+      "claim": "蒸馏后模型的安全能力总体下降，尤其在歧视领域表现较差。",
+      "quote": "The models perform particularly poorly in the discrimination domain, where the initial performance is already suboptimal, and distillation further exacerbates this decline.",
+      "page": 13
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "蒸馏导致安全性下降的深层机制是什么？",
+    "安全增强方法在其他语言或更多安全领域是否同样有效？",
+    "安全增强对模型其他能力（如知识问答、对话能力）是否有潜在影响？"
+  ]
+}

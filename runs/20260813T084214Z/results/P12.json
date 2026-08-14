@@ -1,0 +1,68 @@
+{
+  "task_id": "P12",
+  "paper_id": "2606.07410",
+  "title": "A Comprehensive Anatomy of Human and DeepSeek-R1 LLM Mathematical Reasoning",
+  "one_sentence_summary": "该论文通过对AIME 2025全部30道题上DeepSeek-R1与人类解题轨迹的逐步骤标注与对比，发现模型表现出‘拓扑模仿’而非真正的逻辑推理，并识别出跨轨迹方差、反思功能定位和尺度错配等关键结构差异。",
+  "research_question": "How do the structural dynamics and control mechanisms within CoT differentiate genuine problem-solving from superficial imitation?",
+  "methodology": "对DeepSeek-R1-0120在AIME 2025全部30道题上的10247个推理步骤进行人工标注，分为五类功能模式（Analysis, Inference, Branch, Backtrace, Reflection），并与人类参考解答对比。使用统计检验（Welch t检验、F检验）、N-gram分析、逻辑流图等方法分析结构差异。",
+  "data_and_training": "数据集为AIME 2025的30个问题（其中28个用于定性附录），共10247个推理步骤。由5名数学竞赛参与者进行标注，两题734步交叉验证达成87.3%精确一致和Fleiss' κ=0.81，其余问题由领域专家单标注。",
+  "main_contributions": [
+    "提出了5模式操作化分类法（Analysis, Inference, Branch, Backtrace, Reflection），用于逐步标注推理轨迹。",
+    "定义并识别了“拓扑模仿”（topological mimicry）这一失败模式：表面结构相似但缺乏功能进展。",
+    "通过统计检验和N-gram分析揭示了成功与失败痕迹在聚合组成上不可区分，但跨轨迹方差（Branch和Backtrace的稳定性）能够区分。",
+    "提出反思功能定位和尺度错配机制，并通过AIME 1.7案例具体展示。",
+    "提出了针对评估与训练的改进方向，包括跨轨迹方差、反思放置、回溯深度过滤、DPO、上下文正则化和推理时compute重分配。"
+  ],
+  "key_findings": [
+    "人类解答以分析-推理紧凑交替为主，约15%步骤用于规划；DeepSeek-R1约40%步骤用于分析，频繁浅层验证和局部循环。",
+    "失败痕迹在模式占用、转移矩阵上与成功痕迹无显著差异，但Branch和Backtrace的跨轨迹方差显著更高（p<0.001和p=0.030）。",
+    "反思密度不预测成功；反思的上下文位置才重要。Logical reflection嵌于Inference中与成功相关，而Numerical/Formal reflection嵌于Analysis循环中与失败相关。",
+    "在AIME 1.7案例中，模型因遗漏FG分支而得出错误答案271（正确为821），其回溯深度浅（η≈0.05）且验证尺度错配，验证了错误的东西。"
+  ],
+  "limitations": [
+    "仅针对单一模型（DeepSeek-R1-0120）和单一基准（AIME 2025），结论可能不具普适性。",
+    "人工标注仅在两题交叉验证，其余由单标注者完成，可能引入偏差。",
+    "未开发自动化标注代理，难以大规模应用。",
+    "未与其他模型或非数学领域比较。"
+  ],
+  "relation_to_deepseek": "该论文直接对DeepSeek-R1-0120进行深度解剖，揭示其长链思维中的拓扑模仿现象，为DeepSeek系列在推理、对齐和效率方面的技术路线提供经验诊断，并针对训练和推理时计算分配提出改进建议。",
+  "categories": [
+    "代码与数学",
+    "推理与强化学习",
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "论文发现人类与DeepSeek-R1推理存在显著结构差异：人类解答紧凑交替分析与演绎，而DeepSeek-R1频繁回访中间结果并进行浅层验证。",
+      "quote": "We find a clear structural difference between human and model reasoning. Human solutions maintain a compact alternation between analysis and deduction, whereas DeepSeek-R1 frequently revisits intermediate results, performs shallow (sometime unnecessary) verification, and loops through local checks without meaningful logical progress.",
+      "page": 1
+    },
+    {
+      "claim": "论文将这种行为定义为拓扑模仿，即再现推理的表面形式而没有功能作用。",
+      "quote": "We describe this behaviour astopological mimicry: reproducing the surface form of reasoning without its functional role.",
+      "page": 1
+    },
+    {
+      "claim": "人类求解者只花约15%步骤在问题框架和规划上，而DeepSeek-R1约40%步骤在分析上，反思多为浅层算术检查。",
+      "quote": "an experienced human solver typically devotes only about 15% of steps to problem framing and planning, drives the solution forward through a lean rhythm of analysis and inference, backtracks rarely, and reserves explicit re-evaluation for the small number of points where the strategy genuinely branches. DeepSeek-R1 displays the same surface vocabulary of reasoning but distributes these activities very differently: roughly 40% of its steps are spent in Analysis, intermediate conclusions are repeatedly re-derived rather than carried forward, and reflective interjections (“wait...”, “let me check...”) are emitted frequently but predominantly as shallow arithmetic checks rather than as scrutiny of the underlying logic.",
+      "page": 3
+    },
+    {
+      "claim": "成功的推理痕迹表现出稳定的分支和回溯使用，而失败痕迹则波动较大。",
+      "quote": "Successful traces deploy Branch and Backtrace at a stable rate from one problem to the next (p<0.001 for Branch, p=0.030 for Backtrace); failed traces alternate between barely deploying these actions and deploying them in bursts. The signal is in the variance, not in the mean.",
+      "page": 14
+    },
+    {
+      "claim": "失败痕迹验证了错误的东西：当错误在全局逻辑层面时，模型只做局部算术检查。",
+      "quote": "Failed traces verify; they verify the wrong things.",
+      "page": 19
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "拓扑模仿是否在其他模型或领域中出现？",
+    "自动化标注代理能否达到人类一致度（κ=0.81）？",
+    "论文提出的训练干预（如DPO、上下文正则化）在实际训练中是否能有效提高推理忠实度？",
+    "跨轨迹方差等指标能否扩展到其他基准？"
+  ]
+}

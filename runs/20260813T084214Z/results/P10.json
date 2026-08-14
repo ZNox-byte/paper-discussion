@@ -1,0 +1,60 @@
+{
+  "task_id": "P10",
+  "paper_id": "2503.19855",
+  "title": "Think Twice: Enhancing LLM Reasoning by Scaling Multi-round Test-time Thinking",
+  "one_sentence_summary": "本文提出了一种简单的测试时扩展方法Multi-round Thinking，通过将上一轮最终答案作为提示进行迭代细化，在多个推理基准上提升了DeepSeek-R1等模型的性能，并减少了响应中的犹豫表达和长度。",
+  "research_question": "迭代式答案细化如何影响推理性能和成本？",
+  "methodology": "该方法删除上一轮的中间推理步骤，仅保留最终答案，将其与原始问题拼接作为新一轮输入，鼓励模型独立重新考虑；在AIME 2024、MATH-500、GPQA-Diamond和LiveCodeBench上评估，统一设置最大生成长度32768、温度0.6、top-p 0.95，并对不同基准生成32/8/4个样本计算pass@1；还进行了词频和响应长度分析以及初步SFT实验。",
+  "data_and_training": "评估基准包括AIME 2024、MATH-500、GPQA-Diamond和LiveCodeBench；SFT实验从开放数据集中选取可独立验证的数学和编程任务，使用DeepSeek-R1迭代生成直到正确，形成约10万条数据，用于微调AM-32B模型。",
+  "main_contributions": [
+    "提出Multi-round Thinking测试时扩展方法，迭代利用上一轮最终答案作为提示。",
+    "在DeepSeek-R1、QwQ-32B等多个模型上验证了该方法在多个推理基准上的一致提升。",
+    "通过词频和响应长度分析揭示了多轮思考使模型表达更简洁、更自信。",
+    "探索了结合监督微调的可能性，并指出了未来改进方向。"
+  ],
+  "key_findings": [
+    "DeepSeek-R1在AIME 2024上从79.7%提升到82.0%，在GPQA-Diamond上从74.0%提升到74.8%，在LiveCodeBench上从65.3%提升到67.1%。",
+    "QwQ-32B在4轮迭代中性能持续提升：AIME 2024从80.3%到83.1%，GPQA-Diamond从65.9%到68.1%，LiveCodeBench从63.0%到65.9%。",
+    "多轮思考后模型的犹豫词（but, wait, maybe）使用频率下降，响应长度平均减少（如QwQ-32B第1轮平均10097.4 tokens，第2轮7348.3 tokens）。",
+    "初步的监督微调并未带来额外性能提升，但提示了未来研究方向。"
+  ],
+  "limitations": [
+    "结合监督微调的初步实验未能在当前评估中带来性能提升。",
+    "该方法引入了额外的等待时间，因为需要多轮推理。",
+    "仅在有限的模型和基准上进行了验证，且未系统分析计算成本与性能提升的权衡。"
+  ],
+  "relation_to_deepseek": "本文在DeepSeek-R1模型上验证Multi-round Thinking的效果，并指出DeepSeek-R1通过规则奖励和大规模强化学习推进了测试时计算，但该方法为在DeepSeek-R1等模型上进一步利用测试时扩展提供了简单途径。",
+  "categories": [
+    "推理与强化学习",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-R1在AIME 2024基准上第2轮pass@1从79.7%提升到82.0%。",
+      "quote": "accuracy improved from 79.7% to 82.0% on the AIME 2024 benchmark",
+      "page": 5
+    },
+    {
+      "claim": "多轮思考使模型的犹豫相关词汇频率下降。",
+      "quote": "we observe consistent declines in the frequency of hesitation-related words.",
+      "page": 5
+    },
+    {
+      "claim": "初步的监督微调未能在当前评估中带来性能提升。",
+      "quote": "this preliminary fine-tuning did not lead to performance improvements in our current evaluation",
+      "page": 8
+    },
+    {
+      "claim": "多轮思考会引入额外的等待时间。",
+      "quote": "this inevitably introduces additional waiting time during the thinking phase.",
+      "page": 9
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "多轮思考在更多轮次（超过4轮）上的性能收益是否会持续？",
+    "如何平衡多轮思考带来的计算成本增加与性能提升？",
+    "能否通过改进SFT数据或训练策略使监督微调在多轮思考框架下发挥作用？",
+    "该方法在更大规模模型或不同架构上的泛化性如何？"
+  ]
+}

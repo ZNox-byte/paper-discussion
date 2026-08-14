@@ -1,0 +1,59 @@
+{
+  "task_id": "P31",
+  "paper_id": "2502.11164",
+  "title": "Quantifying the Capability Boundary of DeepSeek Models: An Application-Driven Performance Analysis",
+  "one_sentence_summary": "本文基于A-Eval-2.0基准对DeepSeek系列模型及其蒸馏、量化和推理增强变体进行应用驱动评估，量化能力边界并提供模型选择手册。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "使用A-Eval-2.0基准（678个人工构建问答对，涵盖五大任务类别和27个子类别）评估22个模型；采用DeepSeek-R1作为自动评分模型，并经过两阶段专家复核（N=5, τ=0.8）保证评分可靠性；从总体、任务、子任务、模型组、难度等维度分析性能。",
+  "data_and_training": "本文未进行模型训练；评估数据为A-Eval-2.0，在A-Eval基础上增加方案优化子类别（40个新问答对），并细化逻辑推理和任务规划的难度分级。",
+  "main_contributions": [
+    "开源A-Eval-2.0基准及评估工具包",
+    "对DeepSeek系列模型的能力边界进行量化",
+    "提供模型选择手册帮助用户选择成本效益最优的模型",
+    "揭示推理增强、量化和模型规模对各类任务的不同影响"
+  ],
+  "key_findings": [
+    "推理增强模型在逻辑推理任务上显著提升，但在文本理解和生成任务上可能下降：DeepSeek-R1相比DeepSeek-V3逻辑推理提升5.4%，文本理解下降2.1%，文本生成下降1.6%。",
+    "使用DeepSeek-R1数据蒸馏的Qwen和Llama家族在逻辑推理上分别提升9.50%和19.92%，但多个模型在文本理解、信息抽取、文本生成或任务规划上出现性能下降。",
+    "数据难度越高，蒸馏或推理增强带来的性能提升越大；推理增强对简单问题甚至可能产生负面影响。"
+  ],
+  "limitations": [
+    "测试样本选择、数据分布特征和评估标准设置可能引入偏差",
+    "评估基准仅覆盖5类27个子类，无法完全代表所有真实应用场景",
+    "论文将持续优化基准并周期性更新结果，当前版本结论可能变化"
+  ],
+  "relation_to_deepseek": "本文直接评估DeepSeek-V3、DeepSeek-R1、DeepSeek-R1-Distill系列、4-bit量化版本以及与DeepSeek相关的QwQ-32B，提供应用驱动的性能分析和模型选择指导。",
+  "categories": [
+    "对齐、安全与评测",
+    "推理与强化学习",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "推理增强模型在逻辑推理任务上显著提升，但在文本理解和生成任务上可能表现不佳。",
+      "quote": "Reasoning-enhanced model show significant performance gains in logical reasoning tasks but may underperform in text understanding and generation tasks",
+      "page": 1
+    },
+    {
+      "claim": "DeepSeek-R1相比DeepSeek-V3在逻辑推理和任务规划上提升，而在文本理解和生成上下降。",
+      "quote": "Compared to instruction-tuned model DeepSeek-V3, reasoning model DeepSeek-R1 achieves significant gains of 5.4% and 3.0% in logical reasoning and task planning tasks, respectively. However, it demonstrates performance decreases of 2.1% and 1.6% in text understanding and generation tasks.",
+      "page": 7
+    },
+    {
+      "claim": "蒸馏在逻辑推理任务上带来显著提升，但在文本理解等项目上部分模型出现下降。",
+      "quote": "Particularly in logical reasoning tasks, the distilled models achieve substantial gains of 9.50% and 19.92% respectively. However, Performance degradation occurs after distillation in: Text Understanding (Llama-3.1-8B, Qwen2.5-14B, Qwen2.5-32B, and DeepSeek-V3), Information Extraction (Llama-3.1-8B, Qwen2.5-14B), and Text Generation (Llama-3.1-8B, Qwen2.5-14B, DeepSeek-V3), and Task Planning (Llama-3.3-70B).",
+      "page": 7
+    },
+    {
+      "claim": "随着数据难度增加，推理增强带来的收益更高，但对简单问题可能产生负面影响。",
+      "quote": "As the data difficulty increases, distillation or reasoning enhancements yield higher performance gains for the models. Interestingly, reasoning enhancements can even have a negative impact on simpler problems.",
+      "page": 12
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "推理增强为何在文本理解和生成任务上出现性能下降的具体机制是什么？",
+    "这些结论在A-Eval-2.0之外的其他实际应用基准上是否一致？",
+    "4-bit量化对逻辑推理显著下降的原因是否与特定算子或模型架构有关？"
+  ]
+}

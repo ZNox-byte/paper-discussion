@@ -1,0 +1,56 @@
+{
+  "task_id": "P22",
+  "paper_id": "2504.06792",
+  "title": "Domain-Specific Pruning of Large Mixture-of-Experts Models with Few-shot Demonstrations",
+  "one_sentence_summary": "论文提出EASY-EP框架，利用少样本专家定位实现领域特定的大型MoE模型剪枝，在DeepSeek-R1和DeepSeek-V3-0324上仅用一半专家即可保持相当性能并提升推理吞吐量。",
+  "research_question": "专家定位如何能够实现半专家剪枝并保持相当的质量？",
+  "methodology": "首先分析大型MoE模型中专家激活的领域特异性和少样本稳定性，提出“few-shot expert localization”现象；然后设计EASY-EP方法，通过输出感知的专家重要性评估（门控值乘以专家输出L2范数）和专家级token贡献估计（基于残差前后表示相似度）计算专家得分，仅需单次前向传播即可完成剪枝。",
+  "data_and_training": "训练无关方法，使用少量领域内演示（如25个样本）作为校准集；在DeepSeek-R1和DeepSeek-V3-0324上进行实验，评估基准涵盖数学（AIME-2024、AIME-2025、HMMT-Feb 2025）、编程（LiveCodeBench）、科学（GPQA-Diamond）、医学（USMLE）、金融（FinanceIQ）和智能体任务（AgentBench-OS）。",
+  "main_contributions": [
+    "发现“few-shot expert localization”现象：仅需少量领域内示例即可稳定激活稀疏且与目标领域相关的专家子集。",
+    "提出EASY-EP剪枝框架，结合输出感知的专家重要性评估和专家级token贡献估计，仅需单次前向传播。",
+    "在DeepSeek-R1和DeepSeek-V3-0324上验证，半专家剪枝下性能相当，且吞吐量提升显著（如128专家时2.99×）。"
+  ],
+  "key_findings": [
+    "大型MoE模型存在领域特定专家，高门控值专家在不同领域间重叠低，移除这些专家会显著降低域内性能而对域外影响小。",
+    "仅25个演示足以识别99%的关键专家，专家激活模式在同一领域内跨数据集高度一致（重叠超过84%）。",
+    "EASY-EP在领域特定剪枝中保持相当性能，混合域剪枝保持90%以上原始性能，且剪枝50%专家时推理吞吐量提升2.99倍。"
+  ],
+  "limitations": [
+    "未研究训练以进一步提升剪枝模型性能，尤其在平衡域内外能力方面。",
+    "观察到推理模型（DeepSeek-R1）和非推理模型（DeepSeek-V3-0324）对剪枝的鲁棒性不同，但需在更广泛架构上验证该结论的普适性。"
+  ],
+  "relation_to_deepseek": "论文直接在DeepSeek-R1和DeepSeek-V3-0324上进行实验，针对其细粒度MoE架构（每层256个专家）提出领域特定剪枝方法，以减少内存占用并提升部署效率。该工作与DeepSeek系列模型在高效推理和开放生态方面的技术路线密切相关。",
+  "categories": [
+    "系统效率与部署",
+    "基础模型与架构"
+  ],
+  "evidence": [
+    {
+      "claim": "论文观察到“few-shot expert localization”现象：仅用少量领域内示例，模型就能稳定激活一个稀疏且与目标领域高度相关的专家子集。",
+      "quote": "given just a few domain-specific examples, the model tends to activate a stable and sparse subset of experts that are highly relevant to the target domain. We refer to this phenomenon as few-shot expert localization.",
+      "page": 2
+    },
+    {
+      "claim": "EASY-EP由两个关键组件组成：输出感知的专家重要性评估和专家级token贡献估计。",
+      "quote": "EASY-EP comprises two key components: output-aware expert importance assessment and expert-level token contribution estimation.",
+      "page": 1
+    },
+    {
+      "claim": "在领域特定剪枝中，仅保留50%专家即可保持相当性能；混合域剪枝下DeepSeek-R1保持超过90%原始性能，DeepSeek-V3-0324甚至更好。",
+      "quote": "with only retraining50% experts, our method can keep comparable performances under the domain-specific pruning settings while achieving over 90% of the full model’s performances on DeepSeek-R1 and even better performances on DeepSeek-V3-0324 under the mixed-domain pruning settings.",
+      "page": 2
+    },
+    {
+      "claim": "相比完整DeepSeek-R1模型，保留128和64个专家的配置分别实现了2.99×和4.33×的推理吞吐量。",
+      "quote": "Compared to the full DeepSeek-R1 model, configurations with 128 and 64 experts achieve 2.99× and 4.33× throughput, respectively.",
+      "page": 9
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "该方法是否适用于其他具有不同专家数量或架构的MoE模型？",
+    "剪枝后的模型能否通过微调进一步恢复或提升性能？",
+    "在更大规模或更多样的领域数据上，专家定位的一致性和剪枝效果如何？"
+  ]
+}

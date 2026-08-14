@@ -1,0 +1,50 @@
+{
+  "task_id": "P13",
+  "paper_id": "2501.14312",
+  "title": "Locality-aware Fair Scheduling in LLM Serving",
+  "one_sentence_summary": "该论文提出首个局部性感知的公平调度算法 DLPM 及其分布式扩展 D2LPM，通过带赤字的最长前缀匹配机制在保持前缀缓存局部性的同时提供公平性保证，从而提升 LLM 在线推理的吞吐并降低客户端延迟。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？",
+  "methodology": "论文设计 DLPM：在每个连续批处理步骤中，先按最长前缀匹配长度对等待队列排序，但仅将赤字计数器 qi > 0 的客户端的请求加入当前批；当所有活跃客户端的 qi <= 0 时，按量子 Qu 补充计数器。该机制受 Deficit Round Robin 启发，在保持 LPM 局部顺序的同时偶尔优先服务较少被服务的客户端。分布式扩展 D2LPM 采用去中心化调度，为每个 worker 和客户端维护独立的赤字计数器，先利用全局 RadixTree 找到最长匹配前缀所在的 worker 集合，再在可用 worker 中选择队列最短者，以平衡局部性与负载均衡。作者给出服务界和延迟界的理论证明，并在 SGLang 上实现，与 VTC、RR+LPM、Preble 进行对比。",
+  "experimental_setup": "实现基于 SGLang；模型使用 Llama-3.1-8B 和 Llama-3.2-3B；硬件为 NVIDIA A100 80GB 和 A10G GPU。工作负载包括 Long-Context QA（LooGLE）、Tree-of-Thoughts（GSM8K）、LLM-as-a-Judge 以及真实多轮对话（Chatbot Arena）。合成请求迹线按 Gamma 过程生成，并设置 S1（更多请求/更复杂执行图）和 S2（更长前缀）两类 misbehaving 客户端模式。基线包括 D2LPM（本地 DLPM）、RR+LPM、Preble 和 VTC；指标为服务速率、Jain 公平性指数以及 P50/P99 延迟（长上下文 QA 使用 TTFT）。",
+  "main_contributions": [
+    "提出首个局部性感知的 LLM 推理公平调度算法 DLPM 及其分布式版本 D2LPM。",
+    "为 DLPM 和 D2LPM 提供严格的公平性理论界，包括服务界和延迟界。",
+    "通过多工作负载、多 GPU 规模实验证明算法能在保证公平性的同时保持高吞吐和低延迟。"
+  ],
+  "key_findings": [
+    "与唯一的公平调度算法 VTC 相比，DLPM/D2LPM 吞吐最高提升 2.87 倍。",
+    "与局部性感知调度算法 Preble 相比，受害客户端延迟最高降低 7.18 倍，平均降低 2.90 倍；与 RR+LPM 相比平均降低 4.06 倍。",
+    "D2LPM 的公平性略低于 VTC，但显著高于 Preble 和 RR+LPM，同时能保持更高的前缀缓存命中率。",
+    "在 S2@Long-Context QA 且 D=8 时 Preble 吞吐高于 D2LPM，原因是 D2LPM 为维护公平性牺牲局部性导致长文档前缀重算开销增加。",
+    "在真实多轮对话负载中，D2LPM 能保护良行客户端免受恶意高请求速率客户端的影响，同时避免 VTC 对超额客户端造成的过大延迟。"
+  ],
+  "limitations": [
+    "论文仅考虑同一客户端内部请求之间的前缀共享，忽略不同客户端请求之间的前缀共享。",
+    "调度算法未考虑程序内推理请求之间的数据依赖，例如上游请求生成下游请求输入时，优先调度上游请求可能带来更高并行度，但当前算法可能为了前缀共享或严格公平而错过这种机会。"
+  ],
+  "relation_to_topic": "论文聚焦 LLM 在线推理服务中的请求调度，是 AI Infra 系统中请求调度与 KV Cache/内存管理交汇点的代表性工作。DLPM/D2LPM 通过赤字计数器在保留 RadixAttention/前缀缓存局部性的同时提供公平性保证，直接影响 KV cache 复用率、批处理效率、端到端吞吐和客户端延迟；分布式 D2LPM 还显式处理局部性与负载均衡之间的权衡，与 vLLM、SGLang 等推理引擎的调度设计密切相关。",
+  "categories": [
+    "推理服务与请求调度",
+    "KV Cache与内存管理",
+    "并行计算与分布式执行",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "论文声称其提出的 DLPM 和 D2LPM 在保证公平性的同时显著提升性能：与 VTC 相比吞吐最高提升 2.87 倍，与现有分布式 LLM 服务系统相比每客户端延迟最高降低 7.18 倍。",
+      "quote": "Our extensive evaluation demonstrates the superior performance of DLPM and D2LPM in ensuring fairness while maintaining high throughput (up to 2.87× higher than VTC) and low per-client (up to 7.18 × lower than state-of-the-art distributed LLM serving system) latency.",
+      "page": 1
+    },
+    {
+      "claim": "DLPM 的核心机制是受 Deficit Round Robin 启发的量子机制，它迫使调度器偶尔优先处理服务较少的客户端请求，而不是始终选择最长前缀匹配的请求，从而在不彻底破坏 LPM 局部顺序的情况下引入公平性。",
+      "quote": "To achieve this, we incorporate a quantum mechanism inspired by the deficit round robin (DRR) approach [43]. This mechanism compels the scheduler to occasionally prioritize requests from less-served clients over those with the longest matching prefixes.",
+      "page": 4
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "如何公平地在不同客户端之间共享前缀缓存，即当多个客户端共享同一前缀时，应由哪个客户端承担量子扣减？",
+    "如何将程序内 LLM 调用之间的数据依赖纳入调度，以在公平性、前缀局部性和依赖驱动的并行性之间取得更优折中？",
+    "DLPM/D2LPM 的机制是否能直接移植到 vLLM 等其他 LLM 推理引擎，并在更大规模集群和生产负载下保持收益？"
+  ]
+}

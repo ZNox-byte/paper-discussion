@@ -1,0 +1,49 @@
+{
+  "task_id": "P17",
+  "paper_id": "2511.22570",
+  "title": "DeepSeekMath-V2: Towards Self-Verifiable Mathematical Reasoning",
+  "one_sentence_summary": "DeepSeekMath-V2 通过训练 LLM 验证器作为奖励模型并扩展验证计算，使证明生成器具备自我验证与迭代改进能力，在 IMO 2025、CMO 2024 和 Putnam 2024 等竞赛上达到或接近金牌水平。",
+  "research_question": "训练验证器作为奖励模型并扩展验证计算如何改进定理证明与自我验证？",
+  "methodology": "本文提出以 LLM 验证器作为生成式奖励模型训练证明生成器，并引入元验证（meta-verification）减少幻觉问题、提升验证忠实度；随后通过扩展验证计算自动标注困难证明，用于迭代改进验证器与生成器。训练采用 GRPO，每一轮先优化验证能力，再初始化并优化生成能力，并使用包含证明分数与自分析元验证分数的奖励函数，激励模型在最终输出前发现并修复尽可能多的问题。",
+  "data_and_training": "从 AoPS 爬取 17,503 道竞赛证明题；用 DeepSeek-V3.2-Exp-Thinking 生成候选证明并由数学专家按 0/0.5/1 评分构建初始 RL 数据集；基于 DeepSeek-V3.2-Exp-SFT 训练验证器，使用格式奖励和分数奖励；再训练元验证器并用其反馈增强验证器。生成器从验证器 checkpoint 初始化，奖励结合证明分数与自分析元验证分数（α=0.76, β=0.24）。在后两轮训练迭代中，完全自动化的标注流程取代了人工标注。",
+  "main_contributions": [
+    "训练了一个准确且忠实的基于 LLM 的数学证明验证器。",
+    "使用元验证大幅减少幻觉问题并保证验证质量。",
+    "通过自我验证激励证明生成器最大化证明质量。",
+    "扩展验证计算以自动标注越来越难以验证的证明，从而在无需人工标注的情况下改进验证器。"
+  ],
+  "key_findings": [
+    "在扩展测试期计算下，模型解决了 IMO 2025 的 5/6 题、CMO 2024 的 4 题并有 1 题获得部分分，达到金牌水平；在 Putnam 2024 上得分 118/120，超过人类最高分 90。",
+    "在 CNML 级问题上，DeepSeekMath-V2 在代数、几何、数论、组合和不等式各类型上均持续优于 GPT-5-Thinking-High 与 Gemini 2.5-Pro。",
+    "在 IMO Shortlist 2024 上，顺序自验证细化显著提升 Pass@1，且自选的最佳证明（Best@32）明显高于线程平均，说明生成器能准确评估证明质量。",
+    "在验证器训练中，验证器证明分析的平均质量分数（由元验证器评估）从 0.85 提升到 0.96，同时保持相同的证明分数预测准确率。"
+  ],
+  "limitations": [
+    "论文指出最难的 IMO 级别问题仍然具有挑战性，仍有问题未能完全解决（如 IMO 2025 仅完全解决 5/6，CMO 2024 有 2 题未完全解决）。",
+    "对于未完全解决的问题，生成器通常能识别出证明中的真实问题，但受限于 128K token 上下文，无法在单次尝试中解决所有已识别问题。"
+  ],
+  "relation_to_deepseek": "DeepSeekMath-V2 建立在 DeepSeek-V3.2-Exp-Base 之上，使用 DeepSeek-V3.2-Exp-Thinking 和 DeepSeek-V3.2-Exp-SFT 生成与初始化模型，采用 DeepSeekMath 提出的 GRPO 训练，并与 DeepSeek-Prover-V2 同属 DeepSeek 在数学推理方向的技术路线。",
+  "categories": [
+    "推理与强化学习",
+    "代码与数学",
+    "训练数据与训练方法"
+  ],
+  "evidence": [
+    {
+      "claim": "作者提出通过扩展验证计算来自动标注难以验证的新证明，从而创造训练数据以进一步改进验证器。",
+      "quote": "To maintain the generation-verification gap as the generator becomes stronger, we propose to scale verification compute to automatically label new hard-to-verify proofs, creating training data to further improve the verifier.",
+      "page": 1
+    },
+    {
+      "claim": "证明生成器以验证器作为生成式奖励模型进行强化学习训练。",
+      "quote": "With verifier 𝜋𝜑 serving as a generative reward model, we train a proof generator 𝜋𝜃(·|𝑋) with the RL objective:",
+      "page": 4
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "自动标注流程在更难、更微妙错误上的可靠性与人工判断的边界如何？",
+    "扩展验证计算时的采样数量（n、m、k）如何最优选择以平衡效率与标注质量？",
+    "该方法在竞赛数学之外的研究级数学问题上的泛化能力如何？"
+  ]
+}

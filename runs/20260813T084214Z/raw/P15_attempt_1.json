@@ -1,0 +1,57 @@
+{
+  "task_id": "P15",
+  "paper_id": "2402.03300",
+  "title": "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models",
+  "one_sentence_summary": "本文提出 DeepSeekMath 7B，通过大规模数学语料预训练和 GRPO 强化学习在数学推理基准上取得领先，并重点分析了 GRPO 相比 PPO 的内存效率与推理提升。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "论文采用两阶段流程：首先通过 fastText 迭代筛选构建 120B token 数学语料，并在 DeepSeek-Coder-Base-v1.5 7B 上继续预训练 500B token；随后进行 776K 数学指令微调，最后提出 GRPO 强化学习算法（去掉 PPO 的价值模型，用组内相对优势替代），并在 GSM8K 和 MATH 的 144K 问题上进行 RL 训练。评估覆盖英文和中文数学基准、工具使用、形式化证明及通用能力。",
+  "data_and_training": "预训练数据：DeepSeekMath Corpus 120B 数学 token，加上 AlgebraicStack、arXiv、Github 代码和自然语言数据，共 500B tokens。SFT 数据 776K 条，包含 CoT、PoT 和工具集成推理。RL 数据为 GSM8K 和 MATH 相关 144K 问题；GRPO 参数：每问题采样 64 个输出，batch size 1024，max length 1024，policy learning rate 1e-6，KL coefficient 0.04，单次更新。",
+  "main_contributions": [
+    "构建了 120B token 的多语言高质量数学语料 DeepSeekMath Corpus，并公开了数据筛选流水线。",
+    "提出了 GRPO（Group Relative Policy Optimization），移除价值模型以降低内存开销，并通过组内相对优势提升数学推理。",
+    "基于 DeepSeek-Coder-Base-v1.5 7B 训练得到 DeepSeekMath-Base/Instruct/RL，在多项数学基准上超过开源模型并接近 GPT-4。",
+    "系统探索了代码训练、arXiv 论文对数学推理的影响，并提出统一范式理解 SFT/RFT/DPO/PPO/GRPO。",
+    "分析了 RL 为何有效：提升 Maj@K 而非 Pass@K，说明主要改善输出分布鲁棒性。"
+  ],
+  "key_findings": [
+    "GRPO 相比 PPO 省去了价值模型，显著降低训练内存和计算资源。",
+    "仅使用 144K 英文 GSM8K/MATH 指令数据做 GRPO 即可将 MATH 准确率从 46.8% 提升至 51.7%，GSM8K 从 82.9% 提升至 88.2%，并泛化到中文 CMATH。",
+    "代码训练先于数学训练能提升数学推理（包括工具使用），但将 arXiv 论文作为数学预训练语料效果不佳。",
+    "RL 提升的是 Maj@K 而非 Pass@K，说明其作用在于让正确答案在 TopK 中更突出，而非增强根本能力。",
+    "DeepSeekMath-Base 7B 在 MATH 上达到 36.2%，超过 Minerva 540B；RL 后达到 51.7%。"
+  ],
+  "limitations": [
+    "几何与定理证明能力相对封闭模型较弱（如三角形、椭圆问题），可能源于数据选择偏差。",
+    "受模型规模限制，few-shot 能力不如 GPT-4，零样本与少样本表现差异不大。",
+    "arXiv 论文对数学推理无效的结论具有局限性，尚未研究与其他数据混合或更大规模模型下的效果。"
+  ],
+  "relation_to_deepseek": "该论文属于 DeepSeek 在数学推理领域的核心工作，提出了 GRPO 强化学习算法和数据筛选路线，为 DeepSeek 系列模型在数学与强化学习方向提供了关键技术基础，并体现了从 DeepSeek-Coder 底座继续训练的技术路线。",
+  "categories": [
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "代码与数学",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "GRPO 通过移除价值模型并用组内平均奖励作为基线，显著降低了相比 PPO 的内存和计算开销。",
+      "quote": "GRPO foregoes the value model, instead estimating the baseline from group scores, significantly reducing training resources.",
+      "page": 13
+    },
+    {
+      "claim": "GRPO 在仅使用 GSM8K 和 MATH 的指令微调数据做强化学习后，将 DeepSeekMath-Instruct 的数学推理准确率从 46.8% 提高到 51.7%（MATH）和从 82.9% 提高到 88.2%（GSM8K）。",
+      "quote": "By solely using a subset of English instruction tuning data, GRPO obtains a substantial improvement over the strong DeepSeekMath-Instruct, including both in-domain (GSM8K: 82.9%→ 88.2%, MATH: 46.8%→ 51.7%) and out-of-domain mathematical tasks (e.g., CMATH: 84.6%→ 88.8%) during the reinforcement learning phase.",
+      "page": 2
+    },
+    {
+      "claim": "GRPO 采用对同一问题采样一组输出并计算相对优势的方式，避免了 PPO 中每个 token 都需要准确价值函数的困难。",
+      "quote": "which obviates the need for additional value function approximation as in PPO, and instead uses the average reward of multiple sampled outputs, produced in response to the same question, as the baseline.",
+      "page": 13
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "GRPO 在更大规模模型上的可扩展性和稳定性如何？",
+    "数据筛选流水线能否有效迁移到代码或其他领域？"
+  ]
+}

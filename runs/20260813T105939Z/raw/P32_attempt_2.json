@@ -1,0 +1,47 @@
+{
+  "task_id": "P32",
+  "paper_id": "2502.18505",
+  "title": "Comprehensive Analysis of Transparency and Accessibility of ChatGPT, DeepSeek, And other SoTA Large Language Models",
+  "one_sentence_summary": "该研究对包括 DeepSeek 在内的 112 个 SoTA 大语言模型进行了系统性的透明度与可及性分析，指出多数自称开源的模型实际只是开放权重，并重点以 DeepSeek-R1 和 ChatGPT 为例区分了开放权重与真正开源之间的差距。",
+  "research_question": "DeepSeek 在训练数据、代码和权重等方面的透明度，与其他开源/开放权重模型相比处于什么位置？",
+  "methodology": "采用多阶段叙述性综述方法：以 OSI 开源定义、牛津/剑桥/韦氏词典的透明度定义和已发表文献为基础，建立评估框架；检索 2017 年以来的高被引文献，最终从 2019 到 2025 年筛选并评估了 112 个 LLM；从许可、代码可访问性与修改权、训练数据透明度、社区支持、MMLU 分数与碳排放、伦理与可复现性等维度对模型进行分类。",
+  "data_and_training": "该研究本身不训练模型，而是收集并比较 112 个 LLM 的公开信息，包括模型许可证、权重可获取性、层数/隐单元/注意力头数/参数量、上下文长度、MMLU 分数和碳排放（tCO2eq）。文中指出 DeepSeek-R1 使用混合合成与有机数据的 9.8T token 训练集，但该训练数据组成未公开。",
+  "main_contributions": [
+    "首次系统性地从开放源码与开放权重双重角度审视 100 多个 SoTA LLM 的透明度与可及性。",
+    "以 DeepSeek-R1 和 ChatGPT-4o 为主要案例，清晰区分了 open-weight 与 fully open-source 模型。",
+    "整合 OSI 定义、词典定义和文献，提出了评估 AI 模型开放性与透明度的多维度框架。"
+  ],
+  "key_findings": [
+    "许多被标记为开源的模型实际上只提供了开放权重，并未公开训练数据、完整代码和开发流程。",
+    "DeepSeek-R1 在 MIT 许可下提供权重和部分代码，但缺乏完整的开源透明度，包括训练数据和方法论的访问。",
+    "大多数被评模型（包括 DeepSeek 系列）的训练数据和代码仍未完全公开，限制了可复现性与偏差评估。",
+    "DeepSeek-R1 的 MMLU 分数为 90.8%，碳排放为 44 tCO2eq，在性能与能耗上表现出较优的平衡；相比之下 GPT-4o 的 MMLU 为 88.9%，碳排放为 1,035 tCO2eq。"
+  ],
+  "limitations": [
+    "该文未单独设立局限性章节；作为叙述性综述，其分析依赖各模型自行发布的模型卡、技术报告和已发表文献，可能受到不完整自我报告或 open-washing 的影响。"
+  ],
+  "relation_to_deepseek": "DeepSeek-R1 被归类为开放权重模型而非完全开源：它提供 MIT 许可下的权重和部分代码，但隐藏了训练数据组成、RLHF 细节和完整训练流程。对比其他模型，DeepSeek 比 ChatGPT/GPT-4 等专有模型更开放，但不如 BLOOM、Dolly 2.0 等完全开源模型透明。",
+  "categories": [
+    "训练数据与训练方法",
+    "对齐、安全与评测",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-R1 虽然提供权重和部分代码，但未达到完全开源透明度，缺少训练数据和方法论。",
+      "quote": "While DeepSeek-R1 provides weights and partial code under the MIT license 1, it lacks full open-source transparency, including access to training data and methodologies.",
+      "page": 2
+    },
+    {
+      "claim": "DeepSeek-R1 的预训练数据集组成（混合合成与有机数据）仍属专有，模糊了潜在偏差和伦理来源实践。",
+      "quote": "The pre-training dataset composition, comprising a hybrid of synthetic and organic data, remains proprietary, obscuring potential biases and ethical sourcing practices.",
+      "page": 11
+    }
+  ],
+  "confidence": 0.88,
+  "unanswered_questions": [
+    "DeepSeek 未公开的具体预训练数据来源、清洗和过滤流程是什么？",
+    "如何建立可量化的开放权重与开源模型评估标准，以比较不同模型的透明度？",
+    "DeepSeek 的 RLHF 偏好模型架构、安全对齐协议和微调超参数是否会在未来公开？"
+  ]
+}

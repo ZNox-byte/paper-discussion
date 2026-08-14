@@ -1,0 +1,222 @@
+{
+  "title": "以 vLLM 为代表的 AI Infra Systems 论文综述",
+  "abstract": "本综述基于 30 份已提供的研究报告，围绕以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同提升大模型训练与在线推理的吞吐、延迟、成本效率及可靠性进行综合；计划 32 份中缺少 P05、P25，因此相关主题存在覆盖缺口。现有证据显示，PagedAttention 将 KV cache 分页化并成为主流抽象 [P01]，但其非连续块布局带来的间接寻址、碎片和 I/O 粒度问题推动 vAttention、FastSwitch、vToken 等后续内存管理设计 [P03, P12, P24]。RadixAttention 把 KV cache 作为可复用前缀树缓存，与缓存感知调度结合 [P02, P13, P19]，而 CacheBlend 和 Pensieve 扩展到非前缀融合与多轮状态复用 [P09, P11]。请求调度从单实例连续批处理逐步演化为跨实例迁移、微请求统一调度和 SLO 感知队列管理 [P06, P14, P27]。低精度方面，KIVI、Oaken 与 INT-FlashAttention 分别从 KV cache 非对称量化、在线-离线混合量化和 INT8 注意力内核切入 [P07, P26, P08]，有损缓存的验证式恢复则实现无损输出 [P22]。此外，TBIK 的确定性张量并行与 DeltaServe 的推理-微调协同服务覆盖可靠性与混合负载 [P31, P32]。由于缺少 P05/P25，完整证据链仍不闭合。",
+  "scope_and_method": "本综述只使用提供的 30 份 validated reports 进行合成，不推断缺失报告；已明确覆盖缺口为缺少 P05、P25。方法上按 8 类主题归类：推理服务与请求调度、KV Cache与内存管理、并行计算与分布式执行、训练系统与优化、模型压缩与低精度计算、异构硬件与内核优化、性能评测与成本分析、可靠性/弹性与可观测性；对同类报告进行横向比较，并提取跨论文发现、技术对比和研究空白。",
+  "category_syntheses": [
+    {
+      "category": "推理服务与请求调度",
+      "overview": "该类研究覆盖从 vLLM 的连续批处理调度器 [P01] 到跨实例动态重调度 [P06, P14, P27]。vLLM 通过集中式调度器提高批处理效率，但 PagedAttention 块布局对上下文切换和公平调度带来额外成本 [P01, P12]。SGLang 的 RadixAttention 引入缓存感知调度，通过维护 radix tree 提升前缀复用；DLPM/D2LPM 进一步在保留局部性的同时加入赤字计数器公平性 [P02, P13]。Llumnix 用 KV cache 实时迁移和 virtual usage 统一负载均衡、去碎片、优先级与自动扩缩容 [P06]；DynaServe 以 micro-request 在共置/分离式执行之间动态路由 [P14]；Nexus 在单 GPU 内用 SM 分区解耦 prefill/decode [P15]；BROS 针对实时/尽力而为混布请求做迭代级贪心打包与双向 KV 块共享 [P16]。QLM 由等待时间估计器驱动拉取、驱逐、负载均衡和模型切换 [P27]。生产负载表征 [P04, P28] 与 fuzzing [P30] 说明调度须面向真实并发与可靠性。",
+      "paper_ids": [
+        "P01",
+        "P02",
+        "P03",
+        "P04",
+        "P06",
+        "P09",
+        "P10",
+        "P11",
+        "P12",
+        "P13",
+        "P14",
+        "P15",
+        "P16",
+        "P18",
+        "P19",
+        "P20",
+        "P21",
+        "P22",
+        "P23",
+        "P24",
+        "P26",
+        "P27",
+        "P28",
+        "P29",
+        "P30",
+        "P31",
+        "P32"
+      ],
+      "trends": [
+        "从单实例固定优先级调度转向跨实例、缓存感知、公平性与 SLO 联合优化 [P02, P06, P13, P27]。",
+        "prefill/decode 解耦从跨节点、跨 GPU 到单 GPU 的 SM 级动态分区 [P14, P15, P18]。",
+        "真实生产负载和并发安全测试被纳入调度评估 [P04, P28, P30]。",
+        "推理调度开始与微调、RL 训练路径耦合 [P31, P32]。"
+      ]
+    },
+    {
+      "category": "KV Cache与内存管理",
+      "overview": "PagedAttention 通过分页块表消除内/外部碎片，并支持块级共享 [P01]。vAttention 保留虚拟连续内存，避免 PagedAttention 对注意力内核的改写 [P03]。RadixAttention 把缓存生命周期延续到请求结束后，在 radix tree 中匹配、插入和淘汰 [P02]。Pensieve 将 GPU/CPU 多级缓存与多 token 注意力结合，支持多轮对话缓存复用 [P11]。FastSwitch 为公平调度中的抢占式 swap 设计块组管理、多线程异步交换和跨轮复用 [P12]。CacheBlend 和 CacheGen 分别解决非前缀块融合与带宽受限场景下的压缩流式加载 [P09, P10]。跨内存层级方面，Tutti 用 GPU 直访 SSD，TraCT 用 CXL 共享内存替代 RDMA [P17, P18]；Strata 用 GPU 辅助 I/O 隐藏碎片化块传输 [P19]；AdaptCache、EVICPRESS 和 OrbitFlow 在 DRAM/SSD、请求级放置上引入自适应决策 [P20, P21, P23]；vToken 在 token 级将逻辑活跃性与物理块放置解耦，回收块内碎片 [P24]。",
+      "paper_ids": [
+        "P01",
+        "P02",
+        "P03",
+        "P04",
+        "P06",
+        "P07",
+        "P09",
+        "P10",
+        "P11",
+        "P12",
+        "P13",
+        "P14",
+        "P16",
+        "P17",
+        "P18",
+        "P19",
+        "P20",
+        "P21",
+        "P22",
+        "P23",
+        "P24",
+        "P26",
+        "P29",
+        "P30"
+      ],
+      "trends": [
+        "从连续预分配演进为分页、分组、token 级虚拟化和跨设备存储管理 [P01, P03, P12, P24]。",
+        "内存层级从 GPU/CPU 扩展到 SSD、CXL 和远程前缀缓存 [P11, P17, P18, P19, P20, P21]。",
+        "有损压缩与驱逐决策从独立优化走向联合优化，并通过验证保证无损输出 [P20, P21, P22]。",
+        "缓存复用从请求内共享扩展为跨请求前缀、非前缀和多轮状态 [P02, P09, P11]。"
+      ]
+    },
+    {
+      "category": "并行计算与分布式执行",
+      "overview": "vLLM 在 PagedAttention 基础上采用 Megatron-LM 风格张量模型并行，但主要限于单引擎内的模型并行 [P01]。DLPM 的 D2LPM 扩展将局部性感知公平调度分布到多个 worker [P13]。DynaServe 提出 micro-request 抽象，在任意 token 边界切分请求并通过两级调度跨 GPU 路由 [P14]。Nexus 把 prefill/decode 并行性下沉到单 GPU 的 SM 分区，用成本模型动态分配资源 [P15]。TBIK 通过固定二叉树归约顺序统一 GPU 内 MatMul 与 GPU 间 All-Reduce，实现跨 TP 大小的逐位确定推理 [P31]。",
+      "paper_ids": [
+        "P01",
+        "P13",
+        "P14",
+        "P15",
+        "P31"
+      ],
+      "trends": [
+        "并行粒度从模型张量并行扩展到请求 token 级切分与单 GPU SM 资源切分 [P14, P15]。",
+        "分布式调度同时考虑缓存局部性、公平性与负载均衡 [P13]。",
+        "确定性并行语义被显式建模，以消除训练-推理差异 [P31]。"
+      ]
+    },
+    {
+      "category": "训练系统与优化",
+      "overview": "DeltaServe 利用空闲推理 GPU 容量执行 LoRA 微调，通过 SLO 感知准入、CUDA-graph 感知延迟模型和独立反向子进程实现 host-agnostic 协同服务 [P32]。TBIK 不是训练加速本身，但通过确定性推理消除 vLLM 与 FSDP 之间的概率失配，改善 RL 训练管线的 on-policy 特性 [P31]。",
+      "paper_ids": [
+        "P31",
+        "P32"
+      ],
+      "trends": [
+        "推理系统开始吸收训练/微调负载，从专用资源池转向混合协同 [P32]。",
+        "确定性数值语义成为连接训练与推理可靠性的关键接口 [P31]。"
+      ]
+    },
+    {
+      "category": "模型压缩与低精度计算",
+      "overview": "KIVI 通过分析 KV cache 元素分布，提出 key per-channel、value per-token 的 2bit 非对称量化，并以全精度滑窗残差保持长生成质量 [P07]。Oaken 将异常值阈值离线确定、在线轻量计算量化 scale，并通过 group-shift 和 dense-sparse 编码降低位宽与硬件开销 [P26]。INT-FlashAttention 将 INT8 GEMM 与 FlashAttention tiling/online softmax 结合，替换注意力中所有矩阵乘法 [P08]。CacheGen 利用 token/layer/channel 分布特性做 delta 编码与算术编码，属于 KV cache 压缩而非传统模型量化 [P10]。AdaptCache 与 EVICPRESS 在多层存储中对每个条目自适应选择压缩方法与压缩率 [P20, P21]。",
+      "paper_ids": [
+        "P07",
+        "P08",
+        "P10",
+        "P20",
+        "P21",
+        "P26"
+      ],
+      "trends": [
+        "从统一精度的静态压缩转向按 token/channel/entry 自适应的有损压缩 [P07, P20, P21]。",
+        "离线 profiling 与在线轻量量化结合，以消除在线 outlier 检测开销 [P26]。",
+        "低精度优化从 KV cache 扩展到注意力计算全过程 [P08]。"
+      ]
+    },
+    {
+      "category": "异构硬件与内核优化",
+      "overview": "PagedAttention 需要定制融合 kernel 处理非连续 KV block [P01]。vAttention 通过保留虚拟连续内存使用未修改的 FlashAttention-2/FlashInfer/FlashAttention-3，并修改 NVIDIA 驱动支持 64KB 页 [P03]。Pensieve 实现多 token 注意力 kernel 以应对多轮复用场景 [P11]。INT-FlashAttention 在 Ampere GPU 上用 Triton 实现 INT8 注意力 [P08]。Tutti 设计 GPU io_uring 和 GPU 中心对象存储，绕过 CPU 瓶颈 [P17]。TraCT 让 GPU 经 CXL load/store 与 DMA 直访 KV 块，消除 NIC 跳数 [P18]。Oaken 将量化/反量化引擎和双管理表 MMU 集成到 LPU 加速器 [P26]。配置层面的能耗/延迟评估显示 FlashInfer、FlashAttention-3 等内核效果依赖模型与任务 [P29]。",
+      "paper_ids": [
+        "P01",
+        "P03",
+        "P08",
+        "P11",
+        "P17",
+        "P18",
+        "P26",
+        "P29"
+      ],
+      "trends": [
+        "控制路径与数据路径从 CPU 中间层转向 GPU 直访存储/网络 [P17, P18]。",
+        "新型硬件接口如 CUDA VMM、CXL、Green Context 被用于内存和调度协同 [P03, P18]。",
+        "内核与硬件评估同时考虑延迟、能耗和模型-任务交互效应 [P08, P29]。"
+      ]
+    },
+    {
+      "category": "性能评测与成本分析",
+      "overview": "vLLM 的 2–4× 吞吐提升是在 OPT/LLaMA 与 ShareGPT/Alpaca 轨迹上测得 [P01]；SGLang 报告最高 6.4× 吞吐和 3.7× 延迟下降 [P02]；vAttention 在长上下文端到端吞吐上相对 paged 内核最高提升 1.18–1.23× [P03]。Llumnix 以 P99 延迟和抢占损失评估跨实例迁移收益 [P06]；DynaServe 使用 goodput/serving capacity 比较共置与分离式执行 [P14]；Nexus 报告吞吐与 TTFT/TBT 的双目标结果 [P15]。存储层优化论文普遍以 TTFT、TTFT SLO 达成率和每 token 成本作为指标 [P17, P18, P19, P21, P24]。真实工作负载数据集 BurstGPT 与 ServeGen 揭示突发性、长尾长度和多模态预处理影响 [P04, P28]。QLM 以请求等待时间估计提升 SLO 达成率 [P27]；P29 的系统性配置实验发现能量与延迟并不总成正比 [P29]；DeltaServe 在无额外硬件下提升微调吞吐并保持 SLO [P32]。",
+      "paper_ids": [
+        "P01",
+        "P02",
+        "P03",
+        "P04",
+        "P06",
+        "P12",
+        "P13",
+        "P14",
+        "P15",
+        "P17",
+        "P18",
+        "P19",
+        "P21",
+        "P22",
+        "P24",
+        "P26",
+        "P27",
+        "P28",
+        "P29",
+        "P32"
+      ],
+      "trends": [
+        "从吞吐/延迟主指标扩展为 goodput、P99、SLO 达成率、能耗与成本联合评估 [P14, P27, P29, P32]。",
+        "工作负载从合成 Poisson 转向生产 trace 与按客户端生成 [P04, P28]。",
+        "配置交互效应被纳入评测，单因素优化不能保证综合收益 [P29]。"
+      ]
+    },
+    {
+      "category": "可靠性、弹性与可观测性",
+      "overview": "Llumnix 通过请求迁移和 auto-scaling 改善系统弹性，并给出优先级与碎片化控制 [P06]。GRIEF 以带时间多请求轨迹对 vLLM/SGLang 进行灰盒 fuzzing，发现 KV cache 跨请求污染、性能放大和 LoRA 调度器崩溃等 15 个漏洞，其中 10 个由开发者确认 [P30]。TBIK 消除 TP 大小改变带来的浮点非确定性，为 RL 和可复现推理提供确定性保证 [P31]。",
+      "paper_ids": [
+        "P06",
+        "P30",
+        "P31"
+      ],
+      "trends": [
+        "可靠性评估从单请求正确性扩展到并发隔离、调度公平性和崩溃恢复 [P06, P30]。",
+        "确定性执行成为可复现推理和训练管线的重要属性 [P31]。"
+      ]
+    }
+  ],
+  "cross_paper_findings": [
+    "PagedAttention 虽然实现近零 KV cache 浪费，但其非连续块映射造成注意力 kernel 延迟升高、I/O 粒度小和上下文切换开销放大，成为后续 vAttention、FastSwitch、vToken 的共同改进起点 [P01, P03, P12, P24]。",
+    "KV cache 复用机制从 vLLM 的 copy-on-write 请求内共享扩展到 RadixAttention 的前缀树 [P01, P02]，再到 CacheBlend 的非前缀块融合和 Pensieve 的多轮状态复用 [P09, P11]。",
+    "多级存储是长上下文服务的关键趋势：从 CPU DRAM、SSD、CXL 到远程前缀缓存，分层延迟与容量权衡被反复验证 [P11, P17, P18, P19, P20, P21, P23]。",
+    "有损 KV 压缩能成倍降低容量/带宽占用，但单独使用会牺牲质量；通过效用函数联合驱逐或 draft-verify 可实现可控质量或无损输出 [P07, P20, P21, P22, P26]。",
+    "调度层逐步从单实例连续批处理走向跨实例迁移、micro-request 和 SLO 队列管理，缓存感知和公平性成为重要设计约束 [P02, P06, P13, P14, P27]。",
+    "真实生产负载特征与合成假设差异明显：BurstGPT 和 ServeGen 显示突发到达、长尾输出、多模态预处理和推理 token 长尾会显著改变性能结论 [P04, P28]。",
+    "系统配置与不同模型/任务存在强交互，attention kernel、prefix cache 和 chunked prefill 的最优选择并非固定，甚至影响输出准确率 [P29]。",
+    "AI Infra 的软硬件协同正在从 GPU 内核加速扩展到 CXL 共享内存、GPU 直访 SSD 和领域专用加速器，控制路径与数据路径的 CPU 瓶颈逐步被移除 [P03, P17, P18, P26]。"
+  ],
+  "technical_comparisons": [
+    "PagedAttention vs vAttention：PagedAttention 在用户态实现非连续页，需重写内核并维护块表；vAttention 借助 CUDA VMM 保留虚拟连续，使用未修改 FlashAttention，但需要驱动支持 64KB 页 [P01, P03]。",
+    "RadixAttention vs 仅前缀缓存：SGLang 的 radix tree LRU 缓存能跨请求共享非尾部前缀，相比 vLLM 类请求结束丢弃缓存的方式显著提高命中率和吞吐 [P02, P13]。",
+    "FastSwitch vs vLLM block swap：FastSwitch 认为 vLLM 的非连续块分配导致 PCIe I/O 带宽利用不足，改用 buddy 式动态块组和多线程异步交换，在抢占式公平调度下降低尾部延迟 [P12, P01]。",
+    "KIVI vs Oaken vs CacheGen：KIVI 在线按通道/按 token 量化，Oaken 将 outlier 阈值离线化以消除在线排序，CacheGen 则用 delta+算术编码压缩 KV bitstream，三者面向不同瓶颈 [P07, P26, P10]。",
+    "PD 分离系统：DynaServe 在任意 token 边界切分 micro-request，Nexus 在同一 GPU 内动态划分 SM，TraCT 用 CXL 替代 RDMA 传输 KV；它们分别从请求切分、硬件并行和互连路径优化 prefill/decode 解耦 [P14, P15, P18]。",
+    "有损 KV 管理：AdaptCache 和 EVICPRESS 通过效用函数联合压缩率与驱逐/放置，VeriCache 将有损 KV 作为草稿并用全量 KV 验证，后者保证输出无损但需保留全量缓存 [P20, P21, P22]。",
+    "SLO 调度：QLM 基于等待时间估计进行请求拉取/驱逐/模型切换，Llumnix 通过迁移和 virtual usage 优化尾延迟与成本，DynaServe 则用 micro-request 最大化 SLO 约束下 goodput [P27, P06, P14]。",
+    "推理与微调协同：DeltaServe 将 LoRA 前向作为 prefill-only 请求混入推理 batch，并以独立反向子进程让位；相比 LLMStation 和 split-pool 基线在 SLO 合规下提升微调吞吐 [P32]。"
+  ],
+  "research_gaps": [
+    "覆盖缺口：计划 32 份中缺少 P05 与 P25，无法核验这两个报告可能覆盖的训练系统、调度或可靠性主题，完整结论存在不确定性。",
+    "PagedAttention 的 attention kernel 较 FasterTransformer 慢 20–26%，且 vAttention 依赖修改 NVIDIA 驱动才能使用 64KB 页，闭环优化与跨平台可移植性仍待解决 [P01, P03]。",
+    "KV cache 的多级存储主要基于单节点或双节点评估，跨多节点、多租户、更大容量 SSD/CXL 的生产级扩展缺乏系统验证 [P17, P18, P19, P20, P21, P23]。",
+    "公平性与缓存感知调度存在饥饿风险，且客户端间共享前缀的量子扣减尚未解决；程序内数据依赖也未纳入调度 [P02, P13]。",
+    "KV 量化和有损压缩在 MQA、极长上下文和分布漂移下的精度鲁棒性不足，且不同压缩/驱逐方法缺少统一配置池 [P07, P20, P21, P26]。",
+    "确定性执行的延迟开销高达 22%–63%，尚未支持量化格式，也未能与 chunked prefill/continuous batching 结合 [P31]。",
+    "服务层安全与可靠性评估局限于 vLLM/SGLang 和代表性硬件；fuzzing 无法证明无 bug，生产级监控、恢复和隔离策略未被系统研究 [P30]。",
+    "vToken、OrbitFlow、AdaptCache/EVICPRESS 等原型多局限于单节点或单 GPU，对分布式、跨设备 KV 移动和前缀缓存 COW 支持不足 [P20, P21, P23, P24]。",
+    "真实工作负载数据仍缺乏前缀缓存可观测性和长期纵向覆盖，BurstGPT 与 ServeGen 未完全解决此问题 [P04, P28]。"
+  ],
+  "conclusion": "现有报告清楚显示，以 vLLM 为代表的 AI Infra Systems 已从 PagedAttention 的块式内存管理出发，形成内存管理、调度、并行、低精度与硬件协同相互耦合的优化链条 [P01, P02, P06, P07, P17, P26]。内存侧通过分页、虚拟连续、前缀树、多级存储和 token 级虚拟化持续降低 KV cache 成本 [P01, P03, P02, P11, P24]；调度侧通过跨实例迁移、micro-request、SLO 感知与公平感知提升稳定性和吞吐 [P06, P13, P14, P27]；低精度与有损压缩在质量约束下释放容量和带宽 [P07, P20, P21, P22, P26]；软硬件协同正在移除 CPU 控制路径瓶颈并提升内核效率 [P03, P08, P17, P18, P26]。但覆盖缺口 P05/P25 及多项单节点/单引擎限制表明，仍需在更大规模生产环境、统一压缩/驱逐/调度策略和确定性/安全可靠性方面展开验证 [P20, P23, P24, P30, P31]。"
+}

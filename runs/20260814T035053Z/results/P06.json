@@ -1,0 +1,54 @@
+{
+  "task_id": "P06",
+  "paper_id": "2406.03243",
+  "title": "Llumnix: Dynamic Scheduling for Large Language Model Serving",
+  "one_sentence_summary": "Llumnix 通过跨模型实例的运行时请求重调度和 KV cache 实时迁移，将负载均衡、去碎片化、优先级隔离和自动扩缩容统一为基于虚拟用量的动态调度策略，从而显著改善尾延迟、高优先级请求加速和成本效率。",
+  "research_question": "请求状态的实时迁移如何在多个模型实例之间实现动态调度？",
+  "methodology": "论文提出 Llumnix，在 vLLM 等推理引擎之上实现调度层。核心机制是请求的 live migration：利用 KV cache 的 append-only 特性，将 KV cache 拷贝与解码计算多阶段流水线重叠，并通过源/目标实例之间的握手协议处理预分配、中止和提交。调度架构采用全局调度器加每实例 llumlet 的分布式设计，全局调度只基于实例负载而非单个请求状态。调度策略引入 virtual usage（虚拟用量）统一负载均衡、去碎片化、优先级隔离和自动扩缩容：排队请求、高优先级请求和终止实例会被赋予额外虚拟用量，使实例虚拟过载，从而触发迁移。实现约 3300 行 Python，使用 Ray actor 管理和 Gloo 传输 KV cache。",
+  "experimental_setup": "在 16 块 A10 GPU 集群（4 台 ecs.gn7i-c32g1.32xlarge，每台 4 卡）上评测 LLaMA-7B 和 LLaMA-30B，使用 ShareGPT、BurstGPT 真实轨迹以及幂律合成长度分布、Poisson/Gamma 到达过程，与 round-robin、INFaaS++ 和 Llumnix-base 对比；另用 64 个 LLaMA-7B 实例的睡眠模拟进行调度压力测试。",
+  "main_contributions": [
+    "揭示 LLM 服务中异构、不可预测请求带来的隔离、碎片化和优先级等调度挑战。",
+    "提出基于 KV cache 实时迁移的请求重调度机制，实现近零且与序列长度基本无关的停机时间。",
+    "设计全局调度器与 llumlet 结合的分布式调度架构，使连续动态重调度具备可扩展性。",
+    "提出 virtual usage 抽象，用统一负载均衡策略表达去碎片化、优先级和自动扩缩容等多重目标。",
+    "实现并开源 Llumnix，在尾延迟、高优先级加速和成本节省上优于对比系统。"
+  ],
+  "key_findings": [
+    "迁移停机时间约为 20-30 ms，几乎不随序列长度增长，远低于重计算和阻塞拷贝；迁移对同实例其他请求的性能影响最多约 1%。",
+    "相比 INFaaS，Llumnix 将 P99 prefill 延迟提升最高 15×，P99 decode 延迟提升最高 2×，并减少平均 70.4% 的抢占损失。",
+    "在 M-M 轨迹片段中，Llumnix 的平均内存碎片比例从 INFaaS++ 的 7.9% 降至 0.7%，约降低 92%。",
+    "高优先级请求的平均延迟提升 1.2× 至 1.5×，同时普通请求的性能基本保持（平均请求延迟最多增加 4.5%）。",
+    "在自动扩缩容场景下，Llumnix 在保持相似 P99 prefill 延迟的同时可节省最高 36% 成本。",
+    "在 64 实例压力测试中，集中式调度的调度停顿最高达 40ms/迭代，而 Llumnix 的分布式调度接近零停顿。"
+  ],
+  "limitations": [
+    "目前仅支持 vLLM 作为后端推理引擎，对其他引擎的可扩展性尚未验证。",
+    "当前优先级只支持 high 和 normal 两类。",
+    "virtual usage 规则采用简单启发式，例如排队请求直接使用真实内存需求，更多策略调优留作未来工作。",
+    "尚未支持跨多个模型类型/变体的调度，论文将其列为未来工作。"
+  ],
+  "relation_to_topic": "该论文聚焦在线推理阶段的请求调度与 KV Cache 内存管理，直接回答 AI Infra 如何通过跨实例动态调度和内存状态迁移改善吞吐、延迟、成本效率与 SLO：以运行时重调度替代一次性分发，缓解负载不均、内存碎片化和优先级干扰，并通过自动扩缩容提升成本效率，与 vLLM 等单实例引擎形成互补。",
+  "categories": [
+    "推理服务与请求调度",
+    "KV Cache与内存管理",
+    "性能评测与成本分析",
+    "可靠性、弹性与可观测性"
+  ],
+  "evidence": [
+    {
+      "claim": "Llumnix 利用 KV cache 只追加不改写的特性，将 KV cache 拷贝与解码计算流水线重叠，从而实现迁移期间的近零停机。",
+      "quote": "The live migration mechanism of Llumnix utilizes the inherent append-only characteristic of KV cache to pipeline the KV cache copying with the decoding computation.",
+      "page": 5
+    },
+    {
+      "claim": "在分布式调度架构下，Llumnix 用动态调度策略将不同目标的重调度场景统一起来，而该策略正是基于请求迁移带来的调度灵活性。",
+      "quote": "Llumnix further introduces a dynamic scheduling policy under this architecture that unifies all the rescheduling scenarios with different goals elegantly.",
+      "page": 2
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "如何将 Llumnix 的迁移与实例内调度技术（如抢占式调度、公平调度）进一步结合？",
+    "如何扩展到多模型类型/变体，以同时考虑延迟/吞吐与精度之间的更大权衡空间？"
+  ]
+}

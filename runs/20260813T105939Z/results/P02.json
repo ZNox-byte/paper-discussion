@@ -1,0 +1,51 @@
+{
+  "task_id": "P02",
+  "paper_id": "2412.19437",
+  "title": "DeepSeek-V3 Technical Report",
+  "one_sentence_summary": "DeepSeek-V3 技术报告提出一个 671B 总参数、37B 激活参数的 MoE 语言模型，采用 MLA、DeepSeekMoE、无辅助损失负载均衡、多 Token 预测、FP8 训练和 DualPipe 等技术，以 14.8T token 预训练并达到与领先闭源模型相当的性能。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？本篇聚焦：无辅助损失（auxiliary-loss-free）负载均衡如何提升 MoE 训练稳定性与性能。",
+  "methodology": "论文为技术报告，描述了从架构到训练、后训练和部署的完整技术路线：包括 MLA、DeepSeekMoE、无辅助损失负载均衡、MTP 目标、FP8 混合精度训练、DualPipe 流水线并行、跨节点 all-to-all 通信优化、长上下文扩展、SFT/RL 后训练以及多种基准评测和消融实验。",
+  "data_and_training": "预训练使用 14.8T 高质量多样化 token，采用文档打包和 FIM（PSM）策略，词表为 128K；模型共 61 层、隐藏维 7168，总参数 671B、每 token 激活 37B；预训练后经两阶段上下文扩展到 128K，随后进行 SFT 和 RL（GRPO），并从 DeepSeek-R1 蒸馏推理能力。",
+  "main_contributions": [
+    "在 DeepSeek-V2 的 MLA 与 DeepSeekMoE 基础上，提出无辅助损失负载均衡策略，减少负载均衡对模型性能的损害。",
+    "引入多 Token 预测（MTP）训练目标，可提升基准性能并可用于推测解码加速推理。",
+    "设计 FP8 混合精度训练框架，并首次在大规模模型上验证其有效性；结合 DualPipe 与跨节点通信优化实现高效训练。",
+    "提出从 DeepSeek-R1 蒸馏长思维链推理能力到标准 LLM 的后训练方法。"
+  ],
+  "key_findings": [
+    "无辅助损失负载均衡通过在训练中动态调整每个专家的 bias 项来保持 batch 级负载均衡，避免纯辅助损失对性能的负面影响；消融实验显示其在大多数评测基准上优于基于辅助损失的方法。",
+    "与基于辅助损失的方法相比，无辅助损失策略在大多数评测基准上一致取得更好的模型性能。",
+    "MTP 策略在消融中一致提升大多数评测基准的性能。",
+    "FP8 训练与 BF16 相比相对损失误差低于 0.25%。",
+    "DeepSeek-V3 全训练仅需 2.788M H800 GPU 小时，预训练过程无不可恢复的 loss spike，也无需回滚。"
+  ],
+  "limitations": [
+    "为确保高效推理，DeepSeek-V3 的推荐部署单元相对较大，可能给小型团队带来负担。",
+    "虽然部署策略已使端到端生成速度超过 DeepSeek-V2 的两倍，但仍有进一步提升空间。"
+  ],
+  "relation_to_deepseek": "本文是 DeepSeek 系列的关键技术报告，直接承继 DeepSeek-V2 的 MLA 与 DeepSeekMoE，并引入无辅助损失负载均衡、MTP、FP8 训练、R1 蒸馏等，构成 DeepSeek 系列后续模型的重要技术基础。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "系统效率与部署",
+    "推理与强化学习"
+  ],
+  "evidence": [
+    {
+      "claim": "无辅助损失负载均衡通过训练中动态调整 bias 项保持专家负载均衡，并比纯辅助损失方法取得更好性能。",
+      "quote": "Through the dynamic adjustment, DeepSeek-V3 keeps balanced expert load during training, and achieves better performance than models that encourage load balance through pure auxiliary losses.",
+      "page": 9
+    },
+    {
+      "claim": "消融实验表明，与纯辅助损失方法相比，无辅助损失策略在大多数评测基准上一致取得更好性能。",
+      "quote": "From the table, we can observe that the auxiliary-loss-free strategy consistently achieves better model performance on most of the evaluation benchmarks.",
+      "page": 27
+    }
+  ],
+  "confidence": 0.92,
+  "unanswered_questions": [
+    "无辅助损失负载均衡中 bias 更新速度 γ 在不同模型规模或训练阶段的最优调度是否仍然成立？",
+    "batch 级负载均衡在推理阶段遇到领域偏移时，冗余专家部署之外是否还有其他更优的应对方式？",
+    "MTP 训练目标与推测解码之间的收益权衡是否可以进一步优化？"
+  ]
+}

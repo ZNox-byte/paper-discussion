@@ -1,0 +1,65 @@
+{
+  "task_id": "P26",
+  "paper_id": "2502.11137",
+  "title": "Safety Evaluation of DeepSeek Models in Chinese Contexts",
+  "one_sentence_summary": "该论文引入了中文安全评估基准CHiSafetyBench，并系统评估了DeepSeek-R1和DeepSeek-V3在中文语境下的安全性能，量化了它们在歧视、价值观违规等类别的缺陷。",
+  "research_question": "DeepSeek系列模型在中文语境下存在哪些安全缺陷？",
+  "methodology": "采用CHiSafetyBench基准，依据中国政府发布的《生成式人工智能服务基本安全要求》中的分层安全分类法，对DeepSeek-R1(671B)和DeepSeek-V3进行多层级、细粒度的中文安全评估；评估包括风险内容识别（多项选择题，使用ACC指标）和风险问题拒绝回答（使用RR-1、RR-2、HR指标）两类任务，并与来自Baichuan、ChatGLM、Qwen、Yi等系列的10个中文模型进行对比。",
+  "data_and_training": "该研究使用CHiSafetyBench基准，涵盖歧视、价值观违规、商业违规、权利侵害和特定服务安全要求5个主要安全领域；具体任务包括多项选择题和风险问题，但论文未报告训练数据或训练过程。",
+  "main_contributions": [
+    "引入了中文安全评估基准CHiSafetyBench，用于系统评估DeepSeek模型在中文语境下的安全性。",
+    "首次对DeepSeek-R1进行了中文语境下的安全评估。",
+    "量化了DeepSeek-R1和DeepSeek-V3在多个安全类别中的缺陷，并与多个主流中文模型进行了对比分析。"
+  ],
+  "key_findings": [
+    "在风险内容识别多项选择任务中，DeepSeek-R1的总体ACC为71.14%，DeepSeek-V3为84.17%，分别比表现最好的Qwen1.5-72B-Chat低19.72%和6.96%。",
+    "DeepSeek模型在歧视类别表现尤为薄弱：DeepSeek-R1的ACC为50.22%，DeepSeek-V3为66.96%，分别比最佳Qwen模型低36.30%和19.56%。",
+    "在拒绝风险问题任务中，DeepSeek-R1的RR-1和RR-2分别为67.60%和67.17%，比最佳Qwen1.5-32B-Chat低10.11%和10.10%；DeepSeek-V3更低（59.83%和59.61%），比最佳模型低17.88%和17.66%。",
+    "DeepSeek-R1在歧视类风险拒绝上的RR-1/RR-2均为31.98%，DeepSeek-V3仅为23.86%/23.35%，远低于最佳模型，表明拒绝歧视性风险问题的能力显著不足。",
+    "与DeepSeek-V3相比，DeepSeek-R1的总体ACC下降12.76%，但在拒绝任务上RR-1和RR-2分别提升7.77%和7.56%，同时有害率HR增加0.22%。",
+    "不良案例显示，DeepSeek模型在主权问题判断、极端行为识别、年龄歧视风险识别以及贿赂建议等方面出现错误或不当响应。"
+  ],
+  "limitations": [
+    "论文明确承认评估基准存在固有局限，包括测试样本选择、数据分布特征和评估标准设置可能引入偏差。",
+    "评估结果可能并非最客观、最全面或最准确，作者建议参考论文最新版本获取更新结果。",
+    "正文报告的DeepSeek-R1总体ACC为71.14%，而表格中显示为71.41%，存在不一致。",
+    "仅评估了DeepSeek-R1和DeepSeek-V3两个模型，未涵盖其他DeepSeek版本。"
+  ],
+  "relation_to_deepseek": "本文直接针对DeepSeek-R1和DeepSeek-V3进行中文安全评估，揭示其在歧视、价值观违规、拒绝安全等方面存在的缺陷，为DeepSeek模型的安全优化提供方向。",
+  "categories": [
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "论文引入CHiSafetyBench作为中文安全评估基准。",
+      "quote": "this study introduces CHiSafetyBench, a Chinese-specific safety evaluation benchmark.",
+      "page": 1
+    },
+    {
+      "claim": "DeepSeek-R1和DeepSeek-V3在多项选择风险内容识别中的总体准确率分别比最佳模型低19.72%和6.96%。",
+      "quote": "the overall ACC of DeepSeek-R1 and DeepSeek-V3 are 71.14% and 84.17%, respectively. These values are 19.72% and 6.96% lower than the top-performing Qwen1.5-72B-Chat.",
+      "page": 4
+    },
+    {
+      "claim": "DeepSeek-R1在歧视类别的ACC为50.22%，比最佳Qwen模型低36.30%。",
+      "quote": "the DeepSeek-R1 model performs particularly poorly in the discrimination and values of violations categories, with ACC of 50.22% and 64.91%, respectively. These values are 36.30% and 28.82% lower than the best-performing Qwen series models.",
+      "page": 5
+    },
+    {
+      "claim": "DeepSeek-R1的拒绝率RR-1和RR-2分别只有67.60%和67.17%，比最佳模型低10.11%和10.10%。",
+      "quote": "the RR-1 and RR-2 of DeepSeek-R1 are only 67.60% and 67.17% respectively, which are 10.11% and 10.10% lower than the best-performing Qwen1.5-32B-Chat.",
+      "page": 5
+    },
+    {
+      "claim": "评估基准存在固有局限，如样本选择、数据分布和评估标准设置可能引入偏差。",
+      "quote": "any evaluation benchmark inherently has certain limitations, including the selection of test samples, characteristics of data distribution, and the setting of evaluation criteria.",
+      "page": 7
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "DeepSeek模型在中文语境下安全缺陷的根本原因是什么？",
+    "如何针对歧视和价值观违规等薄弱类别改进DeepSeek模型的安全能力？",
+    "CHiSafetyBench的样本分布和评估标准应如何优化以进一步减少偏差？"
+  ]
+}

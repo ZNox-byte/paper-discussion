@@ -1,0 +1,63 @@
+{
+  "task_id": "P02",
+  "paper_id": "2405.04434",
+  "title": "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model",
+  "one_sentence_summary": "DeepSeek-V2 是一个总参数 236B、每 token 激活 21B 的 MoE 语言模型，通过多头潜在注意力（MLA）和 DeepSeekMoE 实现高效推理与低成本训练，在开源模型中取得顶尖性能。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "通过设计 MLA 低秩键值联合压缩与解耦 RoPE 降低 KV 缓存，采用 DeepSeekMoE 细粒度专家分割、共享专家、设备限制路由和负载均衡辅助损失实现稀疏训练；在 8.1T 双语 tokens 上预训练，经 YaRN 扩展至 128K 上下文，再用 1.5M 指令样本进行 SFT 和基于 GRPO 的两阶段 RL 对齐；最后在多种中英文基准上评估。",
+  "data_and_training": "预训练语料 8.1T tokens（BBPE 词表 100K，中文 tokens 比英文多约 12%）；模型 60 层，隐藏维度 5120，MoE 层含 2 共享专家和 160 路由专家，每 token 激活 6 个；使用 AdamW，最大学习率 2.4e-4，batch size 从 2304 增至 9216；在 HAI-LLM 框架上采用 16 路 zero-bubble 流水线并行、8 路专家并行和 ZeRO-1 数据并行；SFT 数据 1.5M（1.2M helpfulness, 0.3M safety），RL 使用 GRPO 分推理对齐和人类偏好对齐两阶段。",
+  "main_contributions": [
+    "提出 Multi-head Latent Attention（MLA），通过低秩键值联合压缩大幅减少 KV 缓存，同时保持优于 MHA 的性能；",
+    "将 DeepSeekMoE 架构扩展到 236B 规模，采用细粒度专家分割和共享专家隔离，并设计设备限制路由、三种负载均衡辅助损失和 token-dropping 策略；",
+    "相比 DeepSeek 67B，实现 42.5% 训练成本节省、93.3% KV 缓存压缩和 5.76 倍最大生成吞吐提升；",
+    "开源模型权重，并发布轻量版 DeepSeek-V2-Lite 以促进 MLA 和 DeepSeekMoE 的研究。"
+  ],
+  "key_findings": [
+    "仅激活 21B 参数即在 MMLU 等基准上取得开源模型顶尖性能，成为最强开源 MoE 模型；",
+    "MLA 的 KV 缓存量相当于 GQA 2.25 组，但性能优于 MHA；",
+    "DeepSeek-V2 Chat (RL) 在 AlpacaEval 2.0 获得 38.9 长度控制胜率，MT-Bench 8.97，AlignBench 7.91，中文表现优于所有开源模型；",
+    "SFT 数据量少于 10K 会导致 IFEval 性能显著下降；",
+    "RL 对齐存在 'alignment tax'，但通过数据与训练策略优化可达到可接受的权衡。"
+  ],
+  "limitations": [
+    "与其他 LLM 一样，存在知识更新滞后、可能产生非事实性信息或幻觉等问题；",
+    "预训练数据主要包含中英文，其他语言能力有限；",
+    "由于预训练数据去偏，模型在某些受特定区域文化影响的评测子集（如 MMLU Humanity-Moral）上表现略差。"
+  ],
+  "relation_to_deepseek": "本文是 DeepSeek 系列的重要迭代，以 DeepSeek 67B 为基线，首次在开源模型中大规模引入 MLA 和 DeepSeekMoE，从架构层面确立高效 MoE 训练与推理路线，为后续 DeepSeek 模型的规模化提供基础。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "系统效率与部署",
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-V2 采用创新的 MLA 和 DeepSeekMoE 架构。",
+      "quote": "DeepSeek-V2 adopts innovative architectures including Multi-head Latent Attention (MLA) and DeepSeekMoE.",
+      "page": 1
+    },
+    {
+      "claim": "MLA 通过低秩键值联合压缩实现优于 MHA 的性能并显著减少 KV 缓存。",
+      "quote": "Equipped with low-rank key-value joint compression, MLA achieves better performance than MHA, but requires a significantly smaller amount of KV cache.",
+      "page": 6
+    },
+    {
+      "claim": "与 DeepSeek 67B 相比，DeepSeek-V2 节省 42.5% 训练成本，减少 93.3% KV 缓存，并将最大生成吞吐提升至 5.76 倍。",
+      "quote": "Compared with DeepSeek 67B, DeepSeek-V2 achieves significantly stronger performance, and meanwhile saves 42.5% of training costs, reduces the KV cache by 93.3%, and boosts the maximum generation throughput to 5.76 times.",
+      "page": 1
+    },
+    {
+      "claim": "DeepSeekMoE 通过更细粒度的专家分割和共享专家隔离来提升专家专业化并减少知识冗余。",
+      "quote": "DeepSeekMoE has two key ideas: segmenting experts into finer granularity for higher expert specialization and more accurate knowledge acquisition, and isolating some shared experts for mitigating knowledge redundancy among routed experts.",
+      "page": 9
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "论文未报告 MLA 在其他模型规模或任务上的系统性消融（仅与 MHA 对比）；",
+    "没有提供训练过程中的总 GPU 时长或碳排放数据；",
+    "多模态扩展、与 GPT-4 等闭源模型的直接对比等未来工作尚无具体方案。"
+  ]
+}

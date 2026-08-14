@@ -1,0 +1,47 @@
+{
+  "task_id": "P31",
+  "paper_id": "2511.17826",
+  "title": "Deterministic Inference across Tensor Parallel Sizes That Eliminates Training–Inference Mismatch",
+  "one_sentence_summary": "提出 Tree-Based Invariant Kernels (TBIK)，通过让 GPU 内 MatMul 与 GPU 间 All-Reduce 共用固定全二叉树归约拓扑，实现不同张量并行大小下 vLLM 推理的逐位一致，并消除 RL 中 rollout 与 training 引擎之间的概率失配。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？",
+  "methodology": "论文提出 TBIK，将输入矩阵沿 K 维切成 tile，并在每个 GPU 内用深度为 L=log2(TK/C) 的固定二叉累加树组织局部 MatMul；跨 GPU 使用遵循同一二叉树拓扑的自定义 Tree-Based All-Reduce，从而保证无论 TP 大小如何，全局浮点累加顺序都保持一致。内核用 Triton 实现，并与 Batch-Invariant Operations (BIO) 配合集成到 vLLM 和 FSDP 中。",
+  "experimental_setup": "在 vLLM 后端上对 Qwen3-8B、Qwen3-32B、Mistral-7B-Instruct-v0.3、Llama-3.1-8B-Instruct 评估 AIME24 和 AMC23，覆盖 TP=1/2/4/8 与 BS=8/16/32（Qwen3-32B 为 TP=2/4/8、9 种配置），并在 NVIDIA RTX PRO 6000 和 L40S 两种 GPU 上重复实验；随机采样使用固定 seed=42 和官方解码参数。RL 实验使用 GRPO 在 GSM8K 上以 4 张 NVIDIA L40S 进行，vLLM 使用 TP=4，FSDP 使用 TP=1，模型为 Qwen3-1.7B；训练使用 256 道题、评测 64 道题，最大新 token 数 512，group size 8，rollout batch 64，training batch 32，学习率 1e-5。",
+  "main_contributions": [
+    "识别了张量并行大小变化导致的非确定性，并分析其对基准评测和 RL 训练的影响。",
+    "提出 Tree-Based Invariant Kernels，通过固定 intra-GPU MatMul 与 inter-GPU All-Reduce 的层级归约顺序，消除 TP 导致的非确定性。",
+    "将 TBIK 集成进 vLLM 与 FSDP，实现跨框架的逐位一致推理，使 RL 管线实现真正 on-policy 训练。"
+  ],
+  "key_findings": [
+    "在 AIME24/AMC23 上，vanilla BF16 下不同 TP/BS 配置会产生接近配置数量的不同输出；BIO 只能缓解 batch 维度影响，而 BIO+TBIK 使所有模型的 Count of Unique Outputs 降为 1，Maximum Probability Divergence 严格为 0。",
+    "端到端延迟评估中，BIO+TBIK 相比 vanilla BF16 引入约 22% 到 63% 的总开销，其中 BIO 贡献约 10~33%，纯 TBIK 额外贡献约 5~30%。",
+    "在 GRPO/GSM8K RL 实验中，TBIK 使 vLLM 与 FSDP 的逐 token 概率完全一致、KL 散度为 0，最终 Pass@1 达到 0.73，高于 BIO 的 0.68 和 BF16 的 0.60。"
+  ],
+  "limitations": [
+    "当前 TBIK 为验证可行性而实现，性能尚未充分优化：Tree-Based MatMul 在 BF16 下吞吐约 120 TFLOPS，约为 cuBLAS 190 TFLOPS 的 63%；端到端确定性推理相比 vanilla BF16 有 22% 到 63% 的开销。",
+    "论文尚未支持量化数据类型，未来工作计划将确定性保证扩展到量化设置。"
+  ],
+  "relation_to_topic": "该工作直接回应 AI Infra Systems 中并行执行与可靠性的核心问题：不同 TP 配置下浮点非结合律会导致 vLLM 推出不同结果；TBIK 通过固定层级归约顺序，在不改动内存管理与请求调度的前提下实现跨 TP 大小和跨框架的 bit-wise 确定性推理，并消除 RL 训练/推理概率失配，提升大规模在线推理与训练的可复现性和稳定性。",
+  "categories": [
+    "并行计算与分布式执行",
+    "推理服务与请求调度",
+    "可靠性、弹性与可观测性",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "TBIK 的核心设计是让累加顺序与 TP 大小无关，通过固定全二叉树拓扑同时约束局部 MatMul 与分布式 All-Reduce。",
+      "quote": "The core principle of TBIK is to make the accumulation order independent of the TP size. Specifically, we impose a fixed full binary-tree reduction topology shared by local MatMul and distributed collective operations.",
+      "page": 5
+    },
+    {
+      "claim": "在 AIME24/AMC23 的多个模型与运行时配置评测中，BIO+TBIK 实现了严格为零的最大概率散度，即逐位确定性的 LLM 推理。",
+      "quote": "In contrast, BIO+TBIK achieves a strictly zero Maximum Probability Divergence across all experimental settings, demonstrating bit-wise deterministic LLM inference.",
+      "page": 7
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "如何进一步优化 Tree-Based MatMul 和 Tree-Based All-Reduce，以降低确定性推理在生产场景中的性能开销？",
+    "如何将 TBIK 的确定性保证扩展到 INT4/INT8 等量化数据类型？"
+  ]
+}

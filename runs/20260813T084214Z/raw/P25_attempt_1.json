@@ -1,0 +1,51 @@
+{
+  "task_id": "P25",
+  "paper_id": "2504.10081",
+  "title": "RealSafe-R1: Safety-Aligned DeepSeek-R1 without Compromising Reasoning Capability",
+  "one_sentence_summary": "本论文提出RealSafe-R1，通过生成安全感知的推理轨迹并对DeepSeek-R1蒸馏模型进行监督微调，在不损害推理能力的前提下显著提升了安全性。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "构建包含15k条安全感知推理轨迹的数据集，使用DeepSeek-R1在明确的安全指令下生成拒绝响应，然后对DeepSeek-R1蒸馏模型进行监督微调（SFT）。",
+  "data_and_training": "数据来自PKU-SafeRLHF和JailbreakV-28k，筛选不安全提示，生成10k直接有害查询和5k越狱提示的拒绝轨迹。训练使用LLaMA-Factory，在NVIDIA A800 GPU上进行，训练1个epoch，批大小128，学习率5e-6，预热比例0.1。",
+  "main_contributions": [
+    "发布了RealSafe-R1系列，即DeepSeek-R1蒸馏模型的安全对齐版本。",
+    "构建了15k条安全感知推理轨迹数据集，涵盖直接有害查询和越狱提示。",
+    "通过监督微调有效提升了模型安全性，且保持推理能力不下降。",
+    "在多个安全基准上验证了方法有效性，并与SafeChain等基线进行比较。"
+  ],
+  "key_findings": [
+    "RealSafe-R1在StrongREJECT上显著降低了有害得分，例如32B模型在PAP攻击下从0.61降至0.10。",
+    "RealSafe-R1在XSTest和WildChat上的拒绝率大幅提升，同时保持或略微改善了通用推理基准（如MATH-500、AIME、GPQA、LiveCodeBench、TruthfulQA）上的表现。",
+    "观察到过度拒绝现象，表明安全性与保守性之间存在权衡。"
+  ],
+  "limitations": [
+    "过度拒绝行为仍然存在，可能由于训练数据中缺少良性查询，计划在后续工作中解决。"
+  ],
+  "relation_to_deepseek": "该工作直接针对DeepSeek-R1蒸馏模型进行安全对齐，利用DeepSeek的推理蒸馏思想生成安全感知的推理轨迹，并发布开源模型。",
+  "categories": [
+    "对齐、安全与评测",
+    "训练数据与训练方法"
+  ],
+  "evidence": [
+    {
+      "claim": "RealSafe-R1模型在安全意识上相比DeepSeek-R1系列有显著提升。",
+      "quote": "RealSafe-R1 models exhibit a significant improvement in safety awareness compared to the DeepSeek-R1 series.",
+      "page": 5
+    },
+    {
+      "claim": "尽管侧重于安全，RealSafe-R1模型仍保持了强大的通用能力。",
+      "quote": "Despite the focus on safety, RealSafe-R1 models retain strong general capabilities.",
+      "page": 5
+    },
+    {
+      "claim": "方法使用DeepSeek-R1在明确指令下生成安全感知的推理轨迹。",
+      "quote": "we generate safety-aware reasoning trajectories using DeepSeek-R1 under explicit instructions for safe behaviors.",
+      "page": 2
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "该方法是否适用于更大规模的DeepSeek-R1模型（如670B）尚未探索。",
+    "过度拒绝问题如何在不影响安全性的前提下缓解？",
+    "所构建的数据集能否扩展到更多安全类别和更复杂的越狱场景？"
+  ]
+}

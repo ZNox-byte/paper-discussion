@@ -1,0 +1,16 @@
+{
+  "status": "failed",
+  "title": "以 vLLM 为代表的 AI Infra Systems 论文综述",
+  "round_number": 1,
+  "parent_run": null,
+  "previous_paper_count": 0,
+  "target_papers": 32,
+  "models": {
+    "screening": "deepseek-v4-flash",
+    "reading": "deepseek-v4-flash",
+    "synthesis": "deepseek-v4-pro"
+  },
+  "reader_concurrency": 32,
+  "run_directory": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+  "error": "Synthesis failed validation twice: [\"synthesis contains invented citations: ['P05', 'P25', 'P99']\"]"
+}

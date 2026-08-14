@@ -1,0 +1,59 @@
+{
+  "task_id": "P05",
+  "paper_id": "2512.02556",
+  "title": "DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models",
+  "one_sentence_summary": "本文介绍 DeepSeek-V3.2，通过引入 DeepSeek Sparse Attention（DSA）在保持长上下文性能的同时大幅降低注意力计算复杂度，并结合可扩展强化学习框架与大规模智能体任务合成管线，推动开放大模型在推理和智能体能力上的前沿。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "DSA 由闪电索引器和细粒度令牌选择机制组成，基于 MLA 的 MQA 模式实现。通过持续预训练（包含稠密预热阶段和稀疏训练阶段）将 DSA 引入 DeepSeek-V3.2。在稠密预热阶段，仅训练闪电索引器，使用 KL 散度损失对齐索引器输出与主注意力分布；在稀疏训练阶段，优化所有模型参数，同时保持索引器与主注意力分布的对齐。训练数据采用与 DeepSeek-V3.1-Terminus 128K 长上下文扩展数据完全对齐的分布。后训练沿用 DeepSeek-V3.2-Exp 流程，包括专家蒸馏和混合 RL 训练。",
+  "data_and_training": "持续预训练使用与 DeepSeek-V3.1-Terminus 128K 长上下文扩展数据完全对齐的数据分布。稠密预热阶段训练索引器 1000 步，每步 16 个 128K 序列，共 2.1B tokens；稀疏训练阶段训练 15000 步，每步 480 个 128K 序列，共 943.7B tokens。后训练阶段，DeepSeek-V3.2 采用与 DeepSeek-V3.2-Exp 相同的流程，包括专家蒸馏和混合 RL 训练，其中 RL 训练采用 GRPO 算法，并应用无偏 KL 估计、Off-Policy 序列掩码、Keep Routing、Keep Sampling Mask 等稳定化策略。",
+  "main_contributions": [
+    "提出 DeepSeek Sparse Attention（DSA），显著降低长序列计算复杂度并保持模型性能。",
+    "开发可扩展强化学习框架，后训练计算预算超过预训练成本 10%，使 DeepSeek-V3.2 与 GPT-5 性能相当，Special 变体超越 GPT-5 并与 Gemini-3.0-Pro 比肩。",
+    "构建大规模智能体任务合成管线，生成 1800+ 环境和 85,000 复杂 prompt，提升工具使用泛化能力。"
+  ],
+  "key_findings": [
+    "DSA 将核心注意力复杂度从 O(L^2) 降至 O(Lk)，闪电索引器虽为 O(L^2) 但计算量远小于 MLA。",
+    "标准基准和人类偏好评估表明，DSA 在短上下文和长上下文任务上均未出现显著性能退化。",
+    "DSA 结合优化实现显著端到端长上下文加速，推理成本降低。",
+    "可扩展 RL 框架使 DeepSeek-V3.2 在推理基准上达到 GPT-5 水平，Special 变体在多个基准上超过 Gemini-3.0-Pro，并在 IMO、IOI 等竞赛中取得金牌。",
+    "大规模智能体任务合成数据在 RL 中有效提升模型在 Tau2Bench、MCP-Mark 等基准上的泛化能力。"
+  ],
+  "limitations": [
+    "世界知识广度仍落后于领先闭源模型，计划通过扩展预训练计算解决。",
+    "token 效率较低，需要更长生成轨迹才能匹配 Gemini-3.0-Pro 的输出质量。",
+    "解决复杂任务的能力仍不如前沿模型。",
+    "闪电索引器本身仍为 O(L^2) 复杂度，尽管计算量较小。"
+  ],
+  "relation_to_deepseek": "本文是 DeepSeek 系列模型的技术报告，介绍 DeepSeek-V3.2 在架构（引入 DSA）、后训练（RL 扩展与智能体任务合成）方面的进展，属于 DeepSeek 开源模型迭代的一部分。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "系统效率与部署",
+    "对齐、安全与评测",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "DSA 将主模型的核心注意力复杂度从 O(L^2) 降低到 O(Lk)，k 为选中的令牌数，远小于序列长度 L。",
+      "quote": "DSA reduces the core attention complexity of the main model from O(L^2) toO(Lk), where k (≪L) is the number of selected tokens.",
+      "page": 5
+    },
+    {
+      "claim": "在标准基准上，DSA 在显著提升长序列计算效率的同时，与 DeepSeek-V3.1-Terminus 相比，在短上下文和长上下文任务上均未观察到明显性能下降。",
+      "quote": "While DeepSeek V3.2 Exp significantly improves computational efficiency on long sequences, we do not observe substantial performance degradation compared with DeepSeek-V3.1-Terminus, on both short- and long-context tasks.",
+      "page": 5
+    },
+    {
+      "claim": "闪电索引器虽然仍具有 O(L^2) 复杂度，但所需计算远小于 MLA，结合优化实现可实现端到端加速。",
+      "quote": "Although the lightning indexer still has a complexity of O(L^2), it requires much less computation compared with MLA in DeepSeek-V3.1-Terminus.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "闪电索引器的具体参数量或计算开销占比未给出定量分析。",
+    "DSA 在极长上下文（超过128K）下的扩展性未讨论。",
+    "不同稀疏度 k 的选择对性能和效率的具体影响未详细说明。"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "task_id": "P16",
+  "paper_id": "2504.09590",
+  "title": "Efficient LLM Serving on Hybrid Real-time and Best-effort Requests",
+  "one_sentence_summary": "BROS通过迭代级动态优先级调度与双向KV缓存块共享，将实时（RT）与尽力而为（BE）请求共置于同一LLM服务中，在显著降低RT延迟并提升SLO达成率的同时，仅以较小吞吐损失换取BE请求的持续处理。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？",
+  "methodology": "BROS将混合RT/BE请求调度建模为迭代级选择问题的变体，目标是在满足每个RT请求TTFT/TPOT SLO约束下最大化BE请求吞吐。调度器使用基于剩余时间优先级的贪心打包算法：先按剩余SLO时间升序挑选RT请求，再在批未满或可替换低优先级RT请求时加入BE请求；并引入类似TCP拥塞控制的自适应批大小机制，根据运行时SLO达成情况动态调节批大小。为降低调度开销，采用部分排序和双队列轮询。KV缓存管理采用双向块布局，RT与BE请求在同一block内相向扩展存储KV cache，配合块抢占（block preemption）和lazy checkpointing，减少D2H交换与重算开销。实现上基于Ray、NCCL、PyTorch和Xformers，并修改PagedAttention kernel以支持双向方向和异步换入换出。",
+  "experimental_setup": "评估使用OPT-13B、OPT-30B和Llama-3-70B模型；OPT实验在4张NVIDIA A100-40GB GPU上运行，Llama-3实验在8张A100-80GB GPU上运行，张量并行度分别为2、4、8。RT请求基于ShareGPT与LMSYS-CHAT-1M数据集合成，BE请求为FlexGen式合成工作负载（prompt长度U(512,1024)，输出长度U(32,128)）。基线包括vLLM、TGI和移除关键机制的BROS-RR。指标包括RT归一化延迟、TTFT/TPOT SLO达成率以及BE吞吐（req/s），所有实验使用10分钟traces，KV cache block size设为16。",
+  "main_contributions": [
+    "提出BROS，一个面向混合RT/BE请求的LLM服务系统，旨在共置两类请求并同时满足RT延迟SLO与BE吞吐目标。",
+    "形式化混合RT/BE请求的迭代级调度问题，提出动态优先级打包算法与SLO感知的自适应批大小机制。",
+    "设计双向KV缓存管理机制，包括双向块布局、块抢占和lazy checkpointing，解决RT/BE请求间的GPU内存竞争。",
+    "在OPT和Llama模型及真实/合成负载上验证，相比vLLM、TGI和RR显著降低RT延迟并提升SLO达成率，同时保持较高BE吞吐。"
+  ],
+  "key_findings": [
+    "在ShareGPT混合负载上，BROS相比vLLM和RR的平均归一化RT延迟降低分别为74.20%和54.31%，BE吞吐仅分别下降11.29%和8.80%。",
+    "在LMSYS-CHAT-1M混合负载上，BROS使RT平均归一化延迟降低69.61%和25.77%，BE吞吐下降17.67%和15.18%。",
+    "在ShareGPT上，BROS相对vLLM的TTFT和TPOT SLO达成率分别提升36.38×和1.73×；相对RR分别提升11.75×和1.47×；在LMSYS-CHAT-1M上相对vLLM分别提升21.42×和2.62×，相对RR分别提升14.23×和2.28×。",
+    "系统微基准测试中，在纯RT负载下BROS相比vLLM延迟降低29.36%、吞吐提升1.08×。",
+    "消融实验显示，启用双向KV缓存管理后，TTFT和TPOT SLO达成率分别是不启用时的1.23×和1.63×。"
+  ],
+  "limitations": [
+    "论文指出没有代表性的BE请求数据集可用，因此BE请求采用FlexGen式合成工作负载，可能不完全反映真实BE流量分布。"
+  ],
+  "relation_to_topic": "该工作聚焦AI推理系统中的内存管理与请求调度两大主题：vLLM以PagedAttention管理KV cache，BROS则进一步针对混合RT/BE负载引入双向KV块共享、迭代级抢占式调度和SLO感知批大小，直接回应了如何通过内存管理与请求调度提高大模型在线推理的延迟、吞吐与资源利用效率。",
+  "categories": [
+    "推理服务与请求调度",
+    "KV Cache与内存管理"
+  ],
+  "evidence": [
+    {
+      "claim": "BROS采用双向KV块布局，使RT请求能够利用BE请求缓存块中的空槽，从而在不丢弃或换出KV cache的情况下解除内存不足对调度决策的限制。",
+      "quote": "a bidirectional block layout, which shares one block between two requests and increases their KV cache in the opposite direction, creates the opportunity for scheduled RT requests to utilize empty slots in the cache block from pending BE requests without KV cache dropping or swapping.",
+      "page": 4
+    },
+    {
+      "claim": "BROS将每个KV cache block同时分给一个RT请求和一个BE请求，二者从块两端相向扩展，从而实现同一块内存的高效共享。",
+      "quote": "Each block can be used for KV cache storage of one RT request and one BE request, with a bidirectional storage layout for sharing the block between two requests: KV cache of the RT request occupies memory slots from the left to the right in the block while that of the BE request in the opposite direction.",
+      "page": 7
+    }
+  ],
+  "confidence": 0.95
+}

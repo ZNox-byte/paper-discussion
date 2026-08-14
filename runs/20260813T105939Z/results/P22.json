@@ -1,0 +1,45 @@
+{
+  "task_id": "P22",
+  "paper_id": "2505.02390",
+  "title": "Quantitative Analysis of Performance Drop in DeepSeek Model Quantization",
+  "one_sentence_summary": "本文首次对DeepSeek-R1/V3等模型进行多比特宽度（2/3/4/8比特）量化的系统性性能评估，并提出动态3比特量化方法DQ3_K_M，在接近Q4_K_M性能的同时将模型压缩至281G，支持单机8卡部署。",
+  "research_question": "面向DeepSeek-R1/V3，3比特和4比特量化会带来怎样的性能下降与性能-效率权衡？",
+  "methodology": "基于weights-only PTQ（后训练量化）范式，使用llama.cpp和Unsloth框架对DeepSeek-V3、DeepSeek-R1、DeepSeek-V3-0324及DeepSeek-R1-distill-Qwen-32B进行2/3/4/8比特量化评估；提出DQ3_K_M动态3比特量化，对ffn down exps层采用q6_k/q4_k/q3_k混合精度配置；在数学推理、代码生成和通用知识（MATH 500、AIME 2024、GPQA、LiveCodeBench、MBPP/MBPP+、MMLU、CMMLU、C-Eval）上比较各变体，并采用多次采样统计均值与标准差。",
+  "data_and_training": "论文未涉及新训练数据或模型训练；评估使用公共基准测试集，包括MATH 500、AIME 2024、GPQA、LiveCodeBench、MBPP、MBPP+、MMLU、CMMLU和C-Eval；量化基于llama.cpp和Unsloth框架；DQ3_K_M的开源实现和3比特量化模型已发布在GitHub（https://github.com/UnicomAI/DeepSeek-Eval）。",
+  "main_contributions": [
+    "首次对完整DeepSeek模型谱系（含671B全参数R1/V3）进行多比特宽度量化效果评估。",
+    "提出动态3比特量化方法DQ3_K_M，优于llama.cpp的Q3_K_M，并与Q4_K_M性能相当。",
+    "开源基于DQ3_K_M的DeepSeek-R1和DeepSeek-V3 3比特量化模型（281G），支持单机8卡部署。",
+    "给出不同硬件配置下的量化模型部署建议，DQ3_K_M同时适配NVIDIA H100/A100与华为910B。"
+  ],
+  "key_findings": [
+    "4比特量化（Q4_K_M）相对FP8性能下降很小，DeepSeek-R1加权平均准确率下降0.68%，DeepSeek-V3下降0%。",
+    "DQ3_K_M在DeepSeek-R1上平均得分83.03，超过Q3_K_M并接近Q4_K_M；在DeepSeek-V3-0324上平均下降仅0.30%。",
+    "2比特量化导致严重性能下降，DeepSeek-V3的Q2_K_L平均下降8.91%，DeepSeek-V3-0324下降14.66%。",
+    "DQ3_K_M模型大小281G，总内存占用469GB（每GPU 59GB），支持NVIDIA H100/A100和华为910B单机部署。",
+    "DeepSeek-R1-distill-Qwen-32B在Q4_K_M下保持BF16性能，通用知识基准的波动小于0.8%。"
+  ],
+  "limitations": [
+    "论文只评估了weights-only PTQ范式，未覆盖权重-激活量化或量化感知训练（QAT）。",
+    "蒸馏模型仅选取DeepSeek-R1-distill-Qwen-32B作为代表，未覆盖其他蒸馏尺寸。",
+    "评估最大上下文为32K token，未讨论更长上下文下的显存与性能表现。"
+  ],
+  "relation_to_deepseek": "该论文直接针对DeepSeek系列模型（R1/V3/V3-0324及distill-Qwen-32B）的量化部署问题，提出面向DeepSeek的DQ3_K_M动态3比特量化方案，并开源优化后的DeepSeek 3比特量化模型，满足DeepSeek本地化、单机部署的效率需求。",
+  "categories": [
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "4比特量化相对FP8几乎无性能下降，并能在标准NVIDIA GPU上单机部署。",
+      "quote": "Key findings reveal that 4-bit quantization maintains little performance degradation versus FP8 while enabling single-machine deployment on standard Nvidia GPU devices.",
+      "page": 1
+    },
+    {
+      "claim": "提出的DQ3_K_M动态3比特量化方法显著优于传统Q3_K_M，且在多数任务上与Q4_K_M相当。",
+      "quote": "We further propose DQ3 K M, a dynamic 3-bit quantization method that significantly outperforms traditional Q3 K M variant on various benchmarks, which is also comparable with 4-bit quantization (Q4 K M) approach in most tasks.",
+      "page": 1
+    }
+  ],
+  "confidence": 0.96,
+  "unanswered_questions": []
+}

@@ -1,0 +1,67 @@
+{
+  "task_id": "P09",
+  "paper_id": "2504.07128",
+  "title": "DeepSeek-R1 Thoughtology: Let's think about LLM Reasoning",
+  "one_sentence_summary": "本文系统分析了 DeepSeek-R1 的思维链，发现其在长思维链中表现出过度思考损伤性能、反复沉思阻碍探索、长上下文下被压垮产生无意义输出等关键失败模式。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "本文基于 DeepSeek-R1 的开放思维链，提出推理链分类框架（问题定义、绽放循环、重构循环、最终决策），并对 400 个样本进行人工标注；随后在多个基准（AIME-24、MATH500、GSM8K、乘法任务、CHASE-QA、CHASE-Code、Needle-in-a-Haystack、HarmBench、DIT、LLM-GLOBE、心理语言学刺激、ASCII 世界建模等）上进行定量与定性实验，分析思维链长度、沉思行为、长上下文处理、安全性与文化差异等。",
+  "data_and_training": "本文不训练新模型，而是通过 Together API 查询 DeepSeek-R1（671B 参数），温度设为 0.6（部分实验为 1.0），最大令牌预算为 32000；使用的评估数据集包括 AIME-24、MATH500、GSM8K、多位数乘法、CHASE-QA、CHASE-Code、Needle-in-a-Haystack、HarmBench、DIT、LLM-GLOBE、花园路径句和比较错觉句、ASCII 生成任务等；另外对比了 DeepSeek-V3、GPT-4o、Gemini-1.5-Pro、Gemma-2-9B-Instruct、Llama-3.1-8B-Instruct 等模型。",
+  "main_contributions": [
+    "提出 DeepSeek-R1 思维链的结构化分类框架，识别问题定义、绽放循环、重构循环和最终决策四个阶段。",
+    "发现思维链长度与性能之间存在问题特定的‘甜点’区间，过长思维链显著损害准确率。",
+    "揭示 DeepSeek-R1 倾向于反复沉思已探索的问题表述，阻碍进一步探索，并导致效率低下。",
+    "系统评估了长上下文下的行为异常、安全漏洞、文化差异以及与人类认知现象的异同。"
+  ],
+  "key_findings": [
+    "过度长的思维链几乎总是损害性能，正确思维链平均长度短于错误思维链；存在每个问题的最优思维长度范围。",
+    "DeepSeek-R1 会持续沉思之前探索过的问题表述，这种沉思与性能下降相关，且无法自主调节思维长度。",
+    "当输入上下文或自身推理链过长时，模型会‘被压垮’，表现异常并生成无意义或不连贯的文本（包括乱入中文）。",
+    "DeepSeek-R1 难以遵循提示中指定的思维令牌预算，但通过强化训练可以在预算合规与准确率之间取得一定权衡。",
+    "DeepSeek-R1 的安全漏洞比其非推理对应模型 DeepSeek-V3 更严重，且其推理能力可用于生成越狱攻击，危害其他安全对齐模型。"
+  ],
+  "limitations": [
+    "许多分析是定性的，依赖于对小样本的手动观察，未在大规模多样化数据集上验证。",
+    "数据规模有限，可能影响统计显著性，尽管作者认为定性结论在大规模复现下不会有重大变化。",
+    "无法访问 OpenAI o1 的推理链，缺乏直接比较，不清楚这些发现是 DeepSeek-R1 特有还是 LRM 普遍现象。",
+    "DeepSeek 未公开训练数据，难以理解某些推理行为的具体成因。"
+  ],
+  "relation_to_deepseek": "本文直接对 DeepSeek-R1 的思维链进行系统性分析，是 DeepSeek 开放生态下研究其推理行为的重要工作；它为理解 DeepSeek 系列模型在推理、效率、安全等方面的技术路线提供了实证基础。",
+  "categories": [
+    "推理与强化学习",
+    "对齐、安全与评测",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "过度长的思维链几乎总是损害性能，模型存在最优思维长度区间。",
+      "quote": "It is surprising to see that overly long thoughts almost always hurt performance, despite high rates of re-verification.",
+      "page": 18
+    },
+    {
+      "claim": "DeepSeek-R1 会持续沉思之前探索过的问题表述，阻碍进一步探索。",
+      "quote": "we find a tendency for DeepSeek-R1 to persistentlyruminate on previously explored problem formulations, obstructing further exploration.",
+      "page": 1
+    },
+    {
+      "claim": "当上下文或推理链过长时，模型会表现异常，感到不知所措并生成无意义文本。",
+      "quote": "But when the input context or reasoning chain becomes too long, it behaves erratically, often gettingoverwhelmedand producing nonsensical text.",
+      "page": 3
+    },
+    {
+      "claim": "DeepSeek-R1 无法自行调节思维链长度。",
+      "quote": "DeepSeek-R1 is not capable of modulating the length of its own thoughts.",
+      "page": 3
+    },
+    {
+      "claim": "DeepSeek-R1 难以遵循提示中指定的思维令牌预算。",
+      "quote": "We find that DeepSeek-R1 struggles to adhere to thought token budgets specified in the prompt",
+      "page": 4
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "这些失败模式是否同样存在于 DeepSeek-R1-Zero 或其他大型推理模型（如 Qwen3、gpt-oss）中？",
+    "长思维链导致性能下降的确切机制（是走上错误路径还是自我否定正确解）需要进一步实验验证。",
+    "如何有效控制思维链长度、减少无益沉思，同时保持高准确率，目前尚无明确方案。"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "task_id": "P08",
+  "paper_id": "2503.10460",
+  "title": "Light-R1: Curriculum SFT, DPO and RL for Long COT from Scratch and Beyond",
+  "one_sentence_summary": "Light-R1 提出一套完全开源、低成本的课程式 SFT+DPO+RL 长思维链训练方案，仅用公开数据在 7B-32B 模型上实现可复现的数学推理提升，并达到或超过 DeepSeek-R1-Distill 系列效果。",
+  "research_question": "课程难度递进如何增强 7B-32B 模型的长思维链推理能力？",
+  "methodology": "本文构建了可复现的长思维链评测协议（每个问题采样64次计算pass@1），收集约1000k数学题并去污染，使用DeepScaleR-1.5B-Preview和DeepSeek-R1按通过率进行两阶段难度筛选，形成约76k的SFT Stage1数据和约3k的高难Stage2数据；随后采用“两阶段难度递进SFT + DPO（NCA loss）”训练Light-R1-32B，并在DeepSeek-R1-Distill-14B上实施“离线数据筛选 + GRPO在线强化学习”，辅以长度奖励裁剪和重要性采样权重裁剪。",
+  "data_and_training": "训练数据全部来自公开来源，包括OpenR1-Math-220k、OpenThoughts-114k、OpenMathInstruct-2、OmniMath、s1K-1.1、LIMO、hendrycks-math及自建数据，总计约1000k种子题，过滤后得到79,439条带推理轨迹的数据；SFT Stage1约76k题，SFT Stage2约3k高难题；RL使用去重后的Big-Math数据集。成本方面，Light-R1-32B从零训练仅需约6小时/12×H800 GPU（约1000美元）；14B RL实验在16*8 A100上进行，离线数据筛选4小时，在线RL 140步26小时/220步42小时。",
+  "main_contributions": [
+    "开源了一整套课程式后训练方案（SFT Stage1 + SFT Stage2 + DPO + GRPO），可从零训练长COT模型，32B从零训练成本约1000美元。",
+    "构建并开源3k高难数学SFT Stage2数据集，只用该数据微调即可一致提升DeepSeek-R1-Distill 7B/14B/32B模型。",
+    "首次证明RL可在已长COT的14B模型上继续有效，响应长度和奖励同步提升，Light-R1-14B-DS在数学上达到14B SOTA。",
+    "发布可复现评测代码、数据与模型。"
+  ],
+  "key_findings": [
+    "Light-R1-32B在AIME24/25上达76.6/64.6，超过DeepSeek-R1-Distill-Qwen-32B（72.6/54.9）。",
+    "3k Stage2数据单独微调DeepSeek-R1-Distill模型带来普适提升，如Light-R1-32B-DS AIME24/25达78.1/65.9。",
+    "Light-R1-14B-DS在AIME24/25达74.0/60.2，超过许多32B模型和DeepSeek-R1-Distill-Llama-70B。",
+    "GRPO训练中未出现初始长度下降，长度与奖励同步上升。",
+    "数学聚焦的RL还带来GPQA等域外提升，但32B从零训练在SFT Stage2后出现GPQA下降。"
+  ],
+  "limitations": [
+    "论文未设独立limitations章节，但自述数学聚焦训练导致未训练的GPQA科学题出现部分遗忘（Light-R1-32B从SFT-stage2开始GPQA下降）。",
+    "RL实验仅针对14B模型，前两个epoch提升不明显，训练较长（220步/42小时）。",
+    "从零训练Light-R1-32B未覆盖科学和代码领域，GPQA/LCB成绩有限。",
+    "部分数据依赖DeepSeek-R1蒸馏，仍受DeepSeek模型能力影响。"
+  ],
+  "relation_to_deepseek": "本文以DeepSeek-R1为参照和蒸馏来源：由于DeepSeek-R1数据专有，改用公开数据复现其训练范式；评测先复现DeepSeek-R1-Distill和QwQ结果；Light-R1-32B从Qwen2.5-32B-Instruct出发超过DeepSeek-R1-Distill-Qwen-32B，Light-R1-14B-DS超过DeepSeek-R1-Distill-Llama-70B；同时作者也用3k数据直接增强DeepSeek-R1-Distill系列，得到-DS模型。",
+  "categories": [
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "代码与数学",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "为应对单一SFT阶段难以消化异构难度数据的问题，Light-R1采用两阶段SFT难度递进加DPO的课程训练策略。",
+      "quote": "To address this, we implemented a multi-staged curriculum training strategy comprising two consecutive SFT stages with progressively increasing difficulty, followed by a DPO stage",
+      "page": 2
+    },
+    {
+      "claim": "3k高难Stage2数据单独微调即可在7B-32B的DeepSeek-R1-Distill模型上带来普遍提升，说明课程中难度递进数据的高质量是关键。",
+      "quote": "we could achieve universal improvement on DeepSeek-R1-Distill-Qwen models with this 3k data alone, demonstrating the high quality of the stage 2 data.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.92,
+  "unanswered_questions": [
+    "两阶段SFT之外更多课程阶段是否收益更高？",
+    "3k数据带来的提升多大程度上来自难度而非与DeepSeek-R1-Distill数据的正交性？",
+    "GRPO在32B长COT模型上能否继续稳定扩展？",
+    "如何降低RL训练所需的42小时/220步成本？"
+  ]
+}

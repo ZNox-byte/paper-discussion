@@ -1,0 +1,51 @@
+{
+  "task_id": "P22",
+  "paper_id": "2605.17613",
+  "title": "VeriCache: Turning Lossy KV Cache into Lossless LLM Inference",
+  "one_sentence_summary": "VeriCache 提出将压缩 KV 缓存作为草稿生成器、以全量 KV 缓存进行验证的推理框架，在保持与全量 KV 解码完全相同输出的同时显著提升长上下文解码和远程前缀缓存吞吐。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？",
+  "methodology": "基于投机解码思想，用压缩 KV 缓存草稿 token，再用全量 KV 缓存并行验证并接受/纠正；提出跨资源交错调度（cross-resource staggering）将 HBM 带宽受限的草稿与互联带宽受限的验证重叠；引入统一压缩器接口，支持 token 丢弃和量化方法；运行时用带宽环和 HBM 环做资源建模与准入控制。",
+  "experimental_setup": "在 Mistral-24B、Qwen-32B、Llama-70B 上评估；硬件包括 RTX PRO 6000 和 2×H100 NVL；Pipeline 1 为长上下文解码，Pipeline 2 为远程前缀缓存；压缩方法包括 KVzip、KVzap、ExpectedAttention、SnapKV、KIVI、KVQuant、RotateKV；基线包括 Full KV、EAGLE3 传统投机解码器、SparseSpec；数据集包括 LMCache-trace、ComplexFuncBench、PISanitizer、LongGenBench、GSM8K-Long，指标含 KL 散度、函数调用准确率、防御成功率、完成率和吞吐量。",
+  "main_contributions": [
+    "首个通过压缩 KV 草稿 + 全量 KV 验证保证与 full-KV 解码输出相同的推理框架。",
+    "跨资源交错调度设计，将草稿与验证阶段在 HBM/互联/算力上重叠。",
+    "统一压缩器接口，实例化七种 token-dropping 和量化方法。",
+    "同时支持长上下文解码和远程前缀缓存，并可与传统投机解码组合。"
+  ],
+  "key_findings": [
+    "在长上下文解码上相对 Full KV 实现 1.92×–2.73× 吞吐提升，远程前缀缓存实现 1.33×–2.11×。",
+    "与 EAGLE 组合可达 4.26× 理想加速比（Qwen-32B）；实验中整体最高达 4×。",
+    "4× 压缩下接受率在草稿长度 30 时仍约 0.8，接受长度约 19（Qwen-32B）和 23（Llama-70B）。",
+    "KL 散度保持在 0.01 nats 以下，任务指标（函数调用、防御成功率、完成率、准确率）与 Full KV 基本一致，而 lossy 基线大幅下降。"
+  ],
+  "limitations": [
+    "需要在 CPU/存储上保留全量 KV，增加存储开销。",
+    "固定草稿长度，缺少逐请求自适应策略。",
+    "现有压缩器面向直接服务准确率优化，而非最大化长草稿接受长度。",
+    "尚未扩展到压缩之外的其他 lossy KV 技术（如跨非前缀块复用预计算 KV）。"
+  ],
+  "relation_to_topic": "该工作属于 KV Cache 与内存管理、推理服务与请求调度以及性能评测交叉方向：通过把有损压缩作为草稿、全量 KV 作为验证，在不损失输出正确性的前提下利用压缩带来的 HBM/互联带宽收益，提高 LLM 在线推理吞吐和可靠性。",
+  "categories": [
+    "KV Cache与内存管理",
+    "推理服务与请求调度",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "VeriCache 的核心机制是用压缩 KV 缓存草稿 token，再用全量 KV 缓存验证，从而保证输出与 full-KV 解码一致。",
+      "quote": "VeriCache uses the compressed KV cache to draft tokens, then verifies them against the full KV cache.",
+      "page": 1
+    },
+    {
+      "claim": "实验显示 VeriCache 在保持输出一致的前提下，可获得最高 4 倍于 full-KV 推理的吞吐。",
+      "quote": "Experimental results show that VeriCache achieves up to4× higher throughput than full-KV inference while producing identical outputs.",
+      "page": 1
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "如何根据请求/压缩器动态调整草稿长度与验证频率？",
+    "能否设计以最大化接受长度为目标的专用压缩器？",
+    "草稿-验证方法是否适用于 CacheBlend 等非压缩型有损 KV 复用技术？"
+  ]
+}

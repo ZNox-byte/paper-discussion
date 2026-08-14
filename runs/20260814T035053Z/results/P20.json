@@ -1,0 +1,44 @@
+{
+  "task_id": "P20",
+  "paper_id": "2509.00105",
+  "title": "AdaptCache: KV Cache Native Storage Hierarchy for Low-Delay and High-Quality Language Model Serving",
+  "one_sentence_summary": "AdaptCache提出一种面向DRAM/SSD分层存储的有损KV缓存压缩系统，通过为每个KV缓存条目自适应选择压缩算法、压缩率和设备放置，在保持生成质量的同时提高DRAM命中率并降低TTFT延迟。",
+  "research_question": "如何针对每个KV缓存条目自适应决定压缩算法、压缩率和设备放置，以在延迟与生成质量之间取得最优权衡？",
+  "methodology": "通过离线profiling估计每个条目、压缩方法和存储设备的质量-延迟曲线；定义效用函数 Utility(i) = Freq(i) * (alpha*Quality(i, Mi, Ri) - size(i, Mi, Ri)/Bandwidth)，并将优化建模为NP-hard的多选背包问题（MCKP）；采用基于边际效用下降的贪心策略，为新旧KV缓存条目选择压缩、驱逐或放置决策，由执行器实施。",
+  "experimental_setup": "使用Llama-3.1-8B-Instruct模型，1,100个来自六个LongBench数据集的上下文，覆盖summarization、QA和coding三类任务；因数据集缺少时间戳，使用Poisson分布生成请求到达时间；实验运行在单块NVIDIA A100 GPU（100GB DRAM、400GB SSD）上，磁盘读取吞吐为1GB/s；对比无压缩offload、KIVI LRU、StreamingLLM LRU和Prefill等基线。",
+  "main_contributions": [
+    "提出AdaptCache，首个利用有损KV缓存压缩的分层KV缓存存储系统。",
+    "设计utility指标与边际效用下降贪心策略，联合决定压缩算法、压缩率和设备放置。",
+    "实验表明相比最强固定压缩基线，在相同质量下延迟降低1.43–2.4倍，在相同延迟下质量提高6–55%。"
+  ],
+  "key_findings": [
+    "固定压缩方案会迫使大部分KV缓存命中来自慢速SSD，导致加载延迟高；自适应压缩可显著提升DRAM命中率，例如coding任务中KIVI LRU 2bit量化的DRAM命中率为38%，而AdaptCache在不同延迟/质量权重下达到81%、56%、44%和11%。",
+    "AdaptCache相比prefill/offloading降低TTFT 56%，相比KIVI在相同质量下降低TTFT 69%，相比StreamingLLM在相同TTFT下质量提升15–89%。"
+  ],
+  "limitations": [
+    "AdaptCache采用贪心设计，并不保证最优，且论文指出最优解是NP-hard、不可追踪的。",
+    "当前论文标题为Preliminary Results，尚未给出大规模生产环境的全面部署评估。"
+  ],
+  "relation_to_topic": "该工作属于AI Infra Systems中的KV Cache与内存管理方向，通过有损压缩和自适应放置缓解LLM推理中的冗余计算与分层存储加载延迟问题；同时涉及推理请求调度中的TTFT优化以及模型压缩与低精度计算技术。",
+  "categories": [
+    "KV Cache与内存管理",
+    "模型压缩与低精度计算",
+    "推理服务与请求调度"
+  ],
+  "evidence": [
+    {
+      "claim": "AdaptCache通过有损压缩KV缓存，使更多KV缓存条目能够放入CPU内存，从而在不显著降低生成质量的前提下提高高速设备命中率并降低加载延迟。",
+      "quote": "by lossily compressing the KV caches, we can store much more KV cache entries in CPU memory without significant degredation of generation quality",
+      "page": 1
+    },
+    {
+      "claim": "与最强固定压缩基线相比，AdaptCache在相同质量下实现1.43–2.4倍延迟降低，在相同延迟下实现6–55%质量提升。",
+      "quote": "Compared to the strongest fixed compression baseline, AdaptCache is 1.43–2.4× faster at the same quality and improves quality by 6–55% under the same delay.",
+      "page": 2
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "AdaptCache如何扩展到多GPU或多节点环境中的分层存储（如GPU HBM）尚未在本文中讨论。"
+  ]
+}

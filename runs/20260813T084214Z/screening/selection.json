@@ -1,0 +1,229 @@
+{
+  "selection_notes": "Selected 32 papers balancing direct DeepSeek technical reports with analysis, evaluation, safety, efficiency, and application studies. Coverage spans architecture, training, reasoning, code/math, multimodal, system efficiency, alignment/safety, and ecosystem impact.",
+  "selected": [
+    {
+      "paper_id": "2412.19437",
+      "relevance_score": 100,
+      "rationale": "Core technical report for DeepSeek-V3, introducing MLA + DeepSeekMoE, auxiliary-loss-free load balancing, and multi-token prediction with cost-effective training.",
+      "reading_focus": "How do MLA and DeepSeekMoE reduce inference cost and training instability?",
+      "category_hint": "基础模型与架构"
+    },
+    {
+      "paper_id": "2405.04434",
+      "relevance_score": 98,
+      "rationale": "Introduces Multi-head Latent Attention and DeepSeekMoE at scale, establishing efficient MoE architecture for subsequent models.",
+      "reading_focus": "What architectural innovations enable 42.5% training cost reduction and 93.3% KV cache compression?",
+      "category_hint": "基础模型与架构"
+    },
+    {
+      "paper_id": "2606.19348",
+      "relevance_score": 97,
+      "rationale": "DeepSeek-V4 preview with hybrid attention (CSA/HCA), manifold-constrained hyper-connections, and Muon optimizer for million-token contexts.",
+      "reading_focus": "How do CSA and HCA achieve long-context efficiency at 1M tokens?",
+      "category_hint": "基础模型与架构"
+    },
+    {
+      "paper_id": "2401.06066",
+      "relevance_score": 96,
+      "rationale": "Foundational DeepSeekMoE architecture proposing fine-grained expert segmentation and shared experts for specialization.",
+      "reading_focus": "What are the effects of expert segmentation and shared expert isolation on specialization?",
+      "category_hint": "基础模型与架构"
+    },
+    {
+      "paper_id": "2512.02556",
+      "relevance_score": 99,
+      "rationale": "DeepSeek-V3.2 introduces DeepSeek Sparse Attention, scalable RL framework, and large-scale agentic task synthesis, pushing open LLM frontier.",
+      "reading_focus": "How does DeepSeek Sparse Attention balance long-context efficiency and reasoning performance?",
+      "category_hint": "基础模型与架构"
+    },
+    {
+      "paper_id": "2401.02954",
+      "relevance_score": 95,
+      "rationale": "DeepSeek LLM reports scaling laws, 2T-token pre-training corpus, and SFT/DPO, forming the foundation of the open-source DeepSeek line.",
+      "reading_focus": "What scaling law findings guide 7B and 67B model training?",
+      "category_hint": "训练数据与训练方法"
+    },
+    {
+      "paper_id": "2505.00551",
+      "relevance_score": 92,
+      "rationale": "Survey of replication studies after DeepSeek-R1, summarizing SFT and RLVR recipes for reasoning models.",
+      "reading_focus": "What common recipes emerge for reproducing R1-like reasoning with public data?",
+      "category_hint": "训练数据与训练方法"
+    },
+    {
+      "paper_id": "2503.10460",
+      "relevance_score": 90,
+      "rationale": "Light-R1 presents curriculum SFT, DPO, and RL for long CoT training from public data, reproducing R1-like performance.",
+      "reading_focus": "How does curriculum training with public data approach R1 performance?",
+      "category_hint": "训练数据与训练方法"
+    },
+    {
+      "paper_id": "2504.07128",
+      "relevance_score": 94,
+      "rationale": "DeepSeek-R1 Thoughtology analyzes reasoning behavior, including thought length sweet spot, rumination, and safety vulnerabilities.",
+      "reading_focus": "What are the observed failure modes in R1's long chain-of-thought?",
+      "category_hint": "推理与强化学习"
+    },
+    {
+      "paper_id": "2503.19855",
+      "relevance_score": 88,
+      "rationale": "Multi-round Thinking demonstrates a simple test-time scaling method that improves DeepSeek-R1 accuracy across benchmarks.",
+      "reading_focus": "How does iterative answer refinement affect reasoning performance and cost?",
+      "category_hint": "推理与强化学习"
+    },
+    {
+      "paper_id": "2503.20783",
+      "relevance_score": 93,
+      "rationale": "Critical analysis of R1-Zero-like training, identifying GRPO optimization bias and proposing Dr. GRPO for improved token efficiency.",
+      "reading_focus": "What optimization bias in GRPO artificially inflates response length?",
+      "category_hint": "推理与强化学习"
+    },
+    {
+      "paper_id": "2606.07410",
+      "relevance_score": 91,
+      "rationale": "Anatomy of human and DeepSeek-R1 math reasoning reveals structural differences and topological mimicry in long CoTs.",
+      "reading_focus": "What structural differences exist between successful human and model reasoning traces?",
+      "category_hint": "推理与强化学习"
+    },
+    {
+      "paper_id": "2401.14196",
+      "relevance_score": 96,
+      "rationale": "DeepSeek-Coder series establishes open-source code models with project-level pretraining and fill-in-the-middle training.",
+      "reading_focus": "How does project-level pretraining improve code generation and infilling?",
+      "category_hint": "代码与数学"
+    },
+    {
+      "paper_id": "2406.11931",
+      "relevance_score": 97,
+      "rationale": "DeepSeek-Coder-V2 extends DeepSeek-V2 with 6T tokens, achieving GPT4-Turbo-level code and math performance.",
+      "reading_focus": "How does continued pretraining from the V2 checkpoint enhance coding and math?",
+      "category_hint": "代码与数学"
+    },
+    {
+      "paper_id": "2402.03300",
+      "relevance_score": 96,
+      "rationale": "DeepSeekMath 7B introduces GRPO and a data selection pipeline that pushes mathematical reasoning in open models.",
+      "reading_focus": "How does GRPO improve math reasoning while reducing memory compared with PPO?",
+      "category_hint": "代码与数学"
+    },
+    {
+      "paper_id": "2504.21801",
+      "relevance_score": 95,
+      "rationale": "DeepSeek-Prover-V2 advances formal theorem proving via RL for subgoal decomposition, integrating informal and formal reasoning.",
+      "reading_focus": "How does subgoal decomposition integrate informal and formal reasoning?",
+      "category_hint": "代码与数学"
+    },
+    {
+      "paper_id": "2403.05525",
+      "relevance_score": 93,
+      "rationale": "DeepSeek-VL introduces a hybrid vision encoder and real-world VL data for vision-language understanding.",
+      "reading_focus": "How does the hybrid vision encoder handle high-resolution images efficiently?",
+      "category_hint": "多模态"
+    },
+    {
+      "paper_id": "2412.10302",
+      "relevance_score": 95,
+      "rationale": "DeepSeek-VL2 combines dynamic tiling vision encoding with DeepSeekMoE and MLA for efficient multimodal understanding.",
+      "reading_focus": "What improvements do dynamic tiling and MoE language model bring to VL tasks?",
+      "category_hint": "多模态"
+    },
+    {
+      "paper_id": "2510.18234",
+      "relevance_score": 94,
+      "rationale": "DeepSeek-OCR investigates optical 2D mapping for context compression, achieving high OCR accuracy with few vision tokens.",
+      "reading_focus": "How does DeepEncoder achieve high compression with low activations for OCR?",
+      "category_hint": "多模态"
+    },
+    {
+      "paper_id": "2505.09343",
+      "relevance_score": 94,
+      "rationale": "Hardware-aware co-design analysis of DeepSeek-V3/R1 infrastructure, covering MLA, MoE, FP8 training, and network topology.",
+      "reading_focus": "What hardware bottlenecks and co-design choices enabled cost-efficient training?",
+      "category_hint": "系统效率与部署"
+    },
+    {
+      "paper_id": "2505.02390",
+      "relevance_score": 89,
+      "rationale": "Quantization evaluation across DeepSeek models, proposing DQ3_K_M for single-machine deployment.",
+      "reading_focus": "How does 3-bit dynamic quantization compare with FP8 and 4-bit?",
+      "category_hint": "系统效率与部署"
+    },
+    {
+      "paper_id": "2504.06792",
+      "relevance_score": 90,
+      "rationale": "Domain-specific pruning of MoE experts using few-shot expert localization, enabling half-expert deployment.",
+      "reading_focus": "How can expert localization enable half-expert pruning with comparable quality?",
+      "category_hint": "系统效率与部署"
+    },
+    {
+      "paper_id": "2502.07864",
+      "relevance_score": 91,
+      "rationale": "TransMLA converts GQA models to MLA, unlocking DeepSeek-specific optimizations and large KV cache compression.",
+      "reading_focus": "What gains does MLA conversion offer for KV cache and throughput?",
+      "category_hint": "系统效率与部署"
+    },
+    {
+      "paper_id": "2503.16529",
+      "relevance_score": 92,
+      "rationale": "Safety evaluation and enhancement of DeepSeek-R1 series in Chinese contexts, offering open-source safety-enhanced models.",
+      "reading_focus": "How does distillation affect safety, and what enhancement methods preserve reasoning?",
+      "category_hint": "对齐、安全与评测"
+    },
+    {
+      "paper_id": "2504.10081",
+      "relevance_score": 91,
+      "rationale": "RealSafe-R1 aligns DeepSeek-R1 distilled models for safety without compromising reasoning capability.",
+      "reading_focus": "How can safety alignment maintain the original reasoning distribution?",
+      "category_hint": "对齐、安全与评测"
+    },
+    {
+      "paper_id": "2502.11137",
+      "relevance_score": 90,
+      "rationale": "Introduces CHiSafetyBench for Chinese-context safety evaluation of DeepSeek-R1 and V3, quantifying safety deficiencies.",
+      "reading_focus": "What safety deficiencies emerge in Chinese contexts?",
+      "category_hint": "对齐、安全与评测"
+    },
+    {
+      "paper_id": "2501.18438",
+      "relevance_score": 89,
+      "rationale": "Automated safety testing comparing DeepSeek-R1 and o3-mini, revealing higher unsafe response rates for R1.",
+      "reading_focus": "What unsafe response rate differences exist between models?",
+      "category_hint": "对齐、安全与评测"
+    },
+    {
+      "paper_id": "2506.14374",
+      "relevance_score": 88,
+      "rationale": "Excessive Reasoning Attack exploits reasoning LLMs to inflate computation 3x-9x without hurting utility.",
+      "reading_focus": "How do adversarial inputs exploit reasoning length without harming utility?",
+      "category_hint": "对齐、安全与评测"
+    },
+    {
+      "paper_id": "2507.09955",
+      "relevance_score": 93,
+      "rationale": "Survey of DeepSeek paradigm shifts, covering MLA, MoE, MTP, GRPO, and system-level optimization.",
+      "reading_focus": "What algorithm and engineering breakthroughs define the DeepSeek paradigm?",
+      "category_hint": "应用、生态与影响"
+    },
+    {
+      "paper_id": "2506.01257",
+      "relevance_score": 90,
+      "rationale": "Survey of DeepSeek-R1 in healthcare, summarizing capabilities, risks, and clinical applications.",
+      "reading_focus": "What are key strengths and safety risks for DeepSeek-R1 in healthcare?",
+      "category_hint": "应用、生态与影响"
+    },
+    {
+      "paper_id": "2502.11164",
+      "relevance_score": 88,
+      "rationale": "Application-driven performance analysis of DeepSeek models with A-Eval-2.0, providing model selection guidance.",
+      "reading_focus": "How does reasoning enhancement impact text understanding versus logic tasks?",
+      "category_hint": "应用、生态与影响"
+    },
+    {
+      "paper_id": "2503.16040",
+      "relevance_score": 89,
+      "rationale": "Legal reasoning evaluation of test-time scaling LLMs and development of Legal-R1 domain-specific model.",
+      "reading_focus": "What recurring errors appear in legal reasoning, and how does domain specialization help?",
+      "category_hint": "应用、生态与影响"
+    }
+  ]
+}

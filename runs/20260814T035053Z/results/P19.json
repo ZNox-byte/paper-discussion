@@ -1,0 +1,51 @@
+{
+  "task_id": "P19",
+  "paper_id": "2508.18572",
+  "title": "Strata: Hierarchical Context Caching for Long Context Language Model Serving",
+  "one_sentence_summary": "Strata通过GPU辅助I/O与缓存感知调度，将碎片化的KV Cache加载与计算重叠，在长上下文服务中相比现有系统最高降低5倍TTFT并提升吞吐。",
+  "research_question": "以vLLM为代表的AI Infra系统如何通过内存管理、请求调度、并行执行与软硬件协同提高大模型推理效率；具体聚焦于Strata如何将碎片化的KV Cache加载与计算重叠，降低长上下文服务的TTFT与I/O停顿。",
+  "methodology": "Strata包含两大核心组件：一是Strata Cache Controller，采用GPU-assisted I/O，通过启动CUDA kernel而非重复调用小尺寸cudaMemcpyAsync，用大量线程并发搬运小页数据，并支持在GPU计算友好的layer-first布局与host/disk传输友好的page-first布局之间进行近乎零开销的在线转换；二是Strata Scheduler，基于扩展SGLang RadixTree的HiRadixTree实现缓存感知调度，包括延迟命中请求的deferral、balanced batch formation（以loading_bound阈值平衡加载与计算），以及bubble filling（在不可避免的加载气泡中插入解码等有用计算）。系统基于SGLang实现并采用P-D co-location持续批处理。",
+  "experimental_setup": "在H200平台（8×NVIDIA H200、PCIe 5.0 x16）和GH200 Grace-Hopper平台（H100+Grace CPU、464GB LPDDR5X）上评测；模型包括Llama-3.1-8B-Instruct、Qwen2.5-14B-Instruct-1M和Llama-3.1-70B-Instruct（70B使用4卡张量并行）；基线包括vLLM v0.8.5、vLLM-LMCache v0.2.1、TensorRT-LLM v0.17.0、TensorRT-HiCache以及实现层叠式KV Cache传输重叠的SGLang-HiCache；数据集使用LooGLE、NarrativeQA、ReviewMT和ShareGPT；请求到达采用Poisson分布，ShareGPT加入60秒思考时间，最大在途请求数为128，CPU端分配1TB pinned内存（GH200为400GB），所有基准中未使用磁盘存储。",
+  "main_contributions": [
+    "提出Strata层次化上下文缓存框架，包含GPU辅助I/O与缓存感知调度两大设计。",
+    "设计GPU-assisted I/O内核，用少量大CUDA block将I/O限制在少量SM上，兼顾高带宽与低计算干扰，并解耦GPU与CPU/外部存储的KV Cache内存布局。",
+    "提出缓存感知调度：延迟命中请求延迟执行、形成平衡批次、用bubble filling隐藏I/O停顿，将CPU-GPU带宽作为一等资源。",
+    "基于SGLang实现并在生产环境部署；在长上下文基准上相对vLLM+LMCache最高5× TTFT降低、相对TensorRT-LLM最高3.75×加速，且不降低短上下文性能。"
+  ],
+  "key_findings": [
+    "在LooGLE上，Strata在相同TTFT下相比SGLang-HiCache、vLLM-LMCache、TensorRT-HiCache的最高吞吐提升：Llama-8B为3.2×/2.6×/1.9×，Qwen-14B为3.9×/2.1×/1.9×，Llama-70B为5×/5×/3.75×。",
+    "消融实验显示，Strata的调度组件和GPU辅助I/O组件分别能将基线层次化缓存的峰值吞吐提升最高1.8×和2.3×。",
+    "在短上下文ShareGPT数据集上，Strata与现有SOTA系统的性能相当，没有明显退化。",
+    "在GH200平台上，Strata-IO将CPU-GPU持续传输带宽从约40GB/s提升到150GB/s；Strata整体性能接近Oracle（无限带宽）模拟平台。",
+    "page-first布局相对原布局从磁盘加载8192 token的KV Cache可降低最多4×延迟。"
+  ],
+  "limitations": [
+    "论文未设专门局限性章节；从文本可识别，GPU-assisted I/O内核仍有开销，作者计划未来进一步降低其开销。",
+    "评测中未使用磁盘缓存，原因是基线系统对磁盘支持有限，因此外部存储下的端到端效果未被充分评估。",
+    "Strata聚焦于单计算实例内的内存管理和调度，未处理跨实例大规模KV Cache分池整合问题。"
+  ],
+  "relation_to_topic": "该论文属于AI Infra Systems中的KV Cache与内存管理、推理服务与请求调度方向。它直接回应了以vLLM为代表的长上下文服务瓶颈：PagedAttention等分页机制导致跨内存层级传输小块KV Cache时带宽利用率低，而调度器又未将I/O视为一等资源。Strata通过GPU-assisted I/O提升碎片化小页传输效率，并通过cache-aware scheduling将缓存加载与prefill/decode计算重叠，从而改善TTFT、吞吐与资源利用率；论文不涉及低精度计算、训练系统或分布式并行执行。",
+  "categories": [
+    "KV Cache与内存管理",
+    "推理服务与请求调度",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "Strata的核心思路是将GPU辅助I/O与缓存感知调度结合，从而把碎片化KV Cache加载与计算重叠。",
+      "quote": "Strata introduces GPU-assisted I/O to combat KV cache fragmentation, decoupling GPU and CPU memory layouts and employs cache-aware request scheduling to balance compute with I/O latency and overlapping unavoidable stalls with complementary tasks.",
+      "page": 1
+    },
+    {
+      "claim": "当批次仍处于加载受限时，Strata调度器通过向气泡中插入有用计算（如解码批次）来隐藏I/O停顿。",
+      "quote": "Finally, in the event that batches are still loading-bound, the Scheduler hides I/O stalls by inserting useful compute inside bubbles.",
+      "page": 6
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "Strata的bubble filling在P-D分离架构中如何进一步与跨机prefill批次配合？",
+    "GPU-assisted I/O内核在更多GPU架构（例如AMD ROCm后端）上的性能与干扰特性如何？",
+    "加入磁盘缓存后，Strata的层次化调度如何应对存储层更高且更不可预测的延迟？"
+  ]
+}

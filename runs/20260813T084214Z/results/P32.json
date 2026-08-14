@@ -1,0 +1,57 @@
+{
+  "task_id": "P32",
+  "paper_id": "2503.16040",
+  "title": "Evaluating Test-Time Scaling LLMs for Legal Reasoning: OpenAI o1, DeepSeek-R1, and Beyond",
+  "one_sentence_summary": "该论文系统评估了12个LLM在17个中英文法律推理任务上的表现，通过拒绝采样从DeepSeek-R1构建双语法律推理数据集并微调出领域专用模型Legal-R1，同时分析了反复出现的法律推理错误类型。",
+  "research_question": "法律推理中测试时缩放LLM反复出现哪些错误，领域专业化如何帮助？",
+  "methodology": "对12个LLM（含通用模型和测试时缩放模型）在10个中文和7个英文法律任务上进行封闭式和开放式评估；对代表性任务进行人工错误分析（由法学博士生标注）；通过DeepSeek-R1拒绝采样构建数据集，并对DeepSeek-R1-Distill-Qwen-14B进行渐进式监督微调得到Legal-R1。",
+  "data_and_training": "训练数据：从中文法律任务（LC、LMHR、LJP等）和LegalBench的143个任务中收集，通过DeepSeek-R1拒绝采样生成96,533条含推理链的样本。训练过程：使用8块NVIDIA A800 GPU，学习率1.0e-5，截断长度8192，bf16精度，训练3个epoch；先微调法律判决预测任务（中间模型Mcore），再在全部剩余任务上继续微调。",
+  "main_contributions": [
+    "首次系统评估12个LLM（包括测试时缩放模型和通用模型）在17个中英文法律推理任务上的表现。",
+    "通过DeepSeek-R1拒绝采样构建了包含96,533条样本的双语法律推理数据集。",
+    "基于DeepSeek-R1-Distill-Qwen-14B通过渐进式监督微调开发了领域专用模型Legal-R1，在多数中文和英文任务上超过基线。",
+    "对代表性任务（IAPE、CFE、LJP、AR、NYSJE、CPC）进行错误分析，揭示了常见的法律推理缺陷模式。"
+  ],
+  "key_findings": [
+    "DeepSeek-R1在中文法律推理任务中表现突出，OpenAI o1-preview在英文任务中表现相当。",
+    "测试时缩放模型整体优于通用LLM，但即使最强模型在高级推理任务（如司法伦理和复杂税务计算）上仍存在问题。",
+    "Legal-R1在多数中英文法律任务上较基线（DeepSeek-R1-Distill-Qwen-14B）有提升，特别是LMHR (+9.98%)、CAIL2018 (+5.57%)、MDLJP (+5.2%)。",
+    "错误分析发现反复出现的问题：过时的法律知识、有限的法律解释能力、事实幻觉；具体错误包括主体不一致、内容捏造、引用不准确、混淆法条等。",
+    "在开放式设置中提供高质量检索知识能显著提升知识密集型任务的性能。"
+  ],
+  "limitations": [
+    "基准测试可能无法完全覆盖现实法律推理的广度和复杂性。",
+    "某些任务（如争议焦点识别和伦理判断）具有主观性，现有自动评估指标可能无法准确反映模型输出质量。",
+    "基线模型虽有进步，但在复杂法律场景中仍有较大提升空间。"
+  ],
+  "relation_to_deepseek": "论文直接评估了DeepSeek-R1和DeepSeek-V3，并以DeepSeek-R1-Distill-Qwen-14B为基座，利用DeepSeek-R1的拒绝采样生成推理链数据进行领域微调，得到Legal-R1。DeepSeek-R1在中文法律任务上优势明显，其推理能力被用于构建高质量训练数据。",
+  "categories": [
+    "对齐、安全与评测",
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "错误分析揭示了反复出现的问题，包括过时的法律知识、有限的法律解释能力和事实幻觉。",
+      "quote": "recurring issues such as outdated legal knowledge, limited capacity for legal interpretation, and susceptibility to factual hallucinations",
+      "page": 1
+    },
+    {
+      "claim": "Legal-R1相对于基线在多个中文任务上取得了显著提升。",
+      "quote": "significant gains are observed on LMHR (+9.98%), CAIL2018 (+5.57%), and MDLJP (+5.2%)",
+      "page": 5
+    },
+    {
+      "claim": "Legal-R1是通过微调DeepSeek-R1-Distill-Qwen-14B得到的领域专用法律推理模型。",
+      "quote": "we fine-tune the DeepSeek-R1-Distill-Qwen-14B, yielding a domain-specific legal reasoning model, Legal-R1",
+      "page": 4
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "如何进一步减少法律推理中的事实幻觉和过时知识问题？",
+    "如何改进对主观性法律任务的评估方法？",
+    "如何将领域专业化扩展到更多法律体系和更复杂的法律场景？"
+  ]
+}

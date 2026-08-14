@@ -1,0 +1,50 @@
+{
+  "task_id": "P25",
+  "paper_id": "2411.18077",
+  "title": "MiniKV: Pushing the Limits of LLM Inference via 2-Bit Layer-Discriminative KV Cache",
+  "one_sentence_summary": "MiniKV 通过将 2-bit KV cache 量化与自适应 KV 淘汰策略及 FlashAttention 兼容的自定义 Triton 内核进行算法-系统协同设计，在长上下文推理中实现约 86% 的 KV cache 压缩，同时保持接近全模型的准确率并显著改善延迟、吞吐和显存占用。",
+  "research_question": "How should 2-bit KV cache quantization techniques be combined with adaptive KV policies to maximize inference speed of LLMs given a memory budget while retaining high model accuracy in long context inference?",
+  "methodology": "采用压缩与系统协同设计：算法侧用子通道（sub-channel）key 量化和逐 token value 量化，结合基于持久上下文选择的 heavy hitter 保留、recent window 保留以及 Pyramid 层间非均匀 KV 预算分配；系统侧实现两遍式 Triton selective flash-attention 内核（第一遍计算 XO 与 LSE，第二遍按列并行累加注意力得到 Acumul），并将解量化与矩阵乘融合；解码阶段使用流式缓冲区，每 nr 步把新 KV 压缩为 INT2。",
+  "experimental_setup": "模型包括 LLaMA2-7B-chat、LLaMA2-13B-chat、Mistral-7B-Instruct-v0.2 和 Llama3 系列；基准任务使用 LongBench、InfiniteBench 和 GSM8K；对比 Full Model、KIVI、H2O、SnapKV、Q-Hitter；硬件为 NVIDIA A100-40GB、A40-46GB 和 GH200-120GB；MiniKV 默认 50% cache budget（25% heavy hitter + 25% recent window），量化 group size 为 16，residual length nr=128，LongBench 最大 prompt 长度为 4096。",
+  "main_contributions": [
+    "提出 MiniKV，将 2-bit KV cache 量化与 adaptive KV 策略协同组合，在长上下文任务上实现超过 50% 的 KV cache 压缩并保持准确率。",
+    "发现并利用持久 heavy hitter 观察，以及需要同时保留关键比例的 heavy hitter 和 recent window 的层间 Pyramid 分配策略。",
+    "开发两遍式 Triton selective flash-attention 内核，使基于注意力分数的淘汰策略兼容 FlashAttention，且注意力计算内存随序列长度线性增长。",
+    "在 LongBench 上实现 86% KV cache 压缩，并支持最长 44K token 的 prompt，在单张 A100 上比最强基线提高 48% 的最大吞吐。"
+  ],
+  "key_findings": [
+    "在 LLaMA2-7B-chat 的 LongBench 平均分上，MiniKV-Pyramid 达到 34.65，为全模型 35.19 的 98.5%，而 KV cache 仅约 0.33GB（全模型 2.4GB）。",
+    "MiniKV 在同等级 KV cache 大小下优于 H2O、SnapKV 和 Q-Hitter，且在全 6 类 LongBench 任务上都处于 Pareto 最优前沿。",
+    "高程度淘汰（80-95%）会显著损害长上下文准确率，而中等程度淘汰（如 50%）仍可保持可比准确率；Pyramid 层间分配优于 uniform 和 variance-based 分配。",
+    "MiniKV 的两遍式注意力内核使内存占用随序列长度线性扩展，例如 8192 长度下标准注意力 OOM 而 MiniKV 仅需约 2GB。"
+  ],
+  "limitations": [
+    "MiniKV 目前主要聚焦 KV cache 优化，尚未与模型压缩（如权重量化）等优化技术组合。",
+    "设计虽可扩展，但尝试 SnapKV 与 KIVI 组合时 LongBench 分数从 35 降至 32，说明所选 token 对 2-bit 量化更敏感，需要更鲁棒、可泛化的淘汰与量化组合框架。",
+    "MiniKV 的 selective flash-attention 内核在预填充阶段比 FlashAttention 慢（LLaMA2-7B 上从 0.118ms 增至 0.622ms），换取了线性内存以支持更长序列。"
+  ],
+  "relation_to_topic": "该工作直接回应 AI Infra 系统中 KV Cache 内存管理与低精度计算的关键挑战：它不是按层分配不同比特数，而是用统一的 2-bit 量化配合层间金字塔式 KV 保留预算（layer-discriminative allocation），通过持久 heavy hitter 选择、关键 recent window 保留和 sub-channel 量化降低长上下文准确率损失；同时用 FlashAttention 兼容的自定义内核将算法收益转化为延迟、吞吐和显存收益，属于 KV Cache 与内存管理、模型压缩与低精度计算、异构硬件与内核优化的交叉贡献。",
+  "categories": [
+    "KV Cache与内存管理",
+    "模型压缩与低精度计算",
+    "异构硬件与内核优化"
+  ],
+  "evidence": [
+    {
+      "claim": "MiniKV 在多种长上下文任务上实现了超过 80% 的 KV cache 压缩，同时保持准确率，并在延迟、吞吐和内存消耗上优于现有方法。",
+      "quote": "Experiments on a wide range of long context tasks show that MiniKV effectively achieves >80% KV cache compression while retaining accuracy, outperforming state-of-the-art methods while achieving excellent latency, throughput, and memory consumption improvements in long context inference.",
+      "page": 1
+    },
+    {
+      "claim": "在 LongBench 上 MiniKV 实现 86% KV cache 压缩、支持最长 44K token 的 prompt，并在单张 A100 上比最强基线提高 48% 的最大吞吐。",
+      "quote": "MiniKV effectively achieves 86% KV cache compression while retaining comparable accuracy on LongBench, outperforming state-of-the-art methods. Furthermore, MiniKV enables prompt lengths up to 44K tokens and a maximum throughput that is 48% higher than its strongest baseline on a single NVIDIA A100 GPU.",
+      "page": 2
+    }
+  ],
+  "confidence": 0.92,
+  "unanswered_questions": [
+    "在超过 100K token 的长上下文或更大模型中，层间预算分配与 2-bit 量化的最优组合如何变化？",
+    "为什么 SnapKV 保留的 token 比 H2O 保留的 token 对 2-bit 量化更敏感，能否设计统一的量化感知淘汰策略？",
+    "MiniKV 的层间非均匀 KV 预算分配能否进一步扩展为按层（或按注意力头）自适应比特位分配，以在相同内存下获得更高准确率？"
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "task_id": "P04",
+  "paper_id": "2401.06066",
+  "title": "DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models",
+  "one_sentence_summary": "本文提出DeepSeekMoE架构，通过细粒度专家分割和共享专家隔离两种策略提升MoE模型的专家专业化程度，并在多个规模上验证了其相比GShard等架构的性能优势与计算效率。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "作者提出DeepSeekMoE架构，包含细粒度专家分割（将专家FFN中间维度细分并激活更多专家）和共享专家隔离（设置始终激活的共享专家）两种策略；通过在2B、16B、145B等规模上与GShard、Dense等基线进行对比实验，并进行消融研究和专家专业化分析（如禁用路由专家、共享专家等）来验证效果。",
+  "data_and_training": "训练数据来自DeepSeek-AI创建的大规模多语言语料库（主要包含英语和中文），验证实验使用100B token子集，16B模型在2T token上训练，145B模型在245B token上进行初步实验；采用BPE tokenizer（验证实验8K词表，16B模型100K词表），使用AdamW优化器、warmup-and-step-decay学习率调度等。",
+  "main_contributions": [
+    "提出DeepSeekMoE架构，包含细粒度专家分割和共享专家隔离两种策略，旨在实现专家专业化。",
+    "通过实验验证了DeepSeekMoE 2B接近MoE模型理论上限，并在16B和145B规模上验证了其性能和计算效率优势。",
+    "通过消融研究和分析展示了细粒度专家分割与共享专家隔离对降低冗余、提高准确知识获取的作用。",
+    "对DeepSeekMoE 16B进行监督微调以创建对齐聊天模型，并公开模型检查点。"
+  ],
+  "key_findings": [
+    "细粒度专家分割通过将每个专家FFN分割为更小专家并激活更多专家，增强了专家组合的灵活性，使知识能被更精细地分解和专业化学习。",
+    "共享专家隔离通过设置始终激活的共享专家来捕获公共知识，减少了路由专家间的冗余，使路由专家更专注于独特知识。",
+    "消融实验表明细粒度专家分割和共享专家隔离均能独立提升模型整体性能，且专家分割越细，性能提升越明显。",
+    "禁用路由专家实验显示DeepSeekMoE对专家禁用更敏感，表明其路由专家冗余更低、更不可替代。",
+    "禁用共享专家并激活额外路由专家导致Pile损失显著上升，表明共享专家捕获了路由专家无法替代的基本知识。",
+    "仅激活4个路由专家时DeepSeekMoE即可达到与GShard相当的Pile损失，表明其知识获取更准确高效。",
+    "在16B和145B规模上，DeepSeekMoE以约40%或更少的计算量达到与稠密模型（DeepSeek 7B/67B）相当的性能，并显著优于GShard架构。"
+  ],
+  "limitations": [
+    "在多项选择题任务（如MMLU、CEval、CMMLU）上，DeepSeekMoE相对稠密模型存在劣势，论文将其归因于注意力参数较少（DeepSeekMoE 16B只有约0.5B注意力参数，而DeepSeek 7B有2.5B）。",
+    "145B模型仅为初步研究，训练tokens数只有245B，未完成完整训练。"
+  ],
+  "relation_to_deepseek": "本文是DeepSeek-AI团队发布的基础架构工作，提出了DeepSeekMoE架构，为后续DeepSeek系列模型在MoE路线上的发展奠定了关键基础，并在文中与DeepSeek 7B、DeepSeek 67B等稠密模型进行了对比。",
+  "categories": [
+    "基础模型与架构",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "细粒度专家分割使知识能被更精细地分解到不同专家中，从而每个专家保持更高程度的专业化。",
+      "quote": "Fine-grained expert segmentation allows diverse knowledge to be decomposed more finely and be learned more precisely into different experts, where each expert will retain a higher level of specialization.",
+      "page": 3
+    },
+    {
+      "claim": "共享专家隔离通过将公共知识压缩到共享专家中，缓解了路由专家之间的冗余，使每个路由专家专注于独特方面。",
+      "quote": "Through compressing common knowledge into these shared experts, redundancy among other routed experts will be mitigated. This can enhance the parameter efficiency and ensure that each routed expert retains specialized by focusing on distinctive aspects.",
+      "page": 3
+    },
+    {
+      "claim": "消融实验表明细粒度专家分割和共享专家隔离均对整体性能有贡献，且专家分割越细，性能越好。",
+      "quote": "We can find that fine-grained expert segmentation and shared expert isolation both contribute to stronger overall performance.",
+      "page": 12
+    },
+    {
+      "claim": "DeepSeekMoE的路由专家冗余更低，禁用部分路由专家时性能下降更明显，说明每个路由专家更不可替代。",
+      "quote": "DeepSeekMoE exhibits greater sensitivity to the ratio of disabled top routed experts, indicating lower redundancy among routed experts in DeepSeekMoE.",
+      "page": 13
+    },
+    {
+      "claim": "共享专家捕获了路由专家无法替代的基本知识，禁用共享专家会导致性能显著下降。",
+      "quote": "This result highlights the crucial function of the shared expert and indicates that the shared expert captures fundamental and essential knowledge not shared with routed experts, making it irreplaceable by routed ones.",
+      "page": 13
+    },
+    {
+      "claim": "DeepSeekMoE能够用更少的激活路由专家获得与GShard相当的性能，表明其知识获取更准确高效。",
+      "quote": "With only 4 routed experts activated, DeepSeekMoE achieves a Pile loss comparable with GShard.",
+      "page": 14
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "细粒度专家分割和共享专家隔离在不同领域（如多模态、代码）的适用性如何？",
+    "DeepSeekMoE架构在更大规模（超过145B）或更长训练下的表现和稳定性如何？",
+    "如何进一步优化共享专家与路由专家的比例，以及如何结合其他路由策略？"
+  ]
+}

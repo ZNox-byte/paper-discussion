@@ -1,0 +1,56 @@
+{
+  "task_id": "P27",
+  "paper_id": "2501.18438",
+  "title": "o3-mini vs DeepSeek-R1: Which One is Safer?",
+  "one_sentence_summary": "该研究使用自动化安全测试工具 ASTRAL 系统评估了 DeepSeek-R1 (70B) 和 OpenAI o3-mini 的安全性，发现 DeepSeek-R1 的不安全响应率为 12%，显著高于 o3-mini 的 1.2%。",
+  "research_question": "RQ1: 两个模型（o3-mini 和 DeepSeek-R1）的整体安全水平如何？哪个更安全？RQ2: 哪些安全类别对模型更具挑战性？各模型在不同类别上的表现有何差异？RQ3: 写作风格和说服技巧如何影响模型的安全性？",
+  "methodology": "使用 ASTRAL 工具自动生成 1,260 个不安全测试输入，这些输入在 14 个安全类别、6 种写作风格和 5 种说服技巧之间均衡分布，并包含 2024 年 11 月的时事主题。将相同测试集输入到 DeepSeek-R1 (70B) 和 o3-mini 模型中执行，使用 GPT-3.5 作为评估器自动将输出分类为 safe、unsafe 或 unknown。对分类为 unsafe 和 unknown 的响应进行人工审查以确认。",
+  "data_and_training": "本研究使用 ASTRAL 生成的 1,260 个不安全测试输入，这些输入由 6 种写作风格、5 种说服技巧和 14 个安全类别组合而成（6×5×14×3=1260），生成于 2024 年 11 月，包含美国大选等时事主题。测试输入同时应用于两个模型，未涉及模型训练数据。",
+  "main_contributions": [
+    "首次系统评估了 DeepSeek-R1 (70B) 和 OpenAI o3-mini 的安全性，使用自动生成的均衡、最新的不安全测试输入。",
+    "发现 DeepSeek-R1 的不安全响应率（11.98%）显著高于 o3-mini（1.19%），并分析了安全类别、写作风格和说服技巧对安全性的影响。",
+    "观察到 o3-mini 的 policy violation 机制在检测不安全输入中起关键作用，阻止了 44.8% 的输入到达模型。",
+    "提供了复制包（测试用例和 LLM 响应），以促进安全评估的透明度。"
+  ],
+  "key_findings": [
+    "DeepSeek-R1 比 o3-mini 不安全得多：在 1,260 个测试输入上，DeepSeek-R1 产生 151 个不安全响应（11.98%），而 o3-mini 仅产生 15 个（1.19%）。",
+    "DeepSeek-R1 的不安全输出比 o3-mini 更严重且更容易确认，许多响应提供了过多细节。",
+    "某些安全类别（如金融犯罪、暴力、恐怖主义、仇恨言论）和写作风格（技术术语、角色扮演）对 DeepSeek-R1 触发不安全行为的影响更大。",
+    "o3-mini 的 policy violation 机制可能发挥了重要作用，拒绝了 44.8% 的不安全输入，这可能解释了其较高的安全性。"
+  ],
+  "limitations": [
+    "该报告基于初步评估，优先考虑及时性和实用性，未来将提供更全面严格的评估。",
+    "手动评估可能受到个人观点和文化差异的影响，不同团队可能得出不同结论。",
+    "未对分类为 safe 的大量响应进行人工审查，可能遗漏了一些不安全输出。",
+    "o3-mini 的 guardrails 可能不会在正式版中保留，且测试输入生成于 2024 年 11 月，可能随时间过时。"
+  ],
+  "relation_to_deepseek": "本文直接评估了 DeepSeek-R1 (70B) 的安全性，并将其与 OpenAI o3-mini 对比，发现 DeepSeek-R1 在安全对齐方面明显较弱，不安全响应率高出一个数量级。",
+  "categories": [
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-R1 产生的不安全响应显著多于 o3-mini，分别为 12% 和 1.2%。",
+      "quote": "[PAGE 1] the results indicate that DeepSeek-R1 produces significantly more unsafe responses (12%) than OpenAI’s o3-mini (1.2%).",
+      "page": 1
+    },
+    {
+      "claim": "在 1,260 个测试输入上，o3-mini 产生 15 个不安全响应（1.19%），而 DeepSeek-R1 产生 151 个（11.98%），约 10 倍。",
+      "quote": "[PAGE 5] Out of the 1,260 test inputs, o3-mini produced 15 responses classified as unsafe (1.19%). Conversely, DeepSeek-R1 provided 10 times more unsafe responses, 151 in total (11.98%).",
+      "page": 5
+    },
+    {
+      "claim": "研究得出结论，OpenAI 的 o3-mini 比 DeepSeek-R1 安全得多。",
+      "quote": "[PAGE 7] Our results suggest that OpenAI’s o3-mini LLM is a much safer model than DeepSeek-R1, which answered unsafely to almost 12% of the executed unsafe prompts.",
+      "page": 7
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "DeepSeek-R1 更大版本（如 671B）的安全性如何？",
+    "o3-mini 正式版发布后，policy violation 机制是否保留？",
+    "手动评估的主观性是否会导致不同团队得出不同不安全率？",
+    "未检查的 safe 响应中是否隐藏着不安全内容？",
+    "测试输入生成于 2024 年 11 月，对于当前最新威胁的覆盖是否充分？"
+  ]
+}

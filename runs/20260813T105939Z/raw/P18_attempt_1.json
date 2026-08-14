@@ -1,0 +1,51 @@
+{
+  "task_id": "P18",
+  "paper_id": "2403.05525",
+  "title": "DeepSeek-VL: Towards Real-World Vision-Language Understanding",
+  "one_sentence_summary": "DeepSeek-VL是DeepSeek-AI提出的开源视觉语言模型系列（1.3B和7B），通过混合视觉编码器、大规模预训练数据以及语言与多模态约7:3的联合预训练并配合模态预热策略，在保持LLM语言能力的同时获得真实世界视觉-语言理解能力。",
+  "research_question": "什么VL预训练设计能在学习视觉-语言对齐的同时保持LLM能力？",
+  "methodology": "采用SigLIP-L（384x384低分辨率语义特征）与SAM-B（1024x1024高分辨率细节特征）组成的混合视觉编码器，配合两层混合MLP视觉-语言适配器，语言模型基于DeepSeek-LLM。训练分为三阶段：阶段1冻结视觉编码器和LLM，仅训练VL适配器；阶段2联合视觉-语言预训练，按约7:3混合语言与多模态数据，并采用模态预热和按模态分组策略；阶段3进行视觉-语言监督微调，混合多模态对话数据和DeepSeek-LLM纯文本对话数据。数据构建涵盖真实世界场景（网络截图、PDF、OCR、图表、知识内容），并基于真实用户用例taxonomy构造指令微调数据。",
+  "data_and_training": "预训练数据包括交错图像-文本、图像描述、表格图表、网页代码、场景文本OCR、文档OCR以及DeepSeek-LLM的2T文本语料，其中文本语料占比70.0%；最终语言与多模态数据比例约为7:3。SFT数据包括ShareGPT4V、LAION-GPTV、LVIS-Instruct4V等开源GPT-4V数据集，表格图表数据、UI代码数据、基于taxonomy的内部多模态SFT数据，以及47.9%的文本SFT数据。",
+  "main_contributions": [
+    "构建了DeepSeek-VL 1.3B和7B两个开源视觉语言模型，面向真实世界应用。",
+    "提出混合视觉编码器（SigLIP-L+SAM-B），在固定token预算下高效处理1024x1024高分辨率图像。",
+    "提出并验证联合语言-多模态预训练策略（约7:3数据比例与模态预热），缓解多模态训练导致的语言能力退化。",
+    "构建基于真实用户用例taxonomy的指令微调数据，并公开模型权重以推动社区创新。"
+  ],
+  "key_findings": [
+    "在联合预训练中，语言数据占比至少70%对保持模型语言知识至关重要；最终采用约7:3的语言与多模态数据比例。",
+    "模态预热（modality warm-up）从纯语言数据比例1逐步降到目标比例，可避免训练初期语言能力显著下降并在最终阶段取得更优性能。",
+    "按模态分组采样可提升20%训练效率而不损害模型性能。",
+    "DeepSeek-VL-7B在多数语言基准上与DeepSeek-LLM-7B相当或更优（HellaSwag 68.4 vs 68.5，MMLU 52.4 vs 49.4），但在GSM8K上出现一定下降（55.0 vs 63.0）。",
+    "扩大阶段1适配器训练数据量并未带来收益，甚至可能降低性能。"
+  ],
+  "limitations": [
+    "DeepSeek-VL-7B在数学基准GSM8K上相比DeepSeek-LLM-7B出现一定下降，说明视觉与语言模态之间仍存在竞争关系，可能与7B模型容量有限有关。",
+    "1.3B小模型在阶段2训练中的生成式指标波动较大，需要借助多选PPL和小比例SFT数据等方式稳定训练。",
+    "混合视觉编码器中SAM-B在SFT阶段因GPU内存限制保持冻结。"
+  ],
+  "relation_to_deepseek": "DeepSeek-VL是基于DeepSeek-LLM构建的多模态扩展，是DeepSeek系列在视觉语言方向的基础模型；论文由DeepSeek-AI团队发布，并开源1.3B和7B权重，延续DeepSeek开放生态。",
+  "categories": [
+    "多模态",
+    "训练数据与训练方法",
+    "基础模型与架构"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-VL通过将语言与多模态数据比例设为约7:3进行联合预训练，在提升多模态能力的同时保持LLM语言能力。",
+      "quote": "Ultimately, we opt for a training ratio of language to multimodal data of roughly 7:3 for our final model. This ratio enables the model to maintain its language capabilities while simultaneously achieving better pretraining on multimodal data",
+      "page": 13
+    },
+    {
+      "claim": "DeepSeek-VL提出模态预热策略，从语言数据比例1逐渐降低到目标比例（如0.7），以避免训练初期语言能力剧烈下降。",
+      "quote": "To counteract this issue, we propose a simple yet effective modality warm-up strategy. Initially, we set the language data ratio to 1, and then gradually decrease it to the target ratio for the final model training (e.g., 0.7).",
+      "page": 21
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "更大规模模型或MoE结构能否消除语言与多模态能力之间的权衡？",
+    "DeepSeek-VL在真实部署中的推理时延与token成本如何随图像分辨率变化？",
+    "不同数据来源在预训练中的最优配比是否可进一步自动搜索？"
+  ]
+}

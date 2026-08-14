@@ -1,0 +1,63 @@
+{
+  "task_id": "P07",
+  "paper_id": "2505.00551",
+  "title": "100 Days After DeepSeek-R1: A Survey on Replication Studies and More Directions for Reasoning Language Models",
+  "one_sentence_summary": "本综述系统整理了DeepSeek-R1发布后采用公开数据复现R1式推理能力的SFT与RLVR研究，提炼了数据构建、算法设计和奖励设计等关键配方。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "通过收集和比较开源复现项目，按监督微调（SFT）和可验证奖励强化学习（RLVR）两大方向，梳理数据构建、算法变体、奖励设计、采样策略和训练配置，并进行横向性能对比与讨论。",
+  "data_and_training": "SFT数据集如OpenThoughts-114k、OpenR1-Math-220k、Light-R1-SFT等，以数学和代码为主，通过DeepSeek-R1生成CoT并验证；RL数据集如DeepScaleR、Skywork-OR1、DAPO-Math-17k等强调可验证性、去重、去污染和难度筛选。训练常从Qwen2.5系列模型出发，使用GRPO等算法，多数采用大上下文长度和packing。",
+  "main_contributions": [
+    "系统总结了100天内出现的DeepSeek-R1复现研究，涵盖SFT和RLVR两大路线。",
+    "详细比较了SFT数据集构建流程与训练配置，揭示高质量小数据集可达到强性能。",
+    "梳理了PPO、GRPO及其变体（DAPO、Dr.GRPO、VC-PPO等）的改进动机与公式。",
+    "归纳了RLVR的通用配方：数据难度筛选、去污染、动态采样、长度控制等。",
+    "讨论了过程奖励模型、偏好优化、泛化性、安全性和多模态多语言等后续方向。"
+  ],
+  "key_findings": [
+    "使用DeepSeek-R1生成的经过验证的CoT进行SFT，可使小模型复现蒸馏模型的推理能力。",
+    "精心策划的小型SFT数据集（如LIMO 817条、s1K-1.1 1000条）也能取得强结果。",
+    "RLVR成功的关键包括：可验证的规则奖励、过滤过易或过难样本、数据去重去污染、动态采样和适当的上下文长度。",
+    "KL损失并非必要；多个工作省略KL损失仍性能强，但结果不一。",
+    "GRPO及其变体是主流，但Open-Reasoner-Zero和Logic-RL报告普通PPO也能稳定训练且可能更优。"
+  ],
+  "limitations": [
+    "DeepSeek-R1官方训练数据和配置未完全公开，复现研究只能基于推测和有限披露。",
+    "许多数据集存在交叉引用和潜在基准污染，影响公平评测。",
+    "对格式奖励等设计缺乏严格消融实验，效果不明确。",
+    "RLVR主要限于数学和代码等可验证任务，扩展到通用领域仍具挑战。"
+  ],
+  "relation_to_deepseek": "本论文是对DeepSeek-R1复现工作的综述，聚焦于DeepSeek-R1采用的SFT+RLVR技术路线，并梳理了社区在公开数据上的复现配方。",
+  "categories": [
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "论文指出许多复现研究旨在使用公开数据重现DeepSeek-R1的强性能",
+      "quote": "many replication studies have emerged aiming to reproduce the strong performance achieved by DeepSeek-R1",
+      "page": 1
+    },
+    {
+      "claim": "SFT路线通过精选数据集在较小模型上复现DeepSeek-R1蒸馏模型的推理能力",
+      "quote": "Since then, several works (Hugging-Face, 2025; OpenThoughts-Team, 2025; Wen et al., 2025a; Zhao et al., 2025a) have attempted to reproduce this reasoning ability in smaller models by applying Supervised Fine-Tuning (SFT) on their own curated datasets.",
+      "page": 4
+    },
+    {
+      "claim": "RLVR成功依赖精心策划的可验证数据集",
+      "quote": "The curated high-quality datasets employed during its RLVR process are instrumental to the success.",
+      "page": 9
+    },
+    {
+      "claim": "RL训练数据应包含模型容易出错但并非完全失败的样本",
+      "quote": "We observe a consistent trend: datasets used for RL training are carefully designed to include data where models are likely to make mistakes (i.e., models neither consistently succeed nor completely fail).",
+      "page": 18
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "哪些具体超参数和配方在更大规模模型上仍有效？",
+    "如何将RLVR扩展到非数学/代码领域并保持可验证性？",
+    "格式奖励的必要性缺乏严格消融，尚未定论。"
+  ]
+}

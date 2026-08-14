@@ -1,0 +1,229 @@
+{
+  "selection_notes": "Selected 32 papers spanning core serving engines, KV cache management, request scheduling, parallel/disaggregated execution, low-precision KV compression, heterogeneous kernels, workload characterization, and reliability. Prioritized primary systems research and evidence from abstracts; includes vLLM/SGLang and key follow-ups.",
+  "selected": [
+    {
+      "paper_id": "2309.06180",
+      "relevance_score": 100,
+      "rationale": "Foundational vLLM paper introducing PagedAttention and paged KV cache management, directly addressing memory fragmentation and high-throughput LLM serving.",
+      "reading_focus": "How does OS-inspired virtual memory paging map to KV cache allocation, sharing, and near-zero waste?",
+      "category_hint": "KV Cache与内存管理"
+    },
+    {
+      "paper_id": "2312.07104",
+      "relevance_score": 95,
+      "rationale": "SGLang runtime for structured LLM programs with RadixAttention for KV reuse and compressed finite state machines, advancing request scheduling and execution.",
+      "reading_focus": "How does RadixAttention reuse KV cache across complex multi-call program structures?",
+      "category_hint": "推理服务与请求调度"
+    },
+    {
+      "paper_id": "2405.04437",
+      "relevance_score": 90,
+      "rationale": "vAttention proposes CUDA virtual memory decoupling to retain contiguous virtual KV cache while managing physical fragmentation, a portable alternative to PagedAttention.",
+      "reading_focus": "What advantages does virtual/physical memory decoupling provide for attention kernels and serving throughput?",
+      "category_hint": "KV Cache与内存管理"
+    },
+    {
+      "paper_id": "2401.17644",
+      "relevance_score": 90,
+      "rationale": "BurstGPT provides a large-scale real-world LLM serving workload dataset, essential for realistic evaluation of scheduling, KV management, and disaggregation.",
+      "reading_focus": "What burstiness, conversation, and failure patterns should serving optimizations target?",
+      "category_hint": "性能评测与成本分析"
+    },
+    {
+      "paper_id": "2408.12757",
+      "relevance_score": 90,
+      "rationale": "NanoFlow identifies LLM serving as compute-bound and exploits intra-device parallelism with nano-batches to overlap compute, memory, and networking for high throughput.",
+      "reading_focus": "How does nano-batching enable heterogeneous resource overlap within a single GPU?",
+      "category_hint": "并行计算与分布式执行"
+    },
+    {
+      "paper_id": "2406.03243",
+      "relevance_score": 88,
+      "rationale": "Llumnix performs runtime request rescheduling with live migration, improving load balancing, fragmentation, and SLO attainment in heterogeneous LLM workloads.",
+      "reading_focus": "How does request state migration enable dynamic scheduling across model instances?",
+      "category_hint": "推理服务与请求调度"
+    },
+    {
+      "paper_id": "2402.02750",
+      "relevance_score": 90,
+      "rationale": "KIVI introduces tuning-free asymmetric 2-bit KV cache quantization based on distribution analysis, reducing memory and increasing batch size and throughput.",
+      "reading_focus": "Why are key and value caches quantized per-channel vs per-token?",
+      "category_hint": "模型压缩与低精度计算"
+    },
+    {
+      "paper_id": "2409.16997",
+      "relevance_score": 85,
+      "rationale": "INT-FlashAttention is the first INT8 attention operator compatible with FlashAttention's forward workflow, enabling fully INT8 inference and faster attention kernels.",
+      "reading_focus": "How does integer quantization integrate with FlashAttention's tiling and online softmax?",
+      "category_hint": "异构硬件与内核优化"
+    },
+    {
+      "paper_id": "2405.16444",
+      "relevance_score": 90,
+      "rationale": "CacheBlend enables reuse of non-prefix KV caches for RAG by selectively recomputing a small token subset, reducing TTFT and improving throughput.",
+      "reading_focus": "How does CacheBlend maintain cross-attention consistency when combining precomputed KV chunks?",
+      "category_hint": "KV Cache与内存管理"
+    },
+    {
+      "paper_id": "2310.07240",
+      "relevance_score": 85,
+      "rationale": "CacheGen compresses KV cache tensors using distribution-aware encoding and adapts compression to bandwidth, reducing context loading delay.",
+      "reading_focus": "How does exploiting KV cache distributions cut bandwidth use without hurting generation quality?",
+      "category_hint": "KV Cache与内存管理"
+    },
+    {
+      "paper_id": "2312.05516",
+      "relevance_score": 85,
+      "rationale": "Pensieve maintains stateful multi-turn conversation serving with multi-tier KV caching and generalized PagedAttention, avoiding repeated history processing.",
+      "reading_focus": "How does Pensieve combine GPU/CPU cache tiers with non-contiguous memory attention?",
+      "category_hint": "KV Cache与内存管理"
+    },
+    {
+      "paper_id": "2411.18424",
+      "relevance_score": 85,
+      "rationale": "FastSwitch reduces context-switching overhead in fairness-aware preemptive LLM scheduling, addressing GPU idleness and I/O inefficiency.",
+      "reading_focus": "How does block-based KV cache layout affect preemption and context switching costs?",
+      "category_hint": "推理服务与请求调度"
+    },
+    {
+      "paper_id": "2501.14312",
+      "relevance_score": 85,
+      "rationale": "DLPM is a locality-aware fair scheduling algorithm balancing prefix cache hit rate and fairness among clients, with extensions for distributed serving.",
+      "reading_focus": "How does deficit longest-prefix-match guarantee fairness while preserving cache locality?",
+      "category_hint": "推理服务与请求调度"
+    },
+    {
+      "paper_id": "2504.09285",
+      "relevance_score": 90,
+      "rationale": "DynaServe unifies colocated and disaggregated serving with micro-request splitting and two-level scheduling, boosting goodput under SLO constraints.",
+      "reading_focus": "How does the micro-request abstraction enable flexible prefill/decode placement?",
+      "category_hint": "并行计算与分布式执行"
+    },
+    {
+      "paper_id": "2507.06608",
+      "relevance_score": 85,
+      "rationale": "Nexus proactively disaggregates prefill and decode within a GPU by dynamically partitioning resources based on diminishing returns and bandwidth contention.",
+      "reading_focus": "How does Nexus anticipate and adapt to conflicting prefill/decode resource demands?",
+      "category_hint": "并行计算与分布式执行"
+    },
+    {
+      "paper_id": "2504.09590",
+      "relevance_score": 85,
+      "rationale": "BROS collocates real-time and best-effort requests with bidirectional KV cache management, improving latency SLOs while maintaining throughput.",
+      "reading_focus": "How does bidirectional KV memory sharing enable hybrid request scheduling?",
+      "category_hint": "推理服务与请求调度"
+    },
+    {
+      "paper_id": "2605.03375",
+      "relevance_score": 90,
+      "rationale": "Tutti removes CPU intervention from SSD-backed KV cache I/O using a GPU-centric object store and GPU io_uring, saturating NVMe bandwidth.",
+      "reading_focus": "How does GPU-centric storage eliminate the CPU bottleneck in long-context serving?",
+      "category_hint": "异构硬件与内核优化"
+    },
+    {
+      "paper_id": "2512.18194",
+      "relevance_score": 85,
+      "rationale": "TraCT uses CXL shared memory as a rack-scale KV transfer substrate, eliminating the NIC hop in disaggregated prefill/decode serving.",
+      "reading_focus": "How do CXL load/store operations replace RDMA for KV cache sharing?",
+      "category_hint": "并行计算与分布式执行"
+    },
+    {
+      "paper_id": "2508.18572",
+      "relevance_score": 85,
+      "rationale": "Strata is a hierarchical context caching framework with GPU-assisted I/O and cache-aware scheduling, cutting TTFT for long-context serving.",
+      "reading_focus": "How does Strata overlap fragmented KV cache loading with compute?",
+      "category_hint": "KV Cache与内存管理"
+    },
+    {
+      "paper_id": "2509.00105",
+      "relevance_score": 85,
+      "rationale": "AdaptCache applies lossy KV compression with adaptive algorithm, rate, and device placement to increase DRAM hits and reduce loading delay.",
+      "reading_focus": "How does AdaptCache optimize delay-quality tradeoffs per KV cache entry?",
+      "category_hint": "KV Cache与内存管理"
+    },
+    {
+      "paper_id": "2512.14946",
+      "relevance_score": 85,
+      "rationale": "EVICPRESS jointly optimizes KV eviction and compression across storage tiers with a unified utility function, improving TTFT and quality.",
+      "reading_focus": "How are eviction and compression decisions co-optimized across all contexts?",
+      "category_hint": "KV Cache与内存管理"
+    },
+    {
+      "paper_id": "2605.17613",
+      "relevance_score": 85,
+      "rationale": "VeriCache combines compressed KV drafting with full-KV verification to guarantee lossless outputs while preserving high decoding throughput.",
+      "reading_focus": "How does speculative verification with full KV avoid accuracy loss from compression?",
+      "category_hint": "KV Cache与内存管理"
+    },
+    {
+      "paper_id": "2601.10729",
+      "relevance_score": 85,
+      "rationale": "OrbitFlow performs fine-grained layer-wise KV cache offloading decisions with an ILP solver, improving SLO attainment in long-context serving.",
+      "reading_focus": "How does online ILP-based placement adapt to shifting memory demands?",
+      "category_hint": "KV Cache与内存管理"
+    },
+    {
+      "paper_id": "2608.13263",
+      "relevance_score": 85,
+      "rationale": "vToken introduces token-level virtualization to reclaim intra-block KV fragmentation while preserving PagedAttention kernel compatibility.",
+      "reading_focus": "How does token-table indirection decouple logical liveness from physical block placement?",
+      "category_hint": "KV Cache与内存管理"
+    },
+    {
+      "paper_id": "2411.18077",
+      "relevance_score": 85,
+      "rationale": "MiniKV achieves 86% KV cache compression with 2-bit layer-discriminative quantization and custom FlashAttention-compatible CUDA kernels.",
+      "reading_focus": "How does layer-discriminative bit allocation preserve long-context accuracy?",
+      "category_hint": "模型压缩与低精度计算"
+    },
+    {
+      "paper_id": "2503.18599",
+      "relevance_score": 85,
+      "rationale": "Oaken co-designs online-offline hybrid KV quantization with custom hardware engines, avoiding online outlier detection overhead.",
+      "reading_focus": "How does offline threshold setting enable high-performance online KV quantization?",
+      "category_hint": "模型压缩与低精度计算"
+    },
+    {
+      "paper_id": "2407.00047",
+      "relevance_score": 85,
+      "rationale": "QLM provides queue management for SLO-oriented LLM serving with request waiting time estimation and global scheduling across models.",
+      "reading_focus": "How do waiting time estimates drive request pulling, eviction, and load balancing?",
+      "category_hint": "推理服务与请求调度"
+    },
+    {
+      "paper_id": "2505.09999",
+      "relevance_score": 85,
+      "rationale": "ServeGen presents production workload characterization and generation for LLM serving, covering multimodal and reasoning models to improve benchmarking realism.",
+      "reading_focus": "What new workload characteristics of multimodal/reasoning models affect serving?",
+      "category_hint": "性能评测与成本分析"
+    },
+    {
+      "paper_id": "2607.09172",
+      "relevance_score": 85,
+      "rationale": "Large-scale controlled study of vLLM configuration options examining attention kernel, prefix caching, and chunked prefill trade-offs across energy, latency, and accuracy.",
+      "reading_focus": "How do configuration interactions impact energy, performance, and output quality?",
+      "category_hint": "性能评测与成本分析"
+    },
+    {
+      "paper_id": "2605.11202",
+      "relevance_score": 85,
+      "rationale": "GRIEF is a greybox fuzzer for LLM serving engines, discovering concurrency-induced vulnerabilities like KV-cache isolation failures and performance interference.",
+      "reading_focus": "How do timed multi-request traces reveal serving-layer reliability and security bugs?",
+      "category_hint": "可靠性、弹性与可观测性"
+    },
+    {
+      "paper_id": "2511.17826",
+      "relevance_score": 85,
+      "rationale": "TBIK provides tree-based invariant kernels for bitwise-identical inference across tensor-parallel sizes, eliminating training-inference mismatch in RL pipelines.",
+      "reading_focus": "How do hierarchical reduction orders ensure determinism across TP configurations?",
+      "category_hint": "训练系统与优化"
+    },
+    {
+      "paper_id": "2607.28848",
+      "relevance_score": 85,
+      "rationale": "DeltaServe converts idle inference GPU capacity into LoRA fine-tuning throughput via an SLO-aware scheduler and shared prefill/fine-tuning forward execution.",
+      "reading_focus": "How does DeltaServe schedule fine-tuning to respect inference SLOs without extra hardware?",
+      "category_hint": "训练系统与优化"
+    }
+  ]
+}

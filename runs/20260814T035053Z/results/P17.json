@@ -1,0 +1,49 @@
+{
+  "task_id": "P17",
+  "paper_id": "2605.03375",
+  "title": "Tutti: Making SSD-Backed KV Cache Practical for Long-Context LLM Serving",
+  "one_sentence_summary": "Tutti 提出一种 GPU 中心化的 SSD-backed KV Cache 对象存储，通过 GPU io_uring 和 slack-aware I/O 调度消除 CPU 干预，使 vLLM 在长上下文场景中接近 DRAM 性能并大幅降低 TTFT 与服务成本。",
+  "research_question": "针对长上下文 LLM 服务，如何通过 GPU-centric 存储消除 SSD-backed KV Cache 恢复时的 CPU 瓶颈，从而同时提升吞吐、降低延迟和成本？",
+  "methodology": "基于 GeminiFS 构建 GPU-centric 对象存储，将每个 KV block 映射为 GPU file 中的 key/value 对象；引入 P2P 内存映射表（采用 SGL 而非 PRP）支持 GPU 直访 SSD；设计 GPU io_uring (gio_uring)，利用 HBM 中的无锁 SQ/CQ 环和 SM 分区实现异步 GPU 直接对象 I/O；实现基于离线 profile 查找表的 slack-aware I/O 调度，将读写 I/O 放入计算 slack 窗口；集成到 vLLM 的 KVConnector，并通过 Mooncake 进行跨节点扩展。",
+  "experimental_setup": "在 64 核 Intel Xeon 6530、512GB 内存、2×H100 80GB HBM、4×Solidigm D7-PS1010 7.68TB SSD 上，对比 vLLM 0.12.0/0.17.0 下的 HBM、DRAM（LMCache-DRAM-LW）、LMCache-SSD、LMCache-GDS 基线；模型使用 Llama3-8B（单 GPU）和 GLM-4-9B-Chat-1M（双 GPU 张量并行）；负载使用 LEval 和 LooGLE，并采用泊松到达模拟多会话；指标包括 TTFT、ITL、存储带宽、GPU bubble time 和每百万 token 成本。",
+  "main_contributions": [
+    "论文自述为首个消除 HBM 与 SSD 之间关键数据路径和 I/O 控制路径上 CPU 干预的开源 SSD-backed KV caching 解决方案。",
+    "提出 GPU-native 对象抽象，弥合 KV cache 传输与 GPU 存储 I/O 之间的粒度差距。",
+    "设计异步 GPU io_uring 和 slack-aware I/O 调度，实现计算与 I/O 深度重叠并避免资源争用。",
+    "集成到 vLLM，展示在饱和 NVMe SSD 带宽和降低 GPU stall 方面的有效性，并接近 DRAM-backed 性能、提供近无限容量。"
+  ],
+  "key_findings": [
+    "相比 GDS-enabled SSD-backed LMCache，Tutti 在严格 SLO 下 TTFT 降低 78.3%，可实现请求速率提升 2×，服务成本降低约 27%。",
+    "Tutti 的 retrieve 带宽最高达 25.9 GB/s，较 LMCache-GDS 的约 11.9 GB/s 提升 2.08×；store 带宽约 10 GB/s。",
+    "SGL 相对 PRP 在单线程微基准下读/写带宽分别提升 31.0× 和 91.3×。",
+    "层间异步流水线将 compute-bound 到 I/O-bound 的 crossover point 推至 98.3% 缓存命中率，平均 bubble time 约 25ms，接近 DRAM 基线。",
+    "在 GLM-4-9B-1M 双 GPU 测试中，Tutti 在 640K prefix 达到 1.2s TTFT，而 LMCache-GDS 在 512K/640K 因 staging buffer 导致 OOM 失败。"
+  ],
+  "limitations": [
+    "当前原型未优化跨节点远程路径：使用 CPU 侧接口将 GPU file 读入 host memory 再经 RDMA 传输，增加了额外 CPU 开销。",
+    "论文展示的分布式评估为双 GPU 场景，跨节点远程加载仍依赖 Mooncake 协调，尚未实现论文提及的 GPU-initiated RDMA 直通远程路径。"
+  ],
+  "relation_to_topic": "该工作属于 AI Infra 系统中 KV Cache 与内存管理、异构硬件与内核优化、性能评测与成本分析的交叉方向：Tutti 通过将存储 I/O 控制平面从 CPU 迁移到 GPU，结合 GPU io_uring 和 slack-aware 调度，展示了软硬件协同如何缓解长上下文 LLM 服务的 I/O 瓶颈，并与 vLLM 等推理引擎无缝集成，直接提升吞吐、降低延迟和成本。",
+  "categories": [
+    "KV Cache与内存管理",
+    "异构硬件与内核优化",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "Tutti 的核心是 GPU-centric KV cache 对象存储，CPU 仅负责每层异步加载 I/O 内核，从而从 HBM 与 SSD 之间的关键数据路径和 I/O 控制路径中移除 CPU 干预。",
+      "quote": "At the core of Tutti is aGPU-centricKV cache object store, in which the CPU is only responsible forasynchronouslyloading I/O kernels once per layer to the GPU.",
+      "page": 1
+    },
+    {
+      "claim": "与最先进的 GDS-enabled SSD-backed LMCache 相比，Tutti 在严格 SLO 约束下将 TTFT 降低 78.3%，并将可实现请求速率提升 2 倍。",
+      "quote": "Extensive evaluation shows that compared to the state-of-the-art GDS-enabled, SSD-backed LMCache, Tutti reduces TTFT by 78.3% under strict SLO constraints and improves the achievable request rate by 2×.",
+      "page": 1
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "如何实现并验证 GPU-initiated RDMA 的跨节点远程路径，以消除当前远程加载中的 CPU 开销？",
+    "Tutti 在更大规模多节点、多租户混合负载及不同 SSD/PCIe 配置下的泛化性如何？"
+  ]
+}

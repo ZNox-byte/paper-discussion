@@ -1,0 +1,68 @@
+{
+  "task_id": "P14",
+  "paper_id": "2406.11931",
+  "title": "DeepSeek-Coder-V2: Breaking the Barrier of Closed-Source Models in Code Intelligence",
+  "one_sentence_summary": "本文提出 DeepSeek-Coder-V2，通过从 DeepSeek-V2 中间检查点继续预训练 6 万亿 token，显著增强编码和数学推理能力，同时保持通用语言性能，并在多项基准上达到或超越闭源模型。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "该论文采用在 DeepSeek-V2 中间检查点（已训练 4.2T token）上继续预训练的方式，使用 60% 源代码、10% 数学语料、30% 自然语言的 6 万亿 token 语料进行训练；训练策略包括 next-token prediction 和仅对 16B 模型使用 Fill-In-Middle；通过 Yarn 将上下文扩展到 128K 并分两阶段长上下文训练；对齐阶段先进行监督微调（SFT），再使用 GRPO 强化学习，并利用编译器反馈训练奖励模型。",
+  "data_and_training": "预训练数据组成为 60% 源代码、10% 数学语料、30% 自然语言；代码语料共 1,170B token 来自 GitHub 和 CommonCrawl，数学语料 221B token，自然语言直接采样自 DeepSeek-V2 训练集；总训练 token 10.2T（4.2T 来自 V2 数据集，6T 来自新数据集）；使用 AdamW 优化器和余弦学习率调度；长上下文扩展采用 Yarn，并用 32K 和 128K 序列长度两阶段训练。",
+  "main_contributions": [
+    "提出 DeepSeek-Coder-V2 16B 和 236B 两个基于 DeepSeek-MoE 框架的模型，激活参数分别只有 2.4B 和 21B，支持 338 种编程语言和 128K 上下文长度。",
+    "首次尝试开发开源的百亿参数代码模型，在编码和数学任务上超越或比肩 GPT4-Turbo、Claude 3 Opus、Gemini 1.5 Pro 等闭源模型。",
+    "模型以宽松许可证公开，支持研究和无限制商业使用。",
+    "引入含 60% 代码、10% 数学、30% 自然语言的多源继续预训练语料，并通过消融验证新代码语料的有效性。"
+  ],
+  "key_findings": [
+    "从 DeepSeek-V2 中间检查点继续预训练 6 万亿 token 后，模型的编码和数学推理能力显著增强，同时通用语言性能保持可比。",
+    "DeepSeek-Coder-V2 在 HumanEval 上取得 90.2%，MBPP 上 76.2%，MATH 上 75.7%，接近 GPT-4o 的 76.6%，并在 AIME 2024 中解题数超过闭源模型。",
+    "DeepSeek-Coder-V2 是首个在 SWE-Bench 上超过 10% 的开源模型，并在 Aider 基准上取得 73.7% 的最高分。",
+    "在通用语言基准中，DeepSeek-Coder-V2 在 MMLU 达到 79.2%，Arena-Hard 达到 65.0，显著优于其他代码专用模型。"
+  ],
+  "limitations": [
+    "与 GPT-4 Turbo 等最先进模型相比，DeepSeek-Coder-V2 在指令遵循能力上仍有显著差距，导致在 SWE-bench 等复杂场景中表现不佳。"
+  ],
+  "relation_to_deepseek": "DeepSeek-Coder-V2 直接基于 DeepSeek-V2 构建：采用相同的 MoE 架构、分词器、超参数和优化器设置，并从一个已训练 4.2T token 的 DeepSeek-V2 中间检查点继续预训练；因此继承了 DeepSeek-V2 的通用语言能力，并通过新增 6T 代码和数学语料强化了专业能力。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "代码与数学",
+    "对齐、安全与评测",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-Coder-V2 从 DeepSeek-V2 中间检查点继续预训练 6 万亿 token，显著增强编码和数学推理能力，同时保持通用语言性能。",
+      "quote": "DeepSeek-Coder-V2 is further pre-trained from an intermediate checkpoint of DeepSeek-V2 with additional 6 trillion tokens. Through this continued pre-training, DeepSeek-Coder-V2 substantially enhances the coding and mathematical reasoning capabilities of DeepSeek-V2, while maintaining comparable performance in general language tasks.",
+      "page": 1
+    },
+    {
+      "claim": "预训练数据由 60% 源代码、10% 数学语料和 30% 自然语言组成。",
+      "quote": "the dataset of DeepSeek-Coder-V2 is created with a composition of 60% source code, 10% math corpus, and 30% natural language corpus.",
+      "page": 2
+    },
+    {
+      "claim": "通过 1B 模型消融验证新代码语料比 DeepSeek-Coder 的语料更有效，HumanEval 和 MBPP 分别提升 6.7% 和 9.4%。",
+      "quote": "we conduct ablation studies with the 1B parameter model and observe improvements of 6.7% and 9.4% in accuracy across both HumanEval (from 30.5% to 37.2%) and MBPP (from 44.6% to 54.0%) benchmarks",
+      "page": 2
+    },
+    {
+      "claim": "总训练 token 为 10.2T，其中 4.2T 来自 DeepSeek-V2 数据集，6T 来自新数据集。",
+      "quote": "In total, DeepSeek-Coder-V2 has been exposed to 10.2T training tokens, where 4.2 trillion tokens originate from the DeepSeek V2 dataset, while the remaining 6 trillion tokens come from the DeepSeek-Coder-V2 dataset.",
+      "page": 2
+    },
+    {
+      "claim": "模型架构与 DeepSeek-V2 一致。",
+      "quote": "Our architecture aligns with that of DeepSeekV2 (DeepSeek-AI, 2024).",
+      "page": 5
+    },
+    {
+      "claim": "对齐阶段采用 GRPO 算法进行强化学习。",
+      "quote": "we employ Group Relative Policy Optimization (GRPO) algorithm to align its behavior with human preferences.",
+      "page": 2
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "论文未报告推理吞吐量或延迟的定量测量，也未讨论继续预训练对模型安全性的具体影响。"
+  ]
+}

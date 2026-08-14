@@ -1,0 +1,60 @@
+{
+  "task_id": "P01",
+  "paper_id": "2606.19348",
+  "title": "DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence",
+  "one_sentence_summary": "DeepSeek-V4 系列（Pro 1.6T/49B activated、Flash 284B/13B activated）通过 CSA/HCA 混合注意力、Manifold-Constrained Hyper-Connections (mHC) 与 Muon 优化器，在百万 token 上下文下显著降低 KV cache 与推理 FLOPs，并通过预训练与后训练蒸馏成为开放模型中新的 SOTA。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？本报告进一步聚焦 CSA/HCA 混合注意力与 mHC 如何在百万 token 上下文下降低 KV cache 与 FLOPs。",
+  "methodology": "本文为官方技术报告，先描述整体架构（保留 DeepSeekMoE 与 MTP，引入 CSA/HCA 混合注意力、mHC、Muon 优化器），再介绍训练/推理基础设施（细粒度 EP 重叠、TileLang 内核、确定性内核、上下文并行、异构与磁盘 KV cache），随后给出预训练（32T/33T tokens）与两阶段后训练（领域专家 SFT+GRPO 训练、多教师 on-policy distillation），最后用内部统一评测框架及真实任务评估模型。",
+  "data_and_training": "预训练语料超过 32T tokens，涵盖数学、代码、网页、长文档等多类别；DeepSeek-V4-Flash 训练 32T tokens，DeepSeek-V4-Pro 训练 33T tokens，序列长度从 4K 逐步扩展到 64K 和 1M。后训练采用领域专家训练（SFT+GRPO）与多教师 full-vocabulary On-Policy Distillation (OPD) 合并能力，并引入 FP4 量化感知训练、Quick Instruction、可抢占容错 rollout 等基础设施。",
+  "main_contributions": [
+    "提出 CSA/HCA 混合注意力架构，将 KV cache 按 m 或 m' 压缩并结合 DeepSeek Sparse Attention，使 1M token 上下文高效可行。",
+    "引入 Manifold-Constrained Hyper-Connections (mHC)，将残差映射约束到双随机矩阵流形，增强深层信号传播稳定性并保持表达力。",
+    "采用 Muon 优化器及混合 Newton-Schulz 迭代，实现更快收敛与更稳定的训练。",
+    "构建高效基础设施：细粒度通信-计算重叠的 MoE 内核、TileLang 融合内核、batch-invariant 与确定性 kernel、两阶段上下文并行、异构 KV cache 管理与磁盘 KV cache 存储。",
+    "后训练采用领域专家训练 + 多教师 OPD，并加入 FP4 量化感知训练与 Quick Instruction，降低部署开销与首 token 延迟。",
+    "开放模型 checkpoint 与 MegaMoE 等实现，延续 DeepSeek 开放生态。"
+  ],
+  "key_findings": [
+    "在 1M token 上下文下，DeepSeek-V4-Pro 仅需 DeepSeek-V3.2 的 27% 单 token 推理 FLOPs 和 10% KV cache；V4-Flash 进一步降至 10% FLOPs 和 7% KV cache。",
+    "DeepSeek-V4-Pro-Max 在 SimpleQA-Verified 等知识基准上大幅超越此前开源模型，但仍落后 Gemini-3.1-Pro。",
+    "DeepSeek-V4-Pro-Max 在 Codeforces 达 3206 rating，与 GPT-5.4 相当，论文称这是开放模型首次在该任务上匹配闭源模型。",
+    "DeepSeek-V4 在 Putnam-2025 形式化推理前沿设置中达到 proof-perfect 120/120。",
+    "在 MRCR 1M 任务上 DeepSeek-V4-Pro 优于 Gemini-3.1-Pro，但弱于 Claude Opus 4.6；检索性能在 128K 内高度稳定，超过 128K 后出现可见下降。",
+    "DeepSeek-V4-Flash-Max 在推理任务上接近 GPT-5.2 与 Gemini-3.0-Pro，兼具成本效益。"
+  ],
+  "limitations": [
+    "为了控制风险，DeepSeek-V4 保留了较多已验证组件，整体架构相对复杂，未来需要更本质化的简化。",
+    "Anticipatory Routing 与 SwiGLU Clamping 虽能缓解训练不稳定，但其底层原理仍未被充分理解。",
+    "DeepSeek-V4-Pro-Max 在知识和部分推理基准上仍落后于 GPT-5.4、Gemini-3.1-Pro 等前沿闭源模型约 3 到 6 个月。",
+    "长上下文检索性能在 128K 之后出现可见下降。",
+    "在最高难度中文写作、复杂指令跟随与多轮写作任务中，Claude Opus 4.5 仍保持优势。",
+    "DeepSeek-V4-Flash 因参数规模较小，在知识类任务上明显低于 DeepSeek-V4-Pro。",
+    "论文指出 DeepSeek-V4-Pro 在格式美学、部分格式约束遵循和长文本简洁摘要方面仍有改进空间。"
+  ],
+  "relation_to_deepseek": "本文是 DeepSeek-V4 系列的官方技术报告，基于 DeepSeek-V3 的 DeepSeekMoE、MTP 与训练/推理框架，并在架构（CSA/HCA、mHC、Muon）、长上下文效率、基础设施和后训练（领域专家 + OPD）上形成对 DeepSeek-V3.2 的关键升级；同时延续 DeepSeek 开放权重与开源基础设施路线，公开 checkpoint 和 MegaMoE 等组件。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "系统效率与部署",
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "CSA 与 HCA 通过将 KV cache 按 m 或 m′ 压缩为单个条目并配合稀疏注意力/重压缩，从根本上降低长上下文 KV cache 与注意力 FLOPs。",
+      "quote": "CSA integrates both compression and sparse attention strategies: it first compresses the Key-Value (KV) cache of every 𝑚 tokens into one entry, and then applies DeepSeek Sparse Attention (DSA) (DeepSeek-AI, 2025) where each query token attends to only𝑘 compressed KV entries. HCA aims for extreme compression by consolidating the KV cache of every 𝑚′ (≫𝑚 ) tokens into a single entry.",
+      "page": 9
+    },
+    {
+      "claim": "在 1M token 上下文下，DeepSeek-V4-Pro 相比 DeepSeek-V3.2 仅需 27% 单 token 推理 FLOPs 和 10% KV cache，V4-Flash 进一步降至 10% 与 7%，量化了混合注意力带来的效率收益。",
+      "quote": "In the scenario of 1M-token context, even DeepSeek-V4-Pro, which has a larger number of activated parameters, attains only 27% of the single-token FLOPs (measured in equivalent FP8 FLOPs) and 10% of the KV cache size relative to DeepSeek-V3.2. Furthermore, DeepSeek-V4-Flash, with its smaller number of activated parameters, pushes efficiency even further: in the 1M-token context setting, it achieves only 10% of the single-token FLOPs and 7% of the KV cache size compared with DeepSeek-V3.2.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "论文未提供 CSA/HCA 相对标准稠密注意力的端到端训练 FLOPs 与内存节省的独立消融数据，也未单独量化 mHC 对 KV cache/FLOPs 的影响。",
+    "FP4 量化对下游任务质量的详细影响未以独立对比表呈现。",
+    "GPT-5.4 因 API 故障未在部分长上下文基准上完成评估，相关对比空缺。"
+  ]
+}

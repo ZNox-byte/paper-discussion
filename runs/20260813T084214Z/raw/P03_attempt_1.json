@@ -1,0 +1,61 @@
+{
+  "task_id": "P03",
+  "paper_id": "2606.19348",
+  "title": "DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence",
+  "one_sentence_summary": "本文提出DeepSeek-V4预览版系列（Pro和Flash），通过CSA与HCA混合注意力、mHC和Muon优化器等创新，实现百万token上下文的高效处理，其中Pro在1M上下文下推理FLOPs和KV缓存分别仅为DeepSeek-V3.2的27%和10%。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "论文采用MoE架构，保留DeepSeekMoE和MTP，引入mHC、CSA/HCA混合注意力及Muon优化器；在超过32T token上预训练，随后进行包含专家训练和on-policy蒸馏的后训练；通过大规模基础设施优化和基准测试评估模型性能与效率。",
+  "data_and_training": "预训练语料超过32T token，Flash和Pro分别训练32T和33T token，逐步扩展序列长度至1M；后训练采用两阶段范式：领域专家独立训练（SFT+GRPO）和基于on-policy蒸馏的多教师合并，并引入FP4量化感知训练。",
+  "main_contributions": [
+    "提出混合注意力架构CSA和HCA，压缩KV缓存和稀疏注意力，大幅降低长上下文计算成本",
+    "引入Manifold-Constrained Hyper-Connections (mHC)增强残差连接稳定性",
+    "采用Muon优化器加速收敛并提升训练稳定性",
+    "实现百万token上下文的高效推理，Pro和Flash分别将FLOPs/KV缓存降至V3.2的27%/10%和10%/7%",
+    "构建高效训练与推理基础设施，包括FP4量化、通信计算重叠、异构KV缓存管理等"
+  ],
+  "key_findings": [
+    "在1M上下文场景，DeepSeek-V4-Pro单token FLOPs为DeepSeek-V3.2的27%，KV缓存为10%；Flash为10%和7%",
+    "与BF16 GQA8基线相比，KV缓存降至约2%",
+    "DeepSeek-V4-Pro-Max在知识基准上领先开源模型，推理性能接近前沿闭源模型",
+    "DeepSeek-V4-Flash-Max以更小参数实现与GPT-5.2和Gemini-3.0-Pro相当的性能",
+    "混合CSA/HCA使百万token上下文在实践可行"
+  ],
+  "limitations": [
+    "架构相对复杂：论文提到'In pursuit of extreme long-context efficiency, DeepSeek-V4 series adopted a bold architectural design... made the architecture relatively complex'",
+    "训练稳定性方法原理不充分：'Although Anticipatory Routing and SwiGLU Clamping have been proven effective ... their underlying principles remain insufficiently understood'",
+    "在知识基准上仍落后于Gemini-3.1-Pro等闭源模型"
+  ],
+  "relation_to_deepseek": "本文由DeepSeek-AI发布，介绍DeepSeek-V4系列（Pro和Flash），是DeepSeek-V3/V3.2的继任者，继承DeepSeekMoE、MTP等设计，并引入CSA/HCA、mHC和Muon等关键升级，目标是高效百万token上下文智能。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "在100万token上下文场景下，DeepSeek-V4-Pro的单token推理FLOPs仅为DeepSeek-V3.2的27%，KV缓存仅为10%；DeepSeek-V4-Flash进一步降至10%和7%。",
+      "quote": "In the scenario of 1M-token context, even DeepSeek-V4-Pro, which has a larger number of activated parameters, attains only 27% of the single-token FLOPs (measured in equivalent FP8 FLOPs) and 10% of the KV cache size relative to DeepSeek-V3.2. Furthermore, DeepSeek-V4-Flash, with its smaller number of activated parameters, pushes efficiency even further: in the 1M-token context setting, it achieves only 10% of the single-token FLOPs and 7% of the KV cache size compared with DeepSeek-V3.2.",
+      "page": 5
+    },
+    {
+      "claim": "CSA先按每m个token压缩KV缓存，再应用稀疏注意力选择top-k压缩条目；HCA以更大压缩率m'整合KV缓存，两者混合使百万token上下文可行。",
+      "quote": "CSA integrates both compression and sparse attention strategies: it first compresses the Key-Value (KV) cache of every 𝑚 tokens into one entry, and then applies DeepSeek Sparse Attention (DSA) (DeepSeek-AI, 2025) where each query token attends to only 𝑘 compressed KV entries. HCA aims for extreme compression by consolidating the KV cache of every 𝑚′ (≫𝑚 ) tokens into a single entry. The hybrid architecture of CSA and HCA remarkably improves the long-context efficiency of DeepSeek-V4 series, making one-million-token context feasible in practice.",
+      "page": 9
+    },
+    {
+      "claim": "与BF16 GQA8基线相比，DeepSeek-V4系列在1M上下文中KV缓存可降低至约2%。",
+      "quote": "Taking BF16 GQA8 (Ainslie et al., 2023) with a head dimension of 128 as the baseline — one of the common configurations of LLM attention — the KV cache size of DeepSeek-V4 series can be dramatically reduced to approximately 2% times of that baseline in the 1M-context setting.",
+      "page": 13
+    },
+    {
+      "claim": "混合CSA/HCA与精度优化共同显著降低长上下文下的推理FLOPs和KV缓存。",
+      "quote": "By employing hybrid CSA and HCA, along with precision optimizations on computation and storage, DeepSeek-V4 series achieve significantly lower inference FLOPs and a substantially reduced KV cache size compared with DeepSeek-V3.2, especially in long-context settings.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "CSA和HCA压缩过程对模型质量损失的定量影响尚不完全清楚",
+    "未来如何进一步简化架构并提升训练稳定性的理论理解仍有待探索"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "task_id": "P03",
+  "paper_id": "2405.04434",
+  "title": "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model",
+  "one_sentence_summary": "DeepSeek-V2 通过提出 Multi-head Latent Attention (MLA) 与 DeepSeekMoE，以 236B 总参数、21B 激活参数的 MoE 架构在 8.1T token 上训练，相比 DeepSeek 67B 节省 42.5% 训练成本、KV cache 减少 93.3%、生成吞吐提升 5.76 倍，同时以 21B 激活参数达到开源模型中的顶尖性能。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？本文阅读聚焦：MLA 为何是压缩 KV cache 与高效推理的有效机制？",
+  "methodology": "论文采用架构创新与实验评估相结合的方法：设计 MLA（低秩键值联合压缩与解耦 RoPE）和 DeepSeekMoE（细粒度专家分割与共享专家隔离），在 8.1T token 上预训练 DeepSeek-V2，随后进行 SFT 与基于 GRPO 的两阶段 RL 对齐；通过标准基准、长上下文 NIAH 测试、训练/推理效率测量以及消融实验验证 MLA 和 DeepSeekMoE 的效果。",
+  "data_and_training": "预训练语料为 8.1T token 的高质量多源中英双语数据，中文 token 比英文多约 12%；使用与 DeepSeek 67B 相同的 BBPE tokenizer（词表 100K）；模型配置为 60 层、隐藏维度 5120、MLA 128 头且每头 128 维、KV 压缩维度 512、每 MoE 层 2 个共享专家和 160 个 routed experts（每 token 激活 6 个）；训练采用 AdamW、warmup-and-step-decay、batch size 从 2304 增至 9216、最大序列长度 4K，并用 YaRN 将上下文扩展到 128K；SFT 使用 1.5M 条指令数据，RL 采用 GRPO 并分为推理对齐与人类偏好对齐两阶段。",
+  "main_contributions": [
+    "提出 Multi-head Latent Attention (MLA)，通过低秩键值联合压缩显著减少推理时的 KV cache，并设计解耦 RoPE 以兼容位置编码。",
+    "采用 DeepSeekMoE 架构，利用细粒度专家分割和共享专家隔离实现经济训练与稀疏计算。",
+    "发布 236B 总参数、21B 激活参数的 DeepSeek-V2，支持 128K 上下文，并开源模型 checkpoint。",
+    "发布 DeepSeek-V2-Lite，为社区提供配备 MLA 与 DeepSeekMoE 的 15.7B 小模型。",
+    "通过 SFT 与 RL 对齐得到 DeepSeek-V2 Chat，在 AlpacaEval 2.0、MT-Bench、AlignBench 等开放式基准上达到开源模型顶尖水平。"
+  ],
+  "key_findings": [
+    "相比 DeepSeek 67B，DeepSeek-V2 节省 42.5% 训练成本、KV cache 减少 93.3%、最大生成吞吐提升至 5.76 倍。",
+    "仅 21B 激活参数下，DeepSeek-V2 在 MMLU 等基准上取得开源模型中的顶尖性能，成为当时最强的开源 MoE 模型。",
+    "消融实验显示 MLA 性能优于 MHA，同时所需 KV cache 大幅减少（大 MoE 模型约仅为 MHA 的 4%）。",
+    "DeepSeek-V2 在 128K 上下文长度的 NIAH 测试中表现良好。",
+    "RL 对齐显著提升开放式生成基准分数，但也观察到“alignment tax”现象，即对 BBH 等标准基准有负面影响。"
+  ],
+  "limitations": [
+    "DeepSeek-V2 存在其他 LLM 共有的局限：缺乏预训练后的持续知识更新、可能生成非事实信息或幻觉。",
+    "预训练数据以中文和英文为主，因此模型在其他语言上的能力可能有限。",
+    "当前 DeepSeek-V2 仅支持文本模态，不支持多模态输入输出。"
+  ],
+  "relation_to_deepseek": "DeepSeek-V2 是 DeepSeek 系列中承上启下的关键模型：它在 DeepSeek 67B 和 DeepSeekMoE 基础上首次引入 MLA，以 236B 规模验证了低秩 KV 压缩对高效推理的核心作用；论文报告的 KV cache 减少 93.3%、生成吞吐 5.76 倍等效率指标，成为后续 DeepSeek 模型延续 MLA 与 DeepSeekMoE 技术路线的重要依据。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "系统效率与部署",
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "MLA 的核心在于对键和值进行低秩联合压缩，推理时只需缓存压缩后的潜在向量，从而大幅缩减 KV cache。",
+      "quote": "The core of MLA is the low-rank joint compression for keys and values to reduce KV cache:",
+      "page": 7
+    },
+    {
+      "claim": "相比 DeepSeek 67B，DeepSeek-V2 将 KV cache 减少 93.3%，并将最大生成吞吐提升到 5.76 倍，说明 MLA 在部署中带来了可测量的推理效率收益。",
+      "quote": "compared with DeepSeek 67B, DeepSeek-V2 saves 42.5% of training costs, reduces the KV cache by 93.3%, and boosts the maximum generation throughput to 5.76 times.",
+      "page": 4
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "MLA 的压缩维度（如 KV 压缩维度 512）在不同模型规模、训练预算和任务类型下是否最优？",
+    "低秩 KV 压缩对长上下文检索、多轮对话等特定推理场景的影响是否还有进一步分析空间？"
+  ]
+}

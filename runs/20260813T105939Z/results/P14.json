@@ -1,0 +1,50 @@
+{
+  "task_id": "P14",
+  "paper_id": "2406.11931",
+  "title": "DeepSeek-Coder-V2: Breaking the Barrier of Closed-Source Models in Code Intelligence",
+  "one_sentence_summary": "DeepSeek-Coder-V2 是 DeepSeek-V2 的代码/数学继续预训练版本，通过 6T 多源 tokens 训练和 MoE 架构，在代码与数学上达到 GPT-4-Turbo 级别，同时保持通用语言能力。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？具体聚焦：从 DeepSeek-V2 中间 checkpoint 继续预训练如何在提升代码/数学能力的同时保持通用语言性能。",
+  "methodology": "论文延续 DeepSeek-V2 的 MoE 架构，从其中间 checkpoint 继续预训练 6T tokens（60% 代码、10% 数学、30% 自然语言）；之后用 300M tokens 指令数据 SFT，再用 GRPO 强化学习（以 reward model 而非编译器 0-1 信号）对齐；长上下文通过 YaRN 两阶段扩展到 128K。评估涵盖代码生成、补全、修复、数学与通用语言基准。",
+  "data_and_training": "预训练语料：60% 源代码（1,170B code-related tokens，来自 GitHub 和 CommonCrawl）、10% 数学（221B tokens）、30% 自然语言（直接采样自 DeepSeek-V2）。总预训练 tokens 10.2T = DeepSeek-V2 中间 checkpoint 的 4.2T + DeepSeek-Coder-V2 数据集的 6T。16B 使用 Next-Token-Prediction + Fill-In-Middle（PSM, rate 0.5），236B 仅使用 Next-Token-Prediction。长上下文：先用 32K 序列训练 1000 步，再用 128K 序列训练 1000 步。SFT 使用 300M tokens；RL 使用 GRPO，代码偏好数据通过编译器反馈和测试用例收集并训练 reward model。",
+  "main_contributions": [
+    "提出 DeepSeek-Coder-V2（16B/236B MoE），激活参数仅 2.4B/21B，支持 338 种编程语言和 128K 上下文长度。",
+    "首次尝试开源千亿参数代码模型，DeepSeek-Coder-V2 236B 在代码和数学基准上超过 GPT4-Turbo、Claude 3 Opus、Gemini 1.5 Pro。",
+    "验证了从 DeepSeek-V2 中间 checkpoint 继续预训练 6T tokens 的路线：显著增强代码/数学推理，同时保持通用语言能力。",
+    "以宽松许可证公开发布模型，支持研究和商业使用。"
+  ],
+  "key_findings": [
+    "HumanEval 90.2%、MBPP+ 76.2%、LiveCodeBench 43.4%，并成为首个在 SWE-bench 上超过 10% 的开源模型。",
+    "MATH 达到 75.7%，接近 GPT-4o 的 76.6%；AIME 2024 解决 4/30，超过对比的多个闭源模型。",
+    "新代码语料消融实验显示，1B 模型 HumanEval 从 30.5% 提升到 37.2%，MBPP 从 44.6% 提升到 54.0%。",
+    "16B Lite 以 2.4B 激活参数在 FIM 任务平均分 86.4%，与 DeepSeek-Coder 33B 持平或更优。"
+  ],
+  "limitations": [
+    "论文指出指令跟随能力仍与 GPT-4 Turbo 有显著差距，导致在 SWE-bench 等复杂场景表现不佳。",
+    "知识密集型基准（如 TriviaQA）上 DeepSeek-Coder-V2-Lite 落后于 DeepSeek-V2-Lite，原因是预训练 Web 数据较少。",
+    "CruxEval 上与更大闭源模型仍有差距，论文认为可能受限于仅 21B 激活参数。"
+  ],
+  "relation_to_deepseek": "DeepSeek-Coder-V2 是 DeepSeek 系列在代码智能方向的关键路线：它直接继承 DeepSeek-V2 的 MoE 架构、tokenizer、训练超参数（AdamW、cosine schedule）和 GRPO 算法，并开创性地从 DeepSeek-V2 中间 checkpoint 继续预训练以定向增强代码/数学能力，同时保持通用语言性能；模型以开放权重和宽松许可证发布，是 DeepSeek 开放生态的一部分。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "代码与数学"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-Coder-V2 从 DeepSeek-V2 中间 checkpoint 继续预训练，中间 checkpoint 已训练 4.2T tokens，因此模型总共接触 10.2T tokens。",
+      "quote": "To maintain robust natural language understanding capabilities in DeepSeek-Coder-V2, we continue the pre-training process from an intermediate checkpoint of DeepSeek-V2. The intermediate checkpoint was initially trained on 4.2T tokens. Consequently, DeepSeek-Coder-V2 has been exposed to a total of 10.2T high-quality tokens during the pre-training phase.",
+      "page": 5
+    },
+    {
+      "claim": "论文在摘要中明确陈述，继续预训练显著增强 DeepSeek-V2 的编码和数学推理能力，同时保持通用语言任务上的可比性能。",
+      "quote": "Through this continued pre-training, DeepSeek-Coder-V2 substantially enhances the coding and mathematical reasoning capabilities of DeepSeek-V2, while maintaining comparable performance in general language tasks.",
+      "page": 1
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "在继续预训练中，代码/数学/自然语言数据比例与通用能力保持之间的精确权衡未进一步量化。",
+    "选择 DeepSeek-V2 的 4.2T tokens 中间 checkpoint 作为起点的具体原因/标准未说明。",
+    "GRPO 阶段 reward model 的训练数据规模、过滤细节和超参数未完整披露。"
+  ]
+}

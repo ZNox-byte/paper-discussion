@@ -1,0 +1,51 @@
+{
+  "task_id": "P26",
+  "paper_id": "2503.15092",
+  "title": "Towards Understanding the Safety Boundaries of DeepSeek Models: Evaluation and Findings",
+  "one_sentence_summary": "该论文首次对DeepSeek系列大语言模型、多模态模型和文生图模型进行系统性安全评测，发现其在算法歧视、色情内容、越狱攻击、跨语言差异及思维链暴露等方面存在显著安全脆弱性。",
+  "research_question": "在中文社会文化语境下，DeepSeek模型在哪些安全风险维度上表现出最大的脆弱性？",
+  "methodology": "基于TC260-003构建中英双语安全评测数据集CNSafe（3100个用例，5大类31子类）及其红队版本CNSafe_RT（1000个攻击样本），并采用(M)LLM-as-Judge（GPT-4o、Qwen2.5-72B-Instruct、Qwen2.5-VL-72B-Instruct）与人工评估相结合的混合方法，以攻击成功率（ASR）为指标，对DeepSeek-R1、DeepSeek-V3、DeepSeek-VL2和Janus-Pro-7B进行系统评测，并与多个中文LLM对比。",
+  "data_and_training": "论文未披露模型训练数据细节；评测数据包括：面向中文语境构建的CNSafe（3100例，5大类31子类）与红队数据集CNSafe_RT（1000例）；多模态评测从SafeBench与MM-SafetyBench中随机抽取1300查询，从I2P中抽取671查询。",
+  "main_contributions": [
+    "首次对DeepSeek完整模型系列（LLM：R1/V3，MLLM：VL2，T2I：Janus-Pro-7B）进行系统性安全评测",
+    "构建了适配中国社会文化语境的中英双语安全评测数据集CNSafe及其红队版本CNSafe_RT",
+    "揭示了跨语言安全差异、思维链暴露风险、越狱攻击脆弱性等多维度安全问题",
+    "对比了其他中国开发的LLM，定位了DeepSeek模型的安全性能排名",
+    "公开了评测代码：https://github.com/NY1024/DeepSeek-Safety-Eval"
+  ],
+  "key_findings": [
+    "DeepSeek模型在算法歧视和色情内容等维度存在显著安全脆弱性。",
+    "英文查询的平均ASR比中文高21.7%，表明安全对齐存在跨语言泛化不足。",
+    "暴露思维链的DeepSeek-R1比DeepSeek-V3平均ASR更高（摘要报告30.4%，正文报告31.25%）。",
+    "面对越狱攻击时ASR急剧上升，部分类别达到100%，例如DeepSeek-V3在Ethnic hatred和False information上中英文均达100%。",
+    "DeepSeek-VL2在排版式越狱攻击下平均ASR比图像语义攻击高20.31%，但表观安全可能源于多模态理解能力不足。",
+    "Janus-Pro-7B在色情内容维度ASR达74.0%，非法活动维度61.0%，并可生成虚假新闻图像。"
+  ],
+  "limitations": [
+    "Service insecurity（特定服务类型安全性）因需要专家知识被标记为N/A，未纳入评估。",
+    "(M)LLM-as-Judge会将无意义输出判定为安全，可能低估真实ASR。",
+    "人工评估仅在CNSafe_RT上对DeepSeek-R1/V3全面进行，其他实验采用采样式人工评估。"
+  ],
+  "relation_to_deepseek": "该研究直接评测DeepSeek-R1、DeepSeek-V3、DeepSeek-VL2和Janus-Pro-7B的安全边界，并与多个中文LLM对比，揭示其在中文社会文化语境下的安全弱点。",
+  "categories": [
+    "对齐、安全与评测",
+    "多模态"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek模型在算法歧视和色情内容等多个风险维度上存在显著安全漏洞。",
+      "quote": "Experimental results indicate that despite their strong general capabilities, DeepSeek models exhibit significant safety vulnerabilities across multiple risk dimensions, including algorithmic discrimination and sexual content.",
+      "page": 1
+    },
+    {
+      "claim": "面对越狱攻击时，DeepSeek模型的攻击成功率急剧上升，部分类别高达100%。",
+      "quote": "When facing jailbreak attacks, the attack success rates of DeepSeek models rise dramatically, reaching up to 100% in some categories.",
+      "page": 2
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "DeepSeek模型在不同安全风险维度上脆弱性差异的根因是什么？",
+    "如何在不损失推理能力的前提下强化安全对齐，尤其是针对越狱攻击和跨语言泛化？"
+  ]
+}

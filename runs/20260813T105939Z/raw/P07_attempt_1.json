@@ -1,0 +1,52 @@
+{
+  "task_id": "P07",
+  "paper_id": "2402.03300",
+  "title": "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models",
+  "one_sentence_summary": "DeepSeekMath 7B 通过从 Common Crawl 构造 120B 数学语料并继续预训练 DeepSeek-Coder-Base-v1.5 7B，结合 GRPO 强化学习，在不使用外部工具和投票的情况下将 MATH 准确率提升到 51.7%，逼近 GPT-4 和 Gemini-Ultra。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？本篇聚焦于：GRPO 如何通过去除 PPO 的 critic 模型、改用组内奖励基线来降低内存开销，同时提升数学推理性能。",
+  "methodology": "论文采用迭代式数据选择流水线：以 OpenWebMath 为种子，用 fastText 分类器从去重后的 Common Crawl 中召回数学网页，经人工标注和四轮迭代构建 120B 数学语料；基于 DeepSeek-Coder-Base-v1.5 7B 继续预训练 500B tokens，再做 776K 样本的数学指令微调；随后提出 GRPO，在同题多输出组内对奖励做标准化得到优势，避免训练值函数，并探索 outcome/process supervision 与 iterative RL。",
+  "data_and_training": "DeepSeekMath Corpus 共 120.2B tokens、35.5M 数学网页，来自 Common Crawl 的四轮迭代筛选；基础模型初始化自 DeepSeek-Coder-Base-v1.5 7B，继续训练 500B tokens，数据分布为 56% DeepSeekMath Corpus、4% AlgebraicStack、10% arXiv、20% Github code、10% 英中自然语言；SFT 数据共 776K 条；RL 仅使用 GSM8K 和 MATH 的约 144K 条 chain-of-thought 问题，GRPO 对每个问题采样 64 个输出，batch size 为 1024，KL 系数为 0.04，策略模型学习率为 1e-6。",
+  "main_contributions": [
+    "构建了 DeepSeekMath Corpus：从 Common Crawl 经四轮迭代筛选出 120B tokens 的高质量多语言数学预训练语料，规模约为 Minerva 所用数学网页的 7 倍、OpenWebMath 的 9 倍。",
+    "发布 DeepSeekMath-Base 7B / Instruct 7B / RL 7B，在 MATH 等基准上超越开源模型并逼近 GPT-4、Gemini-Ultra。",
+    "提出 Group Relative Policy Optimization (GRPO)：去掉 critic 模型，用组内相对奖励估计 baseline，在降低内存/计算开销的同时提升数学推理表现。",
+    "提出统一范式将 SFT、RFT、DPO、PPO、GRPO 等表示为数据来源、奖励函数与梯度系数的组合，并基于该范式进行在线/离线、结果/过程监督、单轮/迭代 RL 的实验分析。"
+  ],
+  "key_findings": [
+    "DeepSeekMath 7B 在 MATH 基准上取得 51.7% 的 Top1 准确率（不借助外部工具和投票），64 样本 self-consistency 达到 60.9%。",
+    "DeepSeekMath-Base 7B 在 GSM8K 和 MATH 上分别达到 64.2% 和 36.2%，超过 Minerva 540B 的 58.8% 和 33.6%。",
+    "GRPO 在 DeepSeekMath-Instruct 7B 基础上仅用 GSM8K/MATH 的 CoT 数据，将 GSM8K 从 82.9% 提升到 88.2%、MATH 从 46.8% 提升到 51.7%，并在 CMATH 等分布外任务上也取得提升。",
+    "代码训练先于数学训练可以提升数学推理能力（包括无工具和有工具）；而在本文实验中，arXiv 论文语料对数学推理没有显著改进甚至可能有害。",
+    "RL 提升 Maj@K 而非 Pass@K，说明 GRPO 主要使输出分布更稳健，将正确回答提升到 TopK，而非增强底层基础能力。"
+  ],
+  "limitations": [
+    "模型在几何和定理证明方面的能力弱于闭源模型，例如 dry run 中无法处理与三角形、椭圆相关的问题，可能反映预训练和微调的数据选择偏差。",
+    "受模型规模限制，DeepSeekMath 在 few-shot 能力上不如 GPT-4：GPT-4 可从 few-shot 输入中获益，而 DeepSeekMath 在 zero-shot 和 few-shot 下表现相近。",
+    "论文提到其关于 arXiv 语料无效的结论仍有待进一步研究，例如未验证 arXiv tokens 对特定数学任务、与其他数据混合或更大模型规模下的效果。"
+  ],
+  "relation_to_deepseek": "本文由 DeepSeek-AI 主导完成，是 DeepSeek 系列在数学垂域与强化学习路线上的代表性工作：它使用 DeepSeek-Coder-Base-v1.5 7B 作为底座继续预训练，并继承 DeepSeek-LLM 的训练设置；同时提出 GRPO 作为 PPO 的高效变体，为 DeepSeek 系列模型的数学推理和 RL 训练提供了关键算法基础。",
+  "categories": [
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "代码与数学"
+  ],
+  "evidence": [
+    {
+      "claim": "GRPO 去掉了 PPO 中的 critic 模型，通过组内奖励估计 baseline，因此在提升数学推理能力的同时降低内存消耗。",
+      "quote": "We introduce Group Relative Policy Optimization (GRPO), a variant of Proximal Policy Optimization (PPO), which can notably improve mathematical reasoning capabilities with less memory consumption.",
+      "page": 22
+    },
+    {
+      "claim": "GRPO 仅使用 GSM8K/MATH 的 CoT 指令数据，就在 DeepSeekMath-Instruct 7B 基础上带来显著的领域内和分布外数学推理提升。",
+      "quote": "By solely using a subset of English instruction tuning data, GRPO obtains a substantial improvement over the strong DeepSeekMath-Instruct, including both in-domain (GSM8K: 82.9%→ 88.2%, MATH: 46.8%→ 51.7%) and out-of-domain mathematical tasks (e.g., CMATH: 84.6%→ 88.8%) during the reinforcement learning phase.",
+      "page": 2
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "GRPO 在分布外问题提示和树搜索等高级采样/解码策略下是否仍能提升性能？",
+    "如何让 RL 对噪声奖励信号保持鲁棒，尤其是在奖励模型不可靠时？",
+    "如何增强奖励模型的泛化能力、反映不确定性，以及高效构建高质量过程奖励模型？",
+    "arXiv 语料在更大规模模型、与其他数据混合或面向专门数学任务时是否会显现收益？"
+  ]
+}

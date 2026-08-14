@@ -1,0 +1,53 @@
+{
+  "task_id": "P24",
+  "paper_id": "2508.15881",
+  "title": "TPLA: Tensor Parallel Latent Attention for Efficient Disaggregated Prefill and Decode Inference",
+  "one_sentence_summary": "TPLA提出一种张量并行下的潜在注意力方案，将潜在表示与注意力头维度分片、局部注意力后all-reduce，在无需重训练的情况下保留MLA表示能力并减少每设备KV cache，从而在DeepSeek-V3/Kimi-K2上实现显著解码加速。",
+  "research_question": "本文研究张量并行潜在注意力如何在减少跨设备KV cache加载的同时保持表示能力，即TPLA如何通过分片潜在表示和注意力头、并在解码阶段使用TPLA来兼顾效率与精度。",
+  "methodology": "TPLA将MLA中的cKV沿潜在维度分成两片，同时把每个注意力头的输入维度和权重矩阵分片；每台设备用本地cKV分片与全量头的局部Q计算注意力，再通过all-reduce合并输出。数学上利用正交变换U重参数化RMSNorm与softmax，使局部近似全局值；提出Hadamard和PCA两种重参数化实现。推理时采用prefill阶段保持MLA、decode阶段使用TPLA的分离策略，既降低计算又减少KV cache带宽。实验在TP=2及多GPU场景下对比MLA与TPLA的吞吐、TTFT，并使用FlashAttention-3实现。",
+  "data_and_training": "本文不从头训练模型，而是直接加载MLA预训练检查点（DeepSeek-V2/V3、Kimi-K2、TransMLA转换的LLaMA-2-7B），使用WikiText-2作为校准集计算PCA重参数化；TPLA (align)中使用SmolLM-Corpus进行轻量对齐（256条长度2,048的样本对齐层特征，100M tokens端到端对齐）。评测包括MMLU、ARC、PIQA、HellaSwag、OBQA、WinoGrande和LongBench。",
+  "main_contributions": [
+    "提出TPLA，通过将潜在KV表示与每个注意力头的输入维度同时分片，并在分片上独立计算注意力后all-reduce，使每个头仍能访问完整潜在表示。",
+    "证明TPLA可看作具有两倍注意力头数的GLA特例，因而兼容FlashAttention-3等现有优化。",
+    "设计Hadamard/PCA正交重参数化方法，缓解RMSNorm和softmax分片带来的精度损失。",
+    "提出prefill使用MLA、decode使用TPLA的分离策略，减少转换误差并降低prefill延迟。",
+    "在DeepSeek-V3和Kimi-K2上分别实现1.79×和1.93×的解码吞吐加速，同时保持常识任务与LongBench性能。"
+  ],
+  "key_findings": [
+    "直接MLA→GLA转换会导致严重性能退化（DeepSeek-V2-Lite困惑度从6.31升至2212），而TPLA保持7.24，说明保留完整潜在表示对表达能力至关重要。",
+    "TPLA (PD-sep.)在DeepSeek-V3 LongBench上平均仅下降2.15%，且无需训练。",
+    "在32K上下文长度下，DeepSeek-V3-TPLA比MLA快1.79倍，Kimi-K2-TPLA快1.93倍。",
+    "TPLA (sep.)在1K prompt长度下TTFT比原始TPLA快约1.4倍。",
+    "PCA重参数化在同时并行RMSNorm和softmax时效果最佳，因此论文默认采用PCA。"
+  ],
+  "limitations": [
+    "PCA将信息集中到前几个维度，因此当分组数g>2时TPLA可能难以保持效果。",
+    "TPLA因复制注意力头参数会增加一定计算量，从头训练TPLA代价较高，有效训练策略仍是开放问题。",
+    "直接继承MLA检查点会引入转换误差，LongBench等长文本任务上仍有精度损失。",
+    "推理速度实验中移除了MoE以排除路由干扰，真实MoE场景下的加速效果未在文中直接验证。"
+  ],
+  "relation_to_deepseek": "TPLA直接针对DeepSeek-V2/V3等MLA模型的张量并行缺陷：MLA在TP下每设备必须加载完整cKV（如DeepSeek-V3为64+512=576维），而TPLA将cKV分片使每设备只加载部分KV cache。该方法可无重训练加载DeepSeek系列检查点，并通过重参数化与prefill/decode分离缓解转换损失，在DeepSeek-V3-0324上实现32K上下文1.79×解码加速。",
+  "categories": [
+    "基础模型与架构",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "TPLA的核心方案是将潜在表示和每个注意力头的输入维度同时分片，各设备独立执行注意力后通过all-reduce合并结果，从而保留压缩KV cache优势并解锁张量并行效率。",
+      "quote": "We propose Tensor-Parallel Latent Attention (TPLA): a scheme that partitions both the latent representation and each head’s input dimension across devices, performs attention independently per shard, and then combines results with an all-reduce.",
+      "page": 1
+    },
+    {
+      "claim": "通过减少DeepSeek-V3和Kimi-K2的每设备KV cache，TPLA在32K上下文长度下分别获得1.79×和1.93×加速，同时保持常识与LongBench基准性能。",
+      "quote": "By reducing the per-device KV cache for DeepSeek-V3 and Kimi-K2, we achieve 1.79× and 1.93× speedups, respectively, at a 32K-token context length while maintaining performance on commonsense and LongBench benchmarks.",
+      "page": 1
+    }
+  ],
+  "confidence": 0.93,
+  "unanswered_questions": [
+    "TPLA在真实MoE模型、更大TP配置和更长上下文下的端到端表现如何？",
+    "如何设计优化的Hadamard类正交矩阵以改善softmax分片的鲁棒性？",
+    "TPLA从零训练的高效策略是否可行，是否会优于MLA或GLA？",
+    "当g>2时PCA失效，是否存在可扩展的分组重参数化方法？"
+  ]
+}

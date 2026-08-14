@@ -1,0 +1,49 @@
+{
+  "task_id": "P27",
+  "paper_id": "2504.10081",
+  "title": "RealSafe-R1: Safety-Aligned DeepSeek-R1 without Compromising Reasoning Capability",
+  "one_sentence_summary": "RealSafe-R1 通过用 DeepSeek-R1 生成的 15k 安全感知推理轨迹进行监督微调，在基本不损害数学/代码等推理能力的情况下显著提升了 DeepSeek-R1 蒸馏模型的安全拒绝能力。",
+  "research_question": "如何在不对数学/代码等推理性能造成明显损害的前提下，为 DeepSeek-R1 这类大型推理模型应用安全对齐？",
+  "methodology": "利用 DeepSeek-R1 自身具备的潜在安全感知，通过显式指令要求其在推理过程中识别风险并对有害查询给出明确拒绝，从而生成安全感知推理轨迹；使用该数据集对 DeepSeek-R1 蒸馏模型（1.5B/7B/8B/14B/32B）进行监督微调（SFT）。评估涵盖 MATH-500、AIME 2024、GPQA-Diamond、LiveCodeBench、TruthfulQA 等通用基准，以及 StrongREJECT、XSTest、WildChat 等安全基准。",
+  "data_and_training": "构建了 15k 安全感知推理轨迹数据集：从 PKU-SafeRLHF 中筛选不安全标签样本并补充 JailbreakV-28k 样本，使用 DeepSeek-R1 在明确拒绝指令下生成轨迹，并过滤掉未提供明确拒绝的响应，最终得到 10k 直接有害查询和 5k 越狱提示。模型训练采用 LLaMA-Factory 框架，单 epoch，batch size 128，学习率 5e-6，warm-up ratio 0.1。",
+  "main_contributions": [
+    "提出 RealSafe-R1，作为 DeepSeek-R1 蒸馏模型的安全对齐版本。",
+    "构建 15k 安全感知推理轨迹数据集，利用 R1 自身的潜在安全感知进行蒸馏式对齐。",
+    "通过简单 SFT 在显著提升安全性的同时保持推理能力，并开源模型权重（https://huggingface.co/RealSafe）。"
+  ],
+  "key_findings": [
+    "RealSafe-R1 在 StrongREJECT 上大幅降低有害分数：RS-32B 在 None 类别从 DS-32B 的 0.25 降至 0.00，PAIR 下从 0.73 降至 0.27，PAP-M 下从 0.61 降至 0.10。",
+    "在 MATH-500、AIME 2024、GPQA-Diamond、LiveCodeBench 和 TruthfulQA 等非安全基准上与原始 DeepSeek-R1 持平或略有提升，例如 RS-14B 在 AIME 2024 上为 71.43，高于 DS-14B 的 66.67。",
+    "模型越大越倾向于拒绝更少，这一趋势在对齐前后的 DeepSeek-R1 系列中都存在。",
+    "RealSafe-R1 在安全提示上也会出现一定过度拒绝，例如 XSTest 安全提示中 RS-8B 的完全遵从率 56.8%，低于 DS-8B 的 90.8%。"
+  ],
+  "limitations": [
+    "RealSafe-R1 存在过度拒绝（over-refusal）现象，对良性或边缘安全提示可能过于保守。",
+    "训练数据中缺少良性和一般查询，可能是导致过度拒绝的原因。",
+    "该工作是初步探索，数据集可进一步扩展或结合 DPO、带可验证奖励的强化学习等更先进技术。"
+  ],
+  "relation_to_deepseek": "RealSafe-R1 直接基于 DeepSeek-R1 蒸馏模型系列（1.5B 到 32B）进行安全对齐；其数据生成采用了与 DeepSeek 推理蒸馏范式相似的方法，由 DeepSeek-R1 生成安全感知推理轨迹，并用这些小模型进行微调。研究目的是弥补 DeepSeek-R1 开源模型在安全对齐上的不足，同时保持其强大的数学与代码推理能力。",
+  "categories": [
+    "对齐、安全与评测",
+    "训练数据与训练方法",
+    "代码与数学"
+  ],
+  "evidence": [
+    {
+      "claim": "RealSafe-R1 通过将训练数据保持在原始生成分布内，在增强安全性的同时保留模型的推理能力。",
+      "quote": "our method preserves the models’ reasoning capabilities by maintaining the training data within the original distribution of generation",
+      "page": 1
+    },
+    {
+      "claim": "在 StrongREJECT 基准上，32B 模型在 PAIR 和 PAP 攻击下的有害分数分别从 0.73 和 0.61 降至 0.27 和 0.10，且方法几乎不影响推理任务表现，甚至提升了 TruthfulQA 的真实性。",
+      "quote": "we depress the harmful scores under PAIR (Chao et al., 2023) and PAP (Zeng et al., 2024) attacks from 0.73 and 0.61 to 0.27 and 0.10 for the 32B model, which presents better results than the early method of SafeChain (Jiang et al., 2025) and demonstrates the significant improvements in the safety of these LRMs. Meanwhile, our method merely impacts the impressive performance on reasoning tasks and even improves the truthfulness on TruthfulQA (Lin et al., 2021).",
+      "page": 2
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "如何设计数据或训练策略以减少安全对齐引入的过度拒绝？",
+    "DPO 或带可验证奖励的强化学习能否在保持推理能力的同时进一步提升安全-能力权衡？",
+    "RealSafe-R1 在更多样化的良性查询和真实部署场景中的表现如何？"
+  ]
+}

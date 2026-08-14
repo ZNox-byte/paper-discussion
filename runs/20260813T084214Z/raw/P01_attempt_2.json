@@ -1,0 +1,63 @@
+{
+  "task_id": "P01",
+  "paper_id": "2412.19437",
+  "title": "DeepSeek-V3 Technical Report",
+  "one_sentence_summary": "DeepSeek-V3 作为 671B 参数的 MoE 模型，采用 MLA 和 DeepSeekMoE 架构，引入无辅助损失负载均衡与多令牌预测，通过 FP8 训练和高效流水线以仅 2.788M H800 GPU 小时完成训练，在多项基准上达到开源模型最优并接近闭源前沿模型。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "论文通过架构设计（MLA、DeepSeekMoE、辅助损失自由负载均衡、多令牌预测）、训练基础设施优化（DualPipe、FP8 混合精度、跨节点全对全通信）和两阶段后训练（SFT 与 GRPO）构建 DeepSeek-V3，并在大规模预训练（14.8T tokens）后进行了长上下文扩展和评估。",
+  "data_and_training": "预训练数据包含 14.8T 高质量多语言 tokens，训练分阶段调整学习率与批量大小；后训练使用 1.5M 条指令数据进行 SFT，并通过 GRPO 进行强化学习，同时从 DeepSeek-R1 蒸馏推理能力。",
+  "main_contributions": [
+    "提出无辅助损失负载均衡策略，最小化因负载均衡导致的性能下降",
+    "引入多令牌预测（MTP）目标，提升模型性能并支持投机解码加速",
+    "设计 FP8 混合精度训练框架，首次在超大规模模型上验证有效性",
+    "通过算法-框架-硬件协同设计实现低成本训练，仅 2.788M H800 GPU 小时",
+    "从 DeepSeek-R1 蒸馏推理能力，提升数学与代码性能"
+  ],
+  "key_findings": [
+    "MLA 通过低秩联合压缩键值显著减少推理 KV 缓存，同时保持与标准 MHA 相当的性能",
+    "辅助损失自由负载均衡相比纯辅助损失方法在多数基准上取得更好性能",
+    "DeepSeek-V3 在 MMLU、GPQA、MATH-500 等基准上超越其他开源模型，接近闭源模型",
+    "训练过程稳定，未出现不可恢复损失尖峰或回滚",
+    "仅需 2.788M H800 GPU 小时完成全训练，成本约 557.6 万美元"
+  ],
+  "limitations": [
+    "推荐的部署单元较大，可能对小型团队构成负担",
+    "端到端生成速度虽已超过 DeepSeek-V2 两倍，但仍有进一步提升空间"
+  ],
+  "relation_to_deepseek": "本文是 DeepSeek-V3 的技术报告，属于 DeepSeek 系列核心模型之一，在 DeepSeek-V2 基础上深化了 MLA 与 DeepSeekMoE 的应用，并引入了辅助损失自由负载均衡和多令牌预测，是 DeepSeek 系列在效率与开放生态路线上的关键里程碑。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "系统效率与部署",
+    "对齐、安全与评测",
+    "推理与强化学习"
+  ],
+  "evidence": [
+    {
+      "claim": "MLA 通过低秩联合压缩键值，仅需缓存压缩隐向量和带 RoPE 的解耦键，从而显著减少推理时的 KV 缓存。",
+      "quote": "Note that for MLA, only the blue-boxed vectors (i.e., c_KV_t and k_R_t) need to be cached during generation, which results in significantly reduced KV cache while maintaining performance comparable to standard Multi-Head Attention (MHA) (Vaswani et al., 2017).",
+      "page": 8
+    },
+    {
+      "claim": "DeepSeekMoE 采用更细粒度的专家并隔离部分共享专家，以实现经济训练。",
+      "quote": "Compared with traditional MoE architectures like GShard (Lepikhin et al., 2021), DeepSeekMoE uses finer-grained experts and isolates some experts as shared ones.",
+      "page": 8
+    },
+    {
+      "claim": "无辅助损失负载均衡策略在消融实验中比纯辅助损失方法在多数基准上取得更好性能。",
+      "quote": "Compared with the purely auxiliary-loss-based method, the auxiliary-loss-free strategy consistently achieves better model performance on most of the evaluation benchmarks.",
+      "page": 27
+    },
+    {
+      "claim": "DeepSeek-V3 训练过程稳定，未出现不可恢复损失尖峰或回滚。",
+      "quote": "Throughout the entire training process, we did not encounter any irrecoverable loss spikes or have to roll back.",
+      "page": 4
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "论文未明确给出 MLA 压缩维度如何影响长序列推理时的理论内存上界",
+    "辅助损失自由负载均衡策略在推理阶段是否会引入额外延迟或需要特殊硬件支持",
+    "多令牌预测模块在训练后是否可以直接用于模型推理时的缓存优化未详细讨论"
+  ]
+}

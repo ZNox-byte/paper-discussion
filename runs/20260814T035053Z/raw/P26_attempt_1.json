@@ -1,0 +1,54 @@
+{
+  "task_id": "P26",
+  "paper_id": "2503.18599",
+  "title": "Oaken: Fast and Efficient LLM Serving with Online-Offline Hybrid KV Cache Quantization",
+  "one_sentence_summary": "Oaken 提出在线-离线混合 KV Cache 量化算法与定制量化/反量化引擎、内存管理单元，通过离线确定异常值阈值、在线计算量化 scale，以软硬件协同设计提升 LLM 在线推理吞吐并保持较低精度损失。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？",
+  "methodology": "Oaken 采用算法-硬件协同设计：(1) 离线 profiling 通过约百次采样推理、用 topK 统计每个 decoder layer 的组阈值，在线仅用这些阈值将 per-token KV 划分为 outer/middle/inner 三组并动态计算每组 min/max 得到均匀量化 scale；(2) 提出 group-shift quantization，将 outer/middle 组整体平移以收窄数值范围，使 4/5-bit 量化可行；(3) 提出 fused dense-and-sparse encoding，将稀疏 outlier 的 4 bit 嵌入 dense 矩阵的零元素，使 outlier 条目从 23 bit 降至 8 bit；(4) 在 DMA 中实现量化/反量化引擎和双管理表 MMU，以页粒度管理 dense/sparse KV cache，并通过 token 级批量调度将量化/反量化与 DMA 读取和注意力计算重叠以隐藏开销。",
+  "experimental_setup": "基于 LPU 模拟器扩展搭建 Oaken 加速器，并用 SystemVerilog RTL 在 TSMC 28nm 综合验证；评测 8 个 LLM（Llama2-7B/13B/70B、OPT-6.7B/13B/30B、Mistral-7B、Mixtral-8x7B）；使用 Wikitext2、PIQA、Winogrande、Hellaswag 数据集以及 Azure Conversation 和 BurstGPT 真实 trace；GPU 基线包括 vLLM、QServe、KIVI、KVQuant，ASIC 基线包括 Tender，另有 Atom 参与精度对比；批量大小从 16 到 256，总序列长度从 1K 到 32K；对比平台为 NVIDIA A100 GPU 与配置 HBM/LPDDR 的 Oaken 加速器。",
+  "main_contributions": [
+    "提出 online-offline 混合 KV cache 量化：离线确定数据无关的异常值阈值，在线仅据此设置量化 scale，避免在线 topK/排序和混合精度计算的过高开销。",
+    "提出 group-shift quantization：利用离线阈值将 outer/middle 组整体平移收窄分布，使宽范围异常值也能用低 bit 量化。",
+    "提出 fused dense-and-sparse encoding：复用 dense 矩阵中的零元素存储部分 outlier 位，将每个 outlier 条目的存储成本从 23 bit 压缩到 8 bit。",
+    "设计可集成到任意 LLM 加速器的量化/反量化引擎与双管理表 MMU，以页粒度管理 dense/sparse KV cache，最大化带宽利用并避免碎片化。",
+    "在 LPU 上实现 Oaken 加速器，验证其在吞吐、准确率、面积与功耗方面的综合优势。"
+  ],
+  "key_findings": [
+    "在 batch size 为 256 时，Oaken-LPDDR 平均吞吐相对 vLLM 提升 1.79×，相对 QServe 提升 1.58×。",
+    "相比原始 FP16 基线，Oaken 平均准确率损失 0.87%；相比 KVQuant 和 KIVI 精度分别低 0.54% 和 0.32%，但有效位宽更低，且比 QServe 高 1.38% 准确率。",
+    "KV cache 位宽最高减少 70.0%，注意力操作执行时间平均比 LPU 缩短 55.0%；batch=64 时量化和反量化仅占总延迟 1.29% 和 3.23%。",
+    "Oaken 模块面积开销仅 8.21%，整机功耗 222.7W，比 A100 GPU 的 400W TDP 低 44.3%。",
+    "Oaken-LPDDR 可支持最长 32K 序列和更大 batch，而 HBM 系统（包括 QServe 和 Oaken-HBM）在超过 16K 序列或大模型/大批次时面临容量不足。"
+  ],
+  "limitations": [
+    "当总序列长度低于 8K 时，计算密集、可 batch 的操作占比更高，QServe 和 vLLM 在 GPU 上的吞吐可超过 Oaken。",
+    "对于使用 grouped-query attention 的 Mixtral-8x7B 等模型，KV cache 本身较小，量化基线（包括 Oaken-LPDDR）在部分真实 trace 下相对全精度基线几乎没有性能增益。",
+    "Oaken-HBM 在 Mixtral-8x7B 和 Llama2-70B 等大模型或大批次场景下受限于内存容量，难以完成整个 batch。"
+  ],
+  "relation_to_topic": "该论文直接回应 AI Infra 系统中低精度计算、内存管理与软硬件协同如何提升在线推理吞吐的问题：Oaken 将 KV cache 量化的关键决策（异常值阈值）移到离线阶段，在线只做轻量统计与均匀量化，从而避免了现有 KV 量化方案中在线 outlier 检测/排序的高开销；同时用定制 DMA 量化/反量化引擎和 MMU 将这些算法收益转化为实际带宽与容量提升。实验表明在 batch=256 时相对 A100 GPU 上的 SOTA KV 量化方案 QServe 有 1.58× 吞吐提升，展示了离线阈值设置为高性能在线 KV 量化铺平道路的核心价值。",
+  "categories": [
+    "推理服务与请求调度",
+    "KV Cache与内存管理",
+    "模型压缩与低精度计算",
+    "异构硬件与内核优化",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "Oaken 通过离线确定数据无关的 outlier 阈值、在线仅用这些阈值设置量化 scale，从而避免在线高开销的异常值检测。",
+      "quote": "To achieve this goal, Oaken employs an online-offline hybrid approach, where data-agnostic outlier thresholds are determined at offline and subsequently applied to set the quantization scale at online.",
+      "page": 2
+    },
+    {
+      "claim": "离线 profiling 只需约一百次推理且仅需执行一次，对 Llama2-70B 也仅约十分钟，因此在线 KV 量化的额外开销可忽略。",
+      "quote": "Oaken’s offline profiling requires only about a hundred inferences and takes approximately ten minutes, even for the Llama2-70B model. Since this process is required only once before serving LLM inference online, the overhead is negligible.",
+      "page": 10
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "Oaken 的离线阈值设置对部署后输入分布漂移或模型权重更新是否仍然鲁棒？",
+    "Oaken 的 KV 量化与 vLLM 式 PagedAttention、continuous batching 等请求调度机制如何进一步协同？",
+    "在短序列、低延迟优先的在线 serving 场景下，Oaken 相对 GPU 基线的吞吐劣势如何通过调度或配置弥补？"
+  ]
+}

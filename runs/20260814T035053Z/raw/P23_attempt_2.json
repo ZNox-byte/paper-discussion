@@ -1,0 +1,41 @@
+{
+  "task_id": "P23",
+  "paper_id": "2601.10729",
+  "title": "OrbitFlow: SLO-Aware Long-Context LLM Serving with Fine-Grained KV Cache Reconfiguration",
+  "one_sentence_summary": "OrbitFlow通过轻量级ILP求解器为每个请求按层自适应地在GPU/CPU之间重配置KV cache，并配合Token-Deposit与Pause-Resume机制，在长上下文LLM服务中显著提升TPOT/TBT SLO达成率、降低尾延迟并提高吞吐。",
+  "research_question": "OrbitFlow中的在线ILP求解KV cache放置方案如何适应长上下文服务中随着token生成而不断变化的内存需求，从而在GPU容量受限下维持延迟SLO？",
+  "methodology": "作者提出OrbitFlow，在vLLM v0.6.6上实现闭环控制：Runtime Executor执行每次解码并记录计算/传输时间和GPU内存使用；Placement Planner以轻量级ILP求解器在距离驱动offload和剪枝后的搜索空间中，按请求选择每层KV cache的GPU/CPU放置，最小化解码时延并满足GPU容量与SLO约束；Adaptive Controller通过profile失配、批组成变化以及解码窗口过期等触发条件重新调用Planner，并在Planner判定不可行时对KV占用最大的请求执行Pause-Resume。系统还通过Token-Deposit将早期生成的token存入缓冲区并按SLO速率释放，以平滑瞬时延迟尖峰。",
+  "experimental_setup": "在vLLM v0.6.6上构建OrbitFlow；默认配置为单张NVIDIA RTX A5000 24GB GPU、384GB主机内存、PCIe 3.0×16上的LLaMA3-8B，长上下文场景使用4×RTX A6000 48GB、256GB主机内存、PCIe 4.0×16的LLaMA3-70B。负载由ShareGPT派生合成轨迹，使用Poisson到达，默认batch size为4，每批总序列长度限制为32K token，SLO scale为1.5。基线包括DeepSpeed-Inference、FlexGen、FlexGen+、SLO-aware Offloading和Dynamic Heuristic，评估TBT/TPOT SLO达成率、P95/P99尾延迟、吞吐、端到端时延和GPU内存利用率。",
+  "main_contributions": [
+    "提出OrbitFlow，一种细粒度、自适应的KV cache重配置系统，通过ILP求解器对每个请求的每一层KV cache分别做出GPU/CPU放置决策，以应对token维度和batch维度的内存漂移。",
+    "设计闭环控制架构，包括Runtime Executor、Adaptive Controller和Placement Planner，并结合Token-Deposit与Pause-Resume两种回退机制，在过载和内存压力下维护整体SLO达成。",
+    "在vLLM上实现并评估OrbitFlow，在TPOT/TBT SLO达成率、P95/P99尾延迟、吞吐和GPU内存利用率等指标上超越已有KV offloading方法，并验证了张量并行场景下的有效性。"
+  ],
+  "key_findings": [
+    "相比现有offloading方法，OrbitFlow将TPOT和TBT SLO达成率分别提高62%和66%，P95时延降低38%，吞吐最高提升3.3倍。",
+    "逐步加入Request-Wise、Pause-Resume和Token-Deposit后，最紧SLO scale=1下的SLO达成率从Batch-Uniform的45.1%提升到85.6%。",
+    "Placement Planner开销很低：即使在动态性最强的Both Dynamic负载下，其累计执行时间仅占端到端时间的0.64%，并且通过提前一步在独立线程运行可隐藏求解器开销。"
+  ],
+  "limitations": [
+    "论文明确指出服务器严重过载时OrbitFlow仍可能无法满足延迟SLO，只能通过Token-Deposit和Pause-Resume缓解延迟影响。",
+    "分布式扩展目前只验证了单节点多GPU的张量并行（TP）场景；流水线并行（PP）和数据并行（DP）的多节点扩展被留作未来工作。"
+  ],
+  "relation_to_topic": "该工作直接属于AI Infra中的KV Cache与内存管理以及推理服务与请求调度。OrbitFlow通过在线ILP求解将每个请求的KV cache按层动态放置在GPU或主机内存：当token维度导致KV cache增长、批组成变化或profile失配时，Adaptive Controller会触发重新求解；同时Token-Deposit利用早期延迟余量在时间上平滑SLO，Pause-Resume在内存压力下延迟大KV请求以保护整体SLO，展示了一种以SLO为导向、面向动态内存需求的自适应推理内存重配置方案。",
+  "categories": [
+    "KV Cache与内存管理",
+    "推理服务与请求调度"
+  ],
+  "evidence": [
+    {
+      "claim": "OrbitFlow采用轻量级ILP求解器，在内存容量约束下按请求决定保留哪些层的KV cache在GPU，并在活动放置方案在token生成过程中变为次优时基于运行时反馈持续修正KV放置。",
+      "quote": "OrbitFlowemploys a lightweight ILP solver to decide which layers’ KV caches to retain on the GPU for each request, within memory capacity constraints. It continuously refines KV placements based on runtime feedback when the active plan becomes suboptimal during token generation.",
+      "page": 1
+    },
+    {
+      "claim": "论文通过示例说明，随着KV cache在解码中增长，早期最优的放置会变得次优甚至不可行，因此需要动态重配置——这正是在线ILP放置存在的必要性。",
+      "quote": "A placement that was optimal early in decoding can later become suboptimal—or even infeasible—as KV caches grow. A single, static placement therefore cannot serve all decode steps;dynamic reconfiguration is required.",
+      "page": 4
+    }
+  ],
+  "confidence": 0.95
+}

@@ -1,0 +1,63 @@
+{
+  "task_id": "P18",
+  "paper_id": "2412.10302",
+  "title": "DeepSeek-VL2: Mixture-of-Experts Vision-Language Models for Advanced Multimodal Understanding",
+  "one_sentence_summary": "DeepSeek-VL2 是一系列基于 MoE 的视觉语言模型，采用动态平铺视觉编码和具有多头潜在注意力的 DeepSeekMoE 语言模型，在多种多模态任务上以更少激活参数达到先进性能。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "论文提出并训练了 DeepSeek-VL2，包含视觉编码器、视觉-语言适配器和 MoE 语言模型；视觉部分采用动态平铺策略将高分辨率图像切分为多个 384×384 的局部 tile 和一个全局缩略图，经共享 SigLIP 编码器处理后通过 2×2 像素混洗压缩并加入特殊分隔 token；语言部分基于 DeepSeekMoE 并采用 MLA 压缩 KV 缓存；训练分为视觉-语言对齐、视觉-语言预训练和监督微调三个阶段。",
+  "data_and_training": "对齐阶段使用 ShareGPT4V（约 1.2M 样本）仅训练视觉编码器和适配器 MLP；预训练阶段使用约 800B 图文 token，包含交错图文数据、图像描述、OCR、视觉问答、视觉定位等，图文与纯文本比例约为 70:30；SFT 阶段使用多样化开放与内部数据集，并加入纯文本指令数据。所有阶段只对文本 token 计算下一 token 预测损失。",
+  "main_contributions": [
+    "引入动态平铺视觉编码策略，高效处理不同宽高比的高分辨率图像，提升视觉理解能力。",
+    "采用 DeepSeekMoE 与 Multi-head Latent Attention 的语言模型，减少 KV 缓存并实现稀疏计算，提高推理效率与吞吐。",
+    "构建并优化了大规模视觉-语言数据集，扩展了模型在视觉定位、GUI 感知等任务上的能力。",
+    "开源了三种规模（激活参数 1.0B/2.8B/4.5B）的预训练模型和代码。"
+  ],
+  "key_findings": [
+    "在 OCR、文档/表格/图表理解、视觉问答、视觉定位等基准上，DeepSeek-VL2 以相似或更少的激活参数达到竞争或最先进性能。",
+    "动态平铺策略使模型能处理超高分辨率图像，如在 InfoVQA 等极端宽高比任务中表现更好。",
+    "MoE 架构使得 3B/16B/27B 总参数的模型仅需 0.57B/2.4B/4.1B 激活参数，降低计算消耗。"
+  ],
+  "limitations": [
+    "目前 DeepSeek-VL2 的上下文窗口每次只能处理少量图像，计划扩展以支持更丰富的多图交互。",
+    "与其他 VLM 一样，模型有时对模糊图像或未见物体处理不佳。",
+    "视觉感知和识别能力强，但推理能力有待加强。"
+  ],
+  "relation_to_deepseek": "DeepSeek-VL2 是 DeepSeek-AI 在 DeepSeek-VL 基础上的升级，采用 DeepSeekMoE（包括 DeepSeek-V2 的 MLA）作为语言模型，并继承 DeepSeek-VL 的 LLaVA 风格架构，通过动态平铺替代固定分辨率混合编码器。",
+  "categories": [
+    "多模态",
+    "基础模型与架构",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-VL2 使用动态平铺视觉编码策略处理不同宽高比的高分辨率图像。",
+      "quote": "For the vision component, we incorporate a dynamic tiling vision encoding strategy designed for processing high-resolution images with different aspect ratios.",
+      "page": 1
+    },
+    {
+      "claim": "语言组件利用 DeepSeekMoE 和 Multi-head Latent Attention 压缩 KV 缓存，实现高效推理和高吞吐。",
+      "quote": "For the language component, we leverage DeepSeekMoE models with the Multi-head Latent Attention mechanism, which compresses Key-Value cache into latent vectors, to enable efficient inference and high throughput.",
+      "page": 1
+    },
+    {
+      "claim": "动态平铺策略通过将高分辨率图像分割为多个 tile，用单个 SigLIP 编码器高效处理不同宽高比的图像。",
+      "quote": "Inspired by recent advances in VLMs [16, 21, 55], we implement a dynamic tiling strategy by splitting a high-resolution image into tiles. This approach enables the efficient processing of different high-resolution images with varying aspect ratios using a single SigLIP-SO400M-384 vision encoder [ 106].",
+      "page": 4
+    },
+    {
+      "claim": "MLA 通过将 KV 缓存压缩为潜在向量提升推理效率，MoE 架构通过稀疏计算实现高效推理。",
+      "quote": "MLA enhances inference efficiency by compressing the Key-Value cache into a latent vector, enabling increased throughput capacity. The model also incorporates a MoE architecture [20] allowing for efficient inference through sparse computation.",
+      "page": 5
+    },
+    {
+      "claim": "DeepSeek-VL2 提供三种规模，激活参数分别为 1.0B、2.8B 和 4.5B。",
+      "quote": "DeepSeek-VL2 comes in three variants with the following model sizes: 1.0B, 2.8B and 4.5B.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "论文未对动态平铺与 MoE 在特定 VL 任务上的计算开销进行定量对比。",
+    "未提供与不使用动态平铺或未使用 MoE 的消融实验结果。"
+  ]
+}

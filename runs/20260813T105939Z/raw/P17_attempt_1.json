@@ -1,0 +1,48 @@
+{
+  "task_id": "P17",
+  "paper_id": "2511.22570",
+  "title": "DeepSeekMath-V2: Towards Self-Verifiable Mathematical Reasoning",
+  "one_sentence_summary": "论文提出DeepSeekMath-V2，通过训练LLM验证器作为奖励模型并扩展验证计算量，使模型能够自我验证和迭代改进自然语言定理证明，在IMO 2025、CMO 2024和Putnam 2024上达到金牌/高分水平。",
+  "research_question": "如何训练准确且忠实的LLM验证器，并将验证器作为奖励模型、通过扩展验证计算量来提升定理证明与自我验证能力？",
+  "methodology": "基于DeepSeek-V3.2-Exp-Base，采用GRPO迭代训练：先RL训练验证器（含格式奖励与分数奖励），引入元验证（meta-verification）检查验证器发现的问题是否真实存在；随后用验证器作为生成式奖励模型训练证明生成器，鼓励生成器先自我分析再打分；最后通过扩展验证采样和AI辅助标注自动为新的难验证证明标注数据以改进验证器，形成验证-生成协同循环。",
+  "data_and_training": "从AoPS抓取17503道竞赛证明题（D_p）；用DeepSeek-V3.2-Exp-Thinking变体生成候选证明并由数学专家按rubric打分，构建D_v；再用专家标注验证器分析质量构建D_mv训练元验证器；最后两个迭代中完全用自动标注流水线替代人工标注。",
+  "main_contributions": [
+    "提出训练准确且忠实的LLM验证器用于数学证明评估",
+    "引入元验证大幅减少幻觉问题并保证验证质量",
+    "激励证明生成器通过自我验证最大化证明质量",
+    "扩展验证计算量自动标注越来越难验证的证明，无需人工标注",
+    "开源DeepSeekMath-V2及训练方法"
+  ],
+  "key_findings": [
+    "DeepSeekMath-V2在CNML级别问题各科目平均证明分数均超过GPT-5-Thinking-High和Gemini 2.5-Pro",
+    "顺序自验证精炼显著提升IMO Shortlist 2024上的证明质量，Best@32随迭代次数增加从0.29升至0.42",
+    "高分计算下解决IMO 2025 5/6题、CMO 2024 4题+部分分、Putnam 2024 118/120，超过人类最高分90",
+    "IMO-ProofBench上优于DeepThink(IMO Gold)的basic集，advanced集上保持竞争力",
+    "验证器分析质量（元验证器评估）从0.85提升到0.96，同时保持相同分数预测准确率"
+  ],
+  "limitations": [
+    "最难的IMO级别问题仍然具有挑战性",
+    "对于未完全解决的问题，生成器通常能识别真实问题但仍无法解决，说明仍存在显著挑战"
+  ],
+  "relation_to_deepseek": "本工作属于DeepSeek系列，由DeepSeek-AI开发，基于DeepSeek-V3.2-Exp-Base构建，并从DeepSeek-V3.2-Exp-SFT派生验证器训练起点；相关工作中还提到DeepSeek-Prover-V2作为形式化定理证明方面的DeepSeek工作。",
+  "categories": [
+    "推理与强化学习",
+    "代码与数学"
+  ],
+  "evidence": [
+    {
+      "claim": "论文提出扩展验证计算量，自动标注新的难验证证明以改进验证器，从而维持生成器变强后的生成-验证差距。",
+      "quote": "To maintain the generation-verification gap as the generator becomes stronger, we propose to scale verification compute to automatically label new hard-to-verify proofs, creating training data to further improve the verifier.",
+      "page": 1
+    },
+    {
+      "claim": "在验证器引导下扩展测试时计算，使模型解决了需要人类竞争者花费数小时的问题，展示验证器引导的扩展计算可提升定理证明能力。",
+      "quote": "By scaling test-time compute under verifier guidance, our model solves problems that require hours of effort from human competitors.",
+      "page": 9
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "如何进一步将非形式化自我验证与形式化证明工具（如Lean）结合以提供更强的形式保证？"
+  ]
+}

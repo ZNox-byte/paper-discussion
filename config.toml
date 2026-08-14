@@ -1,0 +1,63 @@
+[project]
+title = "以 vLLM 为代表的 AI Infra Systems 论文综述"
+research_question = "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？"
+language = "zh-CN"
+target_papers = 32
+output_dir = "runs"
+max_paper_chars = 180000
+
+[deepseek]
+base_url = "https://api.deepseek.com"
+# 分阶段选型：高吞吐任务用 Flash，跨论文综合用 Pro。
+screening_model = "deepseek-v4-flash"
+reader_model = "deepseek-v4-flash"
+synthesis_model = "deepseek-v4-pro"
+thinking = "enabled"
+reader_concurrency = 32
+max_tokens_screening = 12000
+max_tokens_reader = 8000
+max_tokens_synthesis = 16000
+request_timeout_seconds = 900
+max_retries = 5
+
+[search]
+endpoint = "https://export.arxiv.org/api/query"
+max_results_per_query = 50
+download_concurrency = 8
+request_timeout_seconds = 90
+max_retries = 3
+request_delay_seconds = 3
+queries = [
+  "all:vLLM",
+  "all:\"PagedAttention\"",
+  "all:SGLang",
+  "all:\"large language model serving\"",
+  "all:\"LLM serving\" AND all:scheduling",
+  "all:\"KV cache\" AND all:serving",
+  "all:\"disaggregated prefill\"",
+  "all:\"chunked prefill\"",
+  "all:\"speculative decoding\" AND all:inference",
+  "all:FlashAttention",
+  "all:\"tensor parallelism\" AND all:LLM",
+  "all:\"model parallelism\" AND all:training",
+  "all:Megatron-LM",
+  "all:DeepSpeed AND all:\"large language model\"",
+]
+
+[validation]
+minimum_grounded_evidence = 2
+minimum_quote_chars = 20
+max_repair_attempts = 2
+minimum_results_for_synthesis = 28
+
+[taxonomy]
+categories = [
+  "推理服务与请求调度",
+  "KV Cache与内存管理",
+  "并行计算与分布式执行",
+  "训练系统与优化",
+  "模型压缩与低精度计算",
+  "异构硬件与内核优化",
+  "性能评测与成本分析",
+  "可靠性、弹性与可观测性",
+]

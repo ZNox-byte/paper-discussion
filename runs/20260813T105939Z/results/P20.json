@@ -1,0 +1,47 @@
+{
+  "task_id": "P20",
+  "paper_id": "2510.18234",
+  "title": "DeepSeek-OCR: Contexts Optical Compression",
+  "one_sentence_summary": "DeepSeek-OCR通过光学2D映射将长文本上下文压缩为极少量视觉token，在约10×压缩比下保持97%的OCR精度，并以最少视觉token在OmniDocBench上取得领先性能。",
+  "research_question": "光学压缩如何通过2D映射减少视觉token数量，同时保持OCR精度？",
+  "methodology": "DeepSeek-OCR由DeepEncoder和DeepSeek3B-MoE-A570M解码器组成。DeepEncoder串联SAM-base（窗口注意力）与CLIP-large（全局注意力），中间通过2层卷积模块进行16×下采样压缩视觉token；并通过动态分辨率模式（Tiny/Small/Base/Large/Gundam等）控制压缩比。解码器为DeepSeek3B-MoE（约570M激活参数）。训练分两阶段：先独立训练DeepEncoder（2 epochs，batch size 1280，学习率5e-5），再联合训练整个模型（20节点，DP 40，全局batch size 640，学习率3e-5）。",
+  "data_and_training": "数据包含OCR 1.0数据（30M页PDF，覆盖约100种语言；10M中文和10M英文自然场景OCR）、OCR 2.0数据（10M图表、5M化学公式、1M平面几何）、通用视觉数据（20%）和纯文本数据（10%）。训练时OCR数据占70%，通用视觉占20%，纯文本占10%。",
+  "main_contributions": [
+    "提供了视觉-文本token压缩比的全面定量分析，在Fox基准上压缩比<10×时解码精度约97%。",
+    "引入了DeepEncoder架构，通过16×卷积压缩器在保持高分辨率输入时维持低激活内存和少量视觉token。",
+    "开发了基于DeepEncoder和DeepSeek3B-MoE的DeepSeek-OCR，在OmniDocBench上用最少视觉token达到端到端模型领先性能。"
+  ],
+  "key_findings": [
+    "当文本token数在视觉token的10倍以内时，解码精度可达97%。",
+    "在20×压缩比下精度仍约60%。",
+    "在OmniDocBench上，100视觉token超越使用256 token的GOT-OCR2.0，少于800视觉token超越使用约7000 token的MinerU2.0。"
+  ],
+  "limitations": [
+    "论文承认OCR本身不足以完全验证真实的光学上下文压缩。",
+    "这是早期工作，需要进一步研究。",
+    "当压缩比超过10×时性能下降，可能与复杂布局和分辨率有关。"
+  ],
+  "relation_to_deepseek": "该工作属于DeepSeek系列，采用DeepSeek3B-MoE作为解码器，与DeepSeek-VL2等一脉相承，但专注于通过光学2D映射压缩长上下文，是DeepSeek在视觉语言模型和多模态效率方向的新探索。",
+  "categories": [
+    "基础模型与架构",
+    "系统效率与部署",
+    "多模态"
+  ],
+  "evidence": [
+    {
+      "claim": "当视觉token与文本token数量比例在10倍以内时，DeepSeek-OCR能达到97%的OCR解码精度。",
+      "quote": "Experiments show that when the number of text tokens is within 10 times that of vision tokens (i.e., a compression ratio < 10×), the model can achieve decoding (OCR) precision of 97%.",
+      "page": 1
+    },
+    {
+      "claim": "DeepEncoder通过16×卷积下采样减少视觉token数量，这是压缩的关键机制。",
+      "quote": "Between the two components, we borrow from Vary [36] and use a 2-layer convolutional module to perform 16× downsampling of vision tokens.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "数字-光学文本交错预训练、针叶林测试等评估尚未进行。",
+    "光学压缩系统的实际影响和局限性需要更深入研究。"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "task_id": "P17",
+  "paper_id": "2511.22570",
+  "title": "DeepSeekMath-V2: Towards Self-Verifiable Mathematical Reasoning",
+  "one_sentence_summary": "DeepSeekMath-V2 提出以验证器作为奖励模型训练证明生成器，并通过元验证与扩展验证算力自动标注难验证证明，使模型在 IMO 2025、CMO 2024 和 Putnam 2024 上达到金牌级或近满分表现。",
+  "research_question": "训练验证器作为奖励模型并扩展验证算力如何提升定理证明与自验证能力？",
+  "methodology": "论文采用两阶段强化学习流水线：(1) 验证器训练：基于专家评分的高层级证明评估 rubrics，用格式奖励与分数奖励通过 GRPO 训练验证器，输出问题摘要和 0/0.5/1 的证明分数；再训练元验证器审查验证器指出的问题是否真实，并将元验证得分并入奖励以提升忠实度。(2) 生成器训练：以验证器作为生成式奖励模型优化证明生成器，同时提示生成器在生成证明后按相同 rubrics 输出自我分析，奖励函数结合证明得分与自评忠实度，鼓励模型在定稿前尽可能发现并修复问题。(3) 协同迭代：扩展验证算力，对难验证的新证明多次采样并交由元验证自动标注，取代人工标注，循环改进验证器与生成器；最后通过顺序自验证精炼和多路高算力搜索评估竞赛级定理证明。",
+  "data_and_training": "初始数据来自 AoPS 竞赛题集（17,503 道证明题，记为 D_p），用 DeepSeek-V3.2-Exp-Thinking 生成多轮精炼的候选证明，由数学专家按 rubrics 打分构成 D_v，并另构建元验证数据集 D_mv。验证器训练基于 DeepSeek-V3.2-Exp-SFT，生成器训练初始化自验证器 checkpoint，优化算法为 GRPO。训练迭代中，从第二轮起验证器用上一轮合并验证与生成能力的 checkpoint 经 rejection fine-tuning 初始化；最后两轮训练完全采用自动标注管线，无需人工标注。",
+  "main_contributions": [
+    "训练出准确且忠实的 LLM 验证器，使其能在没有参考解的情况下识别证明中的问题并打分。",
+    "引入元验证（meta-verification）来审查验证器指出的问题是否真实，大幅减少幻觉问题。",
+    "通过让生成器进行自我验证并根据验证器反馈优化，激励其在定稿前尽可能发现并解决证明中的问题。",
+    "扩展验证算力自动标注越来越难验证的新证明，在最后两轮迭代中完全取代人工标注。",
+    "开源 DeepSeekMath-V2 及其训练方法。"
+  ],
+  "key_findings": [
+    "在 CNML 难度内部测试集上，DeepSeekMath-V2 在代数、几何、数论、组合、不等式五个类别上均优于 GPT-5-Thinking-High 与 Gemini 2.5-Pro。",
+    "在 IMO Shortlist 2024 上，顺序自验证精炼显著提升证明质量，且自选最优证明（Best@32）明显高于线程平均 Pass@1。",
+    "高算力搜索下，IMO 2025 解决 5/6 题，CMO 2024 解决 4 题并对 1 题获得部分分，Putnam 2024 为 118/120，超越人类最高分 90。",
+    "在 IMO-ProofBench 上，DeepSeekMath-V2 在 basic 集超过 DeepThink（IMO Gold），在 advanced 集保持竞争力，并大幅超过其他基线。",
+    "验证器分析的平均质量得分从 0.85 提升到 0.96，同时保持相同的证明分数预测准确率。"
+  ],
+  "limitations": [
+    "最难的 IMO 级别问题仍对模型构成挑战，论文表示还有很多工作要做。",
+    "在单次生成受限于 128K token 时，生成器可能识别出证明无效但无法在一次尝试内解决所有已发现的问题。"
+  ],
+  "relation_to_deepseek": "DeepSeekMath-V2 是 DeepSeek 系列在非形式化定理证明与自验证方向的关键技术路线：它构建在 DeepSeek-V3.2-Exp-Base/SFT 之上，使用 DeepSeek 的 GRPO 强化学习算法训练验证器与生成器，并延续 DeepSeek-R1 的推理扩展思路，将奖励从最终答案转向证明验证；同时与 DeepSeek-Prover-V2 等形式化证明工作互补，共同形成 DeepSeek 的数学推理技术谱系。",
+  "categories": [
+    "推理与强化学习",
+    "代码与数学",
+    "训练数据与训练方法"
+  ],
+  "evidence": [
+    {
+      "claim": "论文提出先用验证器作为奖励模型训练证明生成器，并激励生成器在定稿前尽可能识别和解决自身证明中的问题。",
+      "quote": "We then train a proof generator using the verifier as the reward model, and incentivize the generator to identify and resolve as many issues as possible in their own proofs before finalizing them.",
+      "page": 1
+    },
+    {
+      "claim": "论文提出扩展验证算力来自动标注新的难验证证明，从而为验证器提供训练数据，形成生成与验证的协同改进循环。",
+      "quote": "To maintain the generation-verification gap as the generator becomes stronger, we propose to scale verification compute to automatically label new hard-to-verify proofs, creating training data to further improve the verifier.",
+      "page": 1
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "验证器在开放问题上是否真的可以替代参考解？",
+    "自动标注管线的失败模式以及何时需要人工审核？",
+    "验证器评分与人类专家判断的一致性如何随问题难度变化？",
+    "自验证能力能否迁移到形式化证明（如 Lean/Isabelle）？"
+  ]
+}

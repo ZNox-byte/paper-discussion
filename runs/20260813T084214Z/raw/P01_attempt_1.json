@@ -1,0 +1,62 @@
+{
+  "task_id": "P01",
+  "paper_id": "2412.19437",
+  "title": "DeepSeek-V3 Technical Report",
+  "one_sentence_summary": "DeepSeek-V3是一个拥有671B总参数、37B激活参数的MoE语言模型，通过MLA、DeepSeekMoE、辅助损失-free负载均衡和多token预测等技术，以2.788M H800 GPU小时的低成本实现了与领先闭源模型相当的性能。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "采用Transformer框架，使用MLA进行高效推理，DeepSeekMoE进行经济训练，引入辅助损失-free负载均衡策略和多token预测训练目标；训练中使用FP8混合精度、DualPipe流水线并行、高效all-to-all通信；预训练数据14.8T tokens，后训练包括SFT和RL，并从DeepSeek-R1系列模型蒸馏推理能力。",
+  "data_and_training": "预训练数据包含14.8T高质量多样化tokens，数据构建优化了数学和编程样本比例，扩展多语言覆盖，采用文档打包和FIM策略；使用AdamW优化器，最大序列长度4K，学习率调度和批量大小调度；进行了两阶段上下文长度扩展至128K；后训练使用1.5M指令微调数据集和GRPO强化学习。",
+  "main_contributions": [
+    "在DeepSeek-V2基础上，首创辅助损失-free负载均衡策略，最小化负载均衡对模型性能的负面影响。",
+    "研究多token预测目标并证明其有益，可用于投机解码加速推理。",
+    "设计FP8混合精度训练框架，首次在极大规模模型上验证有效。",
+    "通过算法、框架、硬件协同设计，克服跨节点MoE训练通信瓶颈，实现近全计算-通信重叠。",
+    "以仅2.664M H800 GPU小时完成14.8T tokens的预训练，产生最强开源基础模型。",
+    "引入从DeepSeek-R1系列蒸馏推理能力的方法，提升推理性能。"
+  ],
+  "key_findings": [
+    "DeepSeek-V3在多个基准上优于其他开源模型，与闭源模型相当。",
+    "训练过程稳定，无不可恢复损失尖峰。",
+    "训练成本仅为5.576M美元。",
+    "多token预测和辅助损失-free负载均衡在消融实验中一致提升模型性能。",
+    "在代码和数学任务上表现优异。"
+  ],
+  "limitations": [
+    "部署单元较大，对小型团队构成负担。",
+    "尽管生成速度比V2快两倍，仍有进一步优化空间。"
+  ],
+  "relation_to_deepseek": "DeepSeek-V3是DeepSeek系列模型的第三代，继承了DeepSeek-V2的MLA和DeepSeekMoE架构，并引入了新的负载均衡策略和多token预测训练目标，同时从DeepSeek-R1系列模型蒸馏推理能力。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "系统效率与部署",
+    "推理与强化学习",
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "MLA通过低秩联合压缩键和值，显著减少了推理时的KV缓存，同时保持与标准MHA相当的性能。",
+      "quote": "Note that for MLA, only the blue-boxed vectors (i.e., c_KV_t and k_R_t ) need to be cached during generation, which results in significantly reduced KV cache while maintaining performance comparable to standard Multi-Head Attention (MHA) (Vaswani et al., 2017).",
+      "page": 8
+    },
+    {
+      "claim": "DeepSeek-V3首创了辅助损失-free负载均衡策略，通过动态调整专家偏置实现负载平衡，避免了纯辅助损失对模型性能的损害，并提升了训练稳定性。",
+      "quote": "Through the dynamic adjustment, DeepSeek-V3 keeps balanced expert load during training, and achieves better performance than models that encourage load balance through pure auxiliary losses.",
+      "page": 9
+    },
+    {
+      "claim": "整个训练过程非常稳定，没有出现不可恢复的损失尖峰或需要回滚。",
+      "quote": "Throughout the entire training process, we did not experience any irrecoverable loss spikes or perform any rollbacks.",
+      "page": 1
+    },
+    {
+      "claim": "DeepSeekMoE使用更细粒度的专家并隔离一些专家作为共享专家，以实现经济训练。",
+      "quote": "DeepSeekMoE uses finer-grained experts and isolates some experts as shared ones.",
+      "page": 8
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "论文未详细讨论模型在安全性和有害内容生成方面的具体缓解措施。"
+  ]
+}

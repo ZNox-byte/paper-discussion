@@ -1,0 +1,48 @@
+{
+  "task_id": "P16",
+  "paper_id": "2504.21801",
+  "title": "DeepSeek-Prover-V2: Advancing Formal Mathematical Reasoning via Reinforcement Learning for Subgoal Decomposition",
+  "one_sentence_summary": "DeepSeek-Prover-V2 提出以 DeepSeek-V3 做子目标分解、7B 模型递归证明、再结合冷启动 CoT 数据与 GRPO 强化学习统一非形式与形式数学推理，在 MiniF2F-test 达到 88.9% 的通过率。",
+  "research_question": "子目标分解结合强化学习如何将非形式推理与形式推理统一，从而提升定理证明能力？",
+  "methodology": "以 DeepSeek-V3 作为统一工具，先输出自然语言证明草图和 Lean 4 的 have/sorry 子目标；用较小的 7B prover 递归求解子目标并合成完整形式证明；将合成证明与 DeepSeek-V3 的 chain-of-thought 配对构成冷启动数据；随后用 GRPO 强化学习训练，并在早期加入一致性奖励约束 have 结构的对齐；整体采用两阶段训练：先做 non-CoT 的 expert iteration 与课程学习，再做 CoT 的强化学习，并将 671B 的 rollout 数据蒸馏到 7B 模型。",
+  "data_and_training": "训练数据包括专家迭代中成功验证的 Lean 证明、DeepSeek-V3 子目标分解生成的子目标定理（带或不带前置条件）、由子目标与 CoT 配对合成的冷启动数据，以及来自 autoformalization 和开放数据集的题目。SFT 在 DeepSeek-V3-Base-671B 上进行，学习率 5e-6，上下文 16,384 tokens；GRPO 使用二元正确/错误奖励，每轮采样 256 道题、每题 32 个候选证明、最大序列长度 32,768 tokens；7B 蒸馏时将 DeepSeek-Prover-V1.5-Base-7B 的上下文从 4,096 扩展到 32,768 tokens 并执行相同的 RL 阶段。",
+  "main_contributions": [
+    "提出简单有效的递归定理证明管道：DeepSeek-V3 同时承担非形式证明草图和 Lean 4 形式子目标分解，7B prover 递归求解子目标后合成完整证明。",
+    "提出子目标引导的课程学习框架，将子目标构造为带/不带前置条件的引理，扩展训练问题集合并逐步提升难度。",
+    "将 DeepSeek-V3 的 chain-of-thought 与合成形式证明配对生成冷启动数据，并通过带一致性奖励的 GRPO 强化学习统一非形式与形式推理。",
+    "开源 DeepSeek-Prover-V2-7B/671B，并发布 ProverBench（325 道形式化问题，含 AIME 24&25 的 15 道题）以推进神经定理证明研究。"
+  ],
+  "key_findings": [
+    "DeepSeek-Prover-V2-671B 的 CoT 模式在 MiniF2F-test 上 Pass@32 为 82.4%、Pass@8192 为 88.9%，刷新神经定理证明 SOTA。",
+    "在 PutnamBench 上解决 47/658 道题，在 ProofNet-test 上 Pass@1024 达 37.1%，展示了对大学水平数学的泛化能力。",
+    "在 ProverBench 的 AIME 24&25 子集上，形式证明模式解决 6/15，而 DeepSeek-V3-0324 非形式 Maj@16 解决 8/15，表明形式与非形式推理差距正在缩小。",
+    "CoT 模式显著优于 non-CoT 模式；随着采样预算从 1 增至 8192，671B 相对 7B 的性能优势扩大。",
+    "子目标引导的课程学习框架在 miniF2F-valid 上达到 89.8% 的成功率，几乎匹配 DeepSeek-Prover-V2-671B 的最终性能。"
+  ],
+  "limitations": [
+    "论文报告 PutnamBench 上 7B 模型最初解决 13 个 671B 未解题目，但归因于 Lean 4.9.0 中 apply? 的用户界面 bug，模型利用 Cardinal.toNat 和 Cardinal.natCast_inj 触发该 bug，相关结果需要修正。",
+    "评测中因 Lean 4.9.0 兼容性或题目表述错误，PutnamBench 排除了部分题目并从最终结果中去掉 2 道；CombiBench 从 100 题过滤到 77 题并修正 2 道，可能影响绝对得分。",
+    "模型主要在数论和代数上训练，组合问题仍较困难；DeepSeek-Prover-V2-671B 在 CombiBench with-solution 设置下最终解决 10/77。"
+  ],
+  "relation_to_deepseek": "本文是 DeepSeek 系列在形式数学推理方向上的模型，直接以 DeepSeek-V3 和 DeepSeek-V3-Base-671B 为基础，延续 DeepSeek-Prover-V1/V1.5 的定理证明研究，并使用 DeepSeekMath 提出的 GRPO 强化学习算法；其 RL 训练范式与 DeepSeek-R1 的推理模型思路一致，但应用于 Lean 4 形式证明。",
+  "categories": [
+    "推理与强化学习",
+    "代码与数学"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-Prover-V2-671B 在 MiniF2F-test 上达到 88.9% 的通过率，并在 PutnamBench 上解决 47/658 道题，取得神经定理证明的最新最佳性能。",
+      "quote": "The resulting model, DeepSeek-Prover-V2-671B, achieves state-of-the-art performance in neural theorem proving, reaching 88.9% pass ratio on the MiniF2F-test and solving 47 out of 658 problems from PutnamBench.",
+      "page": 1
+    },
+    {
+      "claim": "实验表明，从非形式推理的任务分解冷启动开始进行强化学习，能显著增强模型的形式定理证明能力。",
+      "quote": "Our experiments show that reinforcement learning starting from the cold start of informal reasoning in task decomposition significantly enhances the model’s capabilities in formal theorem proving.",
+      "page": 3
+    }
+  ],
+  "confidence": 0.92,
+  "unanswered_questions": [
+    "如何将子目标分解与强化学习的范式扩展到 AlphaProof 式系统，以解决 IMO 级数学问题？"
+  ]
+}

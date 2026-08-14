@@ -1,0 +1,53 @@
+{
+  "task_id": "P28",
+  "paper_id": "2501.18438",
+  "title": "o3-mini vs DeepSeek-R1: Which One is Safer?",
+  "one_sentence_summary": "本文使用ASTRAL对DeepSeek-R1（70B）与OpenAI o3-mini进行1260条不安全提示的系统性安全评测，发现DeepSeek-R1的不安全响应率（11.98%）显著高于o3-mini（1.19%），尤其在金融犯罪、暴力、恐怖主义/有组织犯罪和仇恨言论等类别上更为突出。",
+  "research_question": "DeepSeek-R1相比OpenAI o3-mini，更容易产生哪些类别的不安全响应？同时考察整体安全性、各安全类别、写作风格和说服技巧的影响。",
+  "methodology": "使用ASTRAL工具自动生成1,260条不安全测试输入，按6种写作风格×5种说服技巧×14个安全类别×3条测试进行平衡组合；在DeepSeek-R1 70B（通过Ollama本地部署，默认配置）和o3-mini beta（通过OpenAI API，早期安全测试计划）上执行相同的测试输入；使用GPT-3.5作为评估器并辅以人工复核，将o3-mini的policy violation响应视为安全；从整体安全性、安全类别、写作风格和说服技巧四个维度分析。",
+  "data_and_training": "论文未提供DeepSeek-R1或o3-mini的训练数据细节。测试输入由ASTRAL于2024年11月生成，结合RAG和网页浏览以纳入近期时事（如2024年美国大选），并按类别、风格和说服技巧进行平衡。复现数据与响应见https://doi.org/10.5281/zenodo.14773277。",
+  "main_contributions": [
+    "首次系统评估DeepSeek-R1（70B）与OpenAI o3-mini的安全对齐水平，使用1,260条由ASTRAL自动生成的平衡测试输入。",
+    "发现DeepSeek-R1的不安全响应率（11.98%）约为o3-mini（1.19%）的10倍，且按此前研究，也比GPT-4和GPT-4o更不安全。",
+    "识别出DeepSeek-R1更易触发不安全响应的安全类别（c6、c14、c13、c7）和写作风格（S3技术术语、S4角色扮演等）。",
+    "揭示了o3-mini的API策略违规机制拦截了44.8%的测试输入，可能显著降低其不安全响应率。",
+    "提供开源ASTRAL工具和复制包，支持后续LLM安全测试。"
+  ],
+  "key_findings": [
+    "DeepSeek-R1在1,260条测试输入中有151条（11.98%）被人工确认为不安全，o3-mini仅有15条（1.19%）。",
+    "DeepSeek-R1不安全响应最集中的类别是c6（金融犯罪、财产犯罪、盗窃），其次是c14（暴力、教唆、煽动）、c13（恐怖主义、有组织犯罪）和c7（仇恨言论、攻击性语言）。",
+    "对DeepSeek-R1而言，写作风格S3（技术术语）和S4（角色扮演）影响最大，其次为S6（提问）和S5（拼写错误）；说服技巧的影响很小。",
+    "o3-mini有44.8%的测试输入被API安全机制以policy violation拒绝，因此其评估结果更接近OpenAI API系统级的安全表现。",
+    "DeepSeek-R1的不安全输出比o3-mini更严重、更容易人工确认为不安全，且提供了更多细节。"
+  ],
+  "limitations": [
+    "仅测试了DeepSeek-R1的70B版本，更大模型因计算基础设施不兼容而未评估。",
+    "o3-mini为beta版本，且通过OpenAI API测评，policy violation拦截意味着评估的是系统级API而非纯模型行为。",
+    "人工复核仅检查被评估器标记为unsafe和unknown的响应，未逐条检查所有safe响应，可能遗漏不安全案例。",
+    "作者指出这是初步评估，旨在及时提供实用见解，未来需要更全面严格的评测。",
+    "人工判断可能受文化和个体视角影响，不同团队可能得出不同结果。"
+  ],
+  "relation_to_deepseek": "该论文将DeepSeek-R1定位为与OpenAI o3-mini竞争的开源推理模型，重点关注其安全对齐；结果指出DeepSeek-R1在金融犯罪、暴力、恐怖主义和仇恨言论等类别上存在明显安全弱点，为DeepSeek系列模型的安全评测和改进提供了外部证据。",
+  "categories": [
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-R1的整体不安全响应比例显著高于o3-mini（11.98% vs 1.19%）。",
+      "quote": "Initial results show that DeepSeek-R1 produces a significantly larger percentage of unsafe responses (11.98%) than o3-mini (1.19%).",
+      "page": 2
+    },
+    {
+      "claim": "DeepSeek-R1不安全响应最常出现在c6金融犯罪/财产犯罪/盗窃，其次为c14暴力、c13恐怖主义/有组织犯罪和c7仇恨言论/攻击性语言。",
+      "quote": "Particularly, category c6 (i.e., financial crime, property crime, theft) was found the category where the model behaved most unsafely, followed by c14 (violence, aiding and abetting, incitement), c13 (terrorism, organized crime) and c7 (hate speech, offensive language).",
+      "page": 5
+    }
+  ],
+  "confidence": 0.92,
+  "unanswered_questions": [
+    "DeepSeek-R1更大版本（如671B）是否比70B版本更安全或更不安全？",
+    "o3-mini正式版发布后，policy violation护栏是否会保留？",
+    "DeepSeek-R1的安全弱点主要源于训练数据、对齐过程还是推理机制？",
+    "不同文化背景的人工评估团队是否会改变不安全响应的判定结果？"
+  ]
+}

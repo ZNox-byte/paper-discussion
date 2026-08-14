@@ -1,0 +1,51 @@
+{
+  "task_id": "P29",
+  "paper_id": "2506.01814",
+  "title": "Analysis of LLM Bias (Chinese Propaganda & Anti-US Sentiment) in DeepSeek-R1 vs. ChatGPT o3-mini-high",
+  "one_sentence_summary": "本文通过跨语言（简体中文、繁体中文、英文）对比 DeepSeek-R1 与 ChatGPT o3-mini-high 的 7,200 条回答，发现 DeepSeek-R1 在简体中文下最容易输出中国国家宣传与反美偏见，且该偏见随语言转向英文而几乎消失。",
+  "research_question": "提示语言（简体中文、繁体中文、英文）如何影响 DeepSeek-R1 输出中与中国国家立场一致的偏见程度？",
+  "methodology": "研究构建了 1,200 条去情境化、推理导向的问题，来源于 Infodemic 平台的繁体中文新闻，并通过 o3-mini API 翻译为简体中文和英文，形成三套平行问题集。将问题分别提交给 DeepSeek-R1 和 ChatGPT o3-mini-high，收集 6 个模型-语言语料库共 7,200 条回答。采用混合评估流水线：由 rubric 引导的 GPT-4o 对每条回答评估两个二分类维度（中国宣传、反美情绪），并对部分样本进行人工标注以计算人机一致性（如 Cohen's κ）。研究还按 11 个主题领域进行分层分析，以回答四个研究问题：模型级偏见、语言效应、跨语言放大和主题集中度。",
+  "data_and_training": "论文未对模型进行训练或微调，仅使用现成模型 API（DeepSeek-R1 与 ChatGPT o3-mini-high）生成回答。评估数据来自约 120,000 条 Infodemic 平台上的繁体中文故事（标题+摘要），经采样和主题分类后得到 1,200 条平衡主题数据集；随后用 o3-mini API 生成去情境化问题并翻译为简体中文和英文。GPT-4o 在 temperature=0.01 下完成全部 7,200 条回答的自动标注，产生 14,400 个二分类判断，并辅以人工审计样本。",
+  "main_contributions": [
+    "首次在简体中文、繁体中文和英文三种语言下，对 PRC 对齐模型（DeepSeek-R1）与非 PRC 模型（ChatGPT o3-mini-high）进行跨语言、跨模型的系统性偏见对比",
+    "构建了基于真实新闻的 1,200 条去情境化、推理导向问题语料库，并采用混合评估流水线（GPT-4o 评分 + 人工标注）进行可扩展、可复现的 LLM 审计",
+    "实证揭示了 DeepSeek-R1 的“隐形扩音器”（invisible loudspeaker）效应，即 PRC 对齐偏见会嵌入看似中立的回答中",
+    "发现偏见不仅出现在政治、经济等硬话题中，也渗透到文化、旅游等软性内容中，且语言选择会显著放大或抑制偏见"
+  ],
+  "key_findings": [
+    "DeepSeek-R1 在宣传偏见和反美偏见上的比例均显著高于 ChatGPT o3-mini-high；o3-mini-high 在三种语言下的反美偏见均为 0%。",
+    "对于 DeepSeek-R1，简体中文提问引发的偏见率最高（宣传 6.83%、反美 5.00%），繁体中文次之（宣传 2.42%、反美 2.42%），英文最低（宣传 0.08%、反美 0.42%）。",
+    "DeepSeek-R1 偶尔会用简体中文回答繁体中文问题，并会在中文回答中额外增加 PRC 对齐术语，放大原有偏见；英文输出中该放大效应消失。",
+    "偏见并不局限于地缘政治等敏感主题，在文化、艺术、旅游等软性主题中同样出现，且 DeepSeek-R1 的比例明显高于 o3-mini-high。",
+    "GPT-4o 自动评分与人工标注在宣传维度达到接近完美的一致性（DeepSeek-R1: κ=0.81；o3-mini-high: κ=0.91），但 o3-mini-high 的反美样本因缺乏阳性案例而难以完整评估。"
+  ],
+  "limitations": [
+    "DeepSeek-R1 在回应繁体中文问题时偶尔切换到简体中文，可能高估了宣传和反美情绪的实际比例。",
+    "论文指出需要进一步检查模型的思维链（chain-of-thought）过程，以判断训练或对齐技术如何导致这些微妙偏见。",
+    "o3-mini-high 的反美情绪审计集因没有阳性样本，导致 precision、recall、F1 和 κ 无法计算，限制了对该维度模型性能的评估。",
+    "研究仅覆盖两个模型，未来需要纳入更多 PRC 与非 PRC 模型以及不同语言文化背景以验证结论的普适性。"
+  ],
+  "relation_to_deepseek": "该论文直接以 DeepSeek-R1 为审计对象，评估其在不同提示语言下嵌入中国国家宣传和反美情绪的程度，属于对 DeepSeek 模型对齐、安全与评测的关键实证研究。",
+  "categories": [
+    "对齐、安全与评测",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-R1 在宣传和反美偏见上的比例始终高于 ChatGPT o3-mini-high，特别是在反美偏见上差距明显。",
+      "quote": "DeepSeek-R1 consistently showed a higher proportion of both Propaganda and Anti-US biases compared to o3-mini-high",
+      "page": 7
+    },
+    {
+      "claim": "对于两个模型而言，简体中文提示最容易引发 PRC 对齐回答，繁体中文次之，英文提示最不容易触发这些偏见。",
+      "quote": "Simplified Chinese queries generally yielded a higher rate of both Propaganda and Anti-US biases than Traditional Chinese queries, and answers in both Chinese scripts contained significantly more biases than those in English.",
+      "page": 7
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "DeepSeek-R1 的具体训练数据与对齐流程中，哪些因素导致了语言相关的偏见差异？",
+    "偏见输出对真实用户态度和行为的影响是否具有统计显著性？",
+    "在其他 PRC 模型（如 DeepSeek 系列其他版本）中，这种跨语言偏见模式是否一致？"
+  ]
+}

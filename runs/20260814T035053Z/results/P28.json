@@ -1,0 +1,48 @@
+{
+  "task_id": "P28",
+  "paper_id": "2505.09999",
+  "title": "ServeGen: Workload Characterization and Generation of Large Language Model Serving in Production",
+  "one_sentence_summary": "本文通过对阿里巴巴云 Model Studio 生产环境中海量 LLM 服务工作负载（覆盖语言、多模态和推理模型）进行特征刻画，提出按客户端组合生成真实工作负载的 ServeGen 框架，以提升推理系统基准测试的真实性。",
+  "research_question": "多模态模型和推理模型的新工作负载特征如何影响 LLM 服务？",
+  "methodology": "对生产集群中 12 个模型、数十亿条请求（跨越四个月）的日志进行特征分析，包括到达模式、输入/输出长度分布、多模态输入构成、推理模型的推理/回答长度等，并通过客户端分解解释整体负载规律；基于这些发现，以 per-client 方式建模并生成合成工作负载，使用 vLLM 和 SGLang 等系统进行基准对比。",
+  "experimental_setup": "数据来自阿里巴巴云 Model Studio，覆盖语言、多模态、推理三类共 12 个模型；用于验证的系统包括 vLLM（Qwen2.5-14B，2×A100 实例）和 PD-disaggregated SGLang（Qwen2.5-72B，4 节点各 8 张 H20 GPU）；对比基线为 NAIVE 工作负载生成方法。",
+  "main_contributions": [
+    "提供了覆盖语言、多模态和推理模型的大规模生产级 LLM 服务工作负载特征研究。",
+    "通过按客户端分解揭示了真实工作负载的因果建模规律（少数头部客户导致整体波动）。",
+    "开源了 ServeGen 工作负载生成框架，支持更真实的基准测试。"
+  ],
+  "key_findings": [
+    "语言模型请求到达具有突发性和随时间变化的速率/突发度，单一随机过程难以统一建模。",
+    "输入长度可用 Pareto 与 Log-normal 混合分布建模，输出长度近似 Exponential；输入输出长度相关性较弱并随时间独立漂移。",
+    "多模态工作负载在各模态间呈现显著的负载方差和请求异质性，下载、归一化、编码等预处理阶段显著延长 TTFT。",
+    "推理模型输出中推理 token 明显更长（平均为答案的 4 倍），推理/答案长度呈双峰比例分布；多轮会话使到达模式更平稳（非突发）。"
+  ],
+  "limitations": [
+    "未覆盖插件调用（plugin calls）场景。",
+    "出于保密义务未分析前缀缓存（prefix caching）。",
+    "单个工作负载的时间跨度不足以进行长期纵向研究。"
+  ],
+  "relation_to_topic": "论文聚焦在线推理服务的工作负载特征与生成，直接服务于 LLM serving 系统的性能评测、容量规划、请求调度和架构优化（如 PD 分离），为内存管理、调度策略等 AI Infra 优化提供现实依据。",
+  "categories": [
+    "性能评测与成本分析",
+    "推理服务与请求调度"
+  ],
+  "evidence": [
+    {
+      "claim": "多模态请求在输入构成上高度异构，且预处理阶段的开销会显著延长 TTFT。",
+      "quote": "Finding 7: Multimodal requests are heterogeneous with diverse ratios of multimodal inputs per request, leading to prolonged TTFTs that require tailored optimizations.",
+      "page": 7
+    },
+    {
+      "claim": "推理模型输出因推理 token 而更长且更不稳定，推理与答案长度呈现双峰比例。",
+      "quote": "Finding 9: Reasoning workloads exhibit longer and more variable output lengths, due to the reason tokens.",
+      "page": 8
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "插件调用如何影响端到端执行时间和输出长度，需要进一步特征化。",
+    "前缀缓存共享对工作负载的影响（因数据隐私未涉及）。",
+    "需要更长跨度的数据以研究 serving 工作负载的长期趋势。"
+  ]
+}

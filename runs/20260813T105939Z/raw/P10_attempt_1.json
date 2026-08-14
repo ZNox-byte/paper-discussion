@@ -1,0 +1,48 @@
+{
+  "task_id": "P10",
+  "paper_id": "2503.20783",
+  "title": "Understanding R1-Zero-Like Training: A Critical Perspective",
+  "one_sentence_summary": "本文批判性分析 R1-Zero-like 训练，发现基础模型在 RL 前已有“Aha moment”，并指出 GRPO 的长度/标准差归一化会造成优化偏差；提出的 Dr. GRPO 去除这些归一化，在提升 token 效率的同时保持推理性能。",
+  "research_question": "GRPO 中何种优化偏差会人为增加响应长度，Dr. GRPO 如何纠正该偏差？",
+  "methodology": "对多种 base model（Qwen2.5 系列、Llama-3.1、DeepSeek-Math、DeepSeek-V3-Base）进行模板/无模板问答能力与探索能力测试，统计自反思关键词；推导 GRPO 与 PPO 目标，识别长度偏差与难度偏差；提出 Dr. GRPO 并用 Qwen2.5 与 Llama 系列做 RL 训练对比、消融与多基准评估。",
+  "data_and_training": "作者在 8×A100 GPU 上以最大响应长度 3000 tokens、每问题 8 个响应、学习率 1×10^-6 等配置进行 RL；训练数据来自 MATH 训练集；评估使用 AIME2024、AMC、MATH500、Minerva Math、OlympiadBench；另用 Llama-3.2-3B-FineMath 与 NuminaMath 拼接数据做持续预训练消融。最终 Oat-Zero-7B 在 AIME 2024 准确率达 43.3%。",
+  "main_contributions": [
+    "系统分析 base model 在 R1-Zero-like 训练前的属性，发现几乎所有模型在 RL 前已有“Aha moment”，包括 DeepSeek-V3-Base。",
+    "识别 GRPO 的响应级长度偏差和问题级难度偏差，指出其会人为增加响应长度，尤其错误响应。",
+    "提出 Dr. GRPO，去除 1/|oi| 和 std 归一化，恢复无偏 PPO 目标，提高 token 效率且保持推理性能。",
+    "给出 minimalist R1-Zero recipe：用 Qwen2.5-Math-7B + Dr. GRPO 在 AIME 2024 达 43.3%，建立新的 SOTA。"
+  ],
+  "key_findings": [
+    "Qwen2.5 基础模型无模板时表现最佳，提示其预训练可能包含拼接的问答文本；DeepSeek-V3-Base 是无模板时回答率最低的“纯 base model”。",
+    "GRPO 对正优势偏向更短的正确答案，而对负优势导致的更长错误响应惩罚更小，使训练中响应长度不断增长。",
+    "Dr. GRPO 与 GRPO 相比，在保持平均 benchmark 分数的同时大幅降低错误响应长度，缓解“overthinking”。",
+    "模板与问题集覆盖相互作用：模板不匹配时 RL 需要良好的问题覆盖才能重建能力；使用 Qwen-Math 模板时，简单 GSM-8K 训练可大幅提升难题测试准确率。",
+    "领域预训练（FineMath/NuminaQA）能提高 Llama-3.2-3B 的 RL 上限。"
+  ],
+  "limitations": [
+    "自反思检测采用关键词与 LLM 交叉验证，但附录承认两类方法都可能误判，长而复杂的响应尤其难以准确分类。",
+    "论文显示 self-reflection 与推理准确率并非正相关，因此“Aha moment”本身不宜直接作为性能提升的证据。"
+  ],
+  "relation_to_deepseek": "本文以 DeepSeek-R1-Zero 为研究对象，直接评估 DeepSeek-V3-Base-685B 与 DeepSeek-R1-Zero；指出 R1-Zero 使用的 GRPO 存在长度与难度偏差，并通过 Dr. GRPO 修正该偏差；同时发现 DeepSeek-V3-Base 本身已出现“Aha moment”，对 R1-Zero 的“纯 RL 涌现”叙事提出质疑。",
+  "categories": [
+    "推理与强化学习",
+    "训练数据与训练方法"
+  ],
+  "evidence": [
+    {
+      "claim": "GRPO 的响应级长度偏差源于除以 |oi|；对错误响应（负优势）惩罚更小，因此会人为偏好更长的错误响应，使响应长度虚增。",
+      "quote": "Response-level length bias: This arises from dividing by |oi|. For positive advantages ( ˆAi,t > 0, indicating a correct response), this bias results in greater gradient updates for shorter responses, leading the policy to favor brevity in correct answers. Conversely, for negative advantages ( ˆAi,t < 0, indicating an incorrect response), longer responses are penalized less due to their larger |oi|, causing the policy to prefer lengthier responses among incorrect ones.",
+      "page": 6
+    },
+    {
+      "claim": "Dr. GRPO 通过去掉 1/|oi| 与 std 归一化项来消除上述优化偏差，从而恢复无偏优化。",
+      "quote": "To avoid the aforementioned optimization bias in GRPO, we propose to simply remove the 1 |oi| and std({R(q,o 1), . . . ,R(q,o G)}) normalization terms.",
+      "page": 6
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "GRPO 的长度偏差在非数学、非结果奖励（如过程奖励）任务中的定量影响如何？",
+    "Dr. GRPO 在更大模型（如 70B/685B）上的 token 效率与性能表现如何？"
+  ]
+}

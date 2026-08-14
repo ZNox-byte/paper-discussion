@@ -1,0 +1,52 @@
+{
+  "task_id": "P19",
+  "paper_id": "2412.10302",
+  "title": "DeepSeek-VL2: Mixture-of-Experts Vision-Language Models for Advanced Multimodal Understanding",
+  "one_sentence_summary": "DeepSeek-VL2 是 DeepSeek 官方提出的 MoE 视觉语言模型系列，通过动态 tiling 高分辨率视觉编码和 DeepSeekMoE+MLA 语言模型，在较少激活参数下实现了具有竞争力的多模态理解与视觉定位能力。",
+  "research_question": "How do dynamic tiling and MoE activation improve high-resolution image processing without excessive compute?",
+  "methodology": "论文采用 LLaVA 风格的三模块架构（视觉编码器、视觉-语言适配器、MoE 语言模型），并提出动态 tiling 策略：基于候选分辨率集合 CR 选择 padding 最小的分辨率，将图像切分为若干 384×384 局部 tile 外加一个全局缩略 tile，由共享的 SigLIP-SO400M-384 编码器处理；视觉 token 经像素重排和特殊 token 组织后送入语言模型。语言模型基于 DeepSeekMoE，并引入 Multi-head Latent Attention (MLA) 压缩 KV cache，同时采用全局 bias 项改进专家负载均衡。训练采用三阶段流程：VL alignment、VL pretraining 和 SFT，前两阶段解锁全部参数，并仅对文本 token 计算下一 token 预测损失。",
+  "data_and_training": "VL alignment 使用 ShareGPT4V（约 1.2M 图文样本）训练 MLP 连接器并微调视觉编码器；VL pretraining 数据约为 70% 视觉语言数据与 30% 纯文本数据，总训练 token 约 800B（Tiny/Small/DeepSeek-VL2 分别为 798.5B/808.9B/796.5B），包含交错图文、图像描述、OCR、VQA、视觉定位、图文对话等；SFT 阶段使用约 19.5B token，融合公开数据集与内部数据，并加入文本对话数据以保持语言能力。训练使用 HAI-LLM 平台和 NVIDIA A100 GPU，采用 pipeline/tensor/expert parallelism，并针对视觉编码器做细粒度层划分和图像 tile 负载均衡。",
+  "main_contributions": [
+    "提出 DeepSeek-VL2 系列（DeepSeek-VL2-Tiny/Small/DeepSeek-VL2，激活参数 1.0B/2.8B/4.5B），将 MoE 架构引入视觉语言模型。",
+    "设计动态 tiling 视觉编码策略，以单一 SigLIP 编码器处理不同长宽比的高分辨率图像，避免分辨率增大带来的二次方计算开销。",
+    "将 DeepSeekMoE 与 Multi-head Latent Attention (MLA) 结合，压缩 KV cache 并提升推理吞吐。",
+    "构建更高质量的视觉语言数据管线，新增精确视觉定位、GUI 感知、in-context visual grounding 和 grounded conversation 等能力。",
+    "开源模型与代码，并在多个多模态基准上以更少激活参数取得具有竞争力的性能。"
+  ],
+  "key_findings": [
+    "动态 tiling 通过将高分辨率图像切分为局部 tile 并共享视觉 transformer，在支持高分辨率与任意宽高比的同时，避免了与图像分辨率二次增长相关的计算开销。",
+    "MLA 通过将 KV cache 压缩为潜在向量，实现更快推理和更高吞吐；MoE 稀疏计算进一步降低激活参数。",
+    "DeepSeek-VL2 在 DocVQA、ChartQA、InfoVQA、TextVQA、OCRBench 等 OCR/文档类基准，以及 MMStar、AI2D、MMMU、MathVista 等通用和多模态推理基准上，以较少激活参数达到相似或更优性能。",
+    "DeepSeek-VL2-Tiny/Small/DeepSeek-VL2 在 RefCOCO、RefCOCO+、RefCOCOg 视觉定位基准上均取得了同规模 MLLM 中的最佳或领先结果。",
+    "模型展现出多图对话、视觉故事创作、meme 理解、in-context visual grounding 等涌现能力。"
+  ],
+  "limitations": [
+    "DeepSeek-VL2 的上下文窗口目前只允许每个对话会话包含少量图像，限制了更丰富的多图交互。",
+    "模型偶尔会在模糊图像或未见物体上表现不佳，鲁棒性有待提升。",
+    "作者指出模型在视觉感知和识别上较强，但推理能力仍需要进一步加强。"
+  ],
+  "relation_to_deepseek": "本文是 DeepSeek-AI 的官方技术报告，DeepSeek-VL2 是 DeepSeek-VL 的 MoE 升级版本；语言模型基座采用 DeepSeekMoE（3B/16B/27B）和源自 DeepSeek-V2 的 Multi-head Latent Attention；数据构建中还使用 DeepSeek Chat 进行字幕质量过滤，并使用 DeepSeek V2.5 扩充 web-to-code 和 plot-to-Python 数据；训练基础设施为 DeepSeek 的 HAI-LLM 平台。",
+  "categories": [
+    "基础模型与架构",
+    "多模态",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "动态 tiling 策略在支持高分辨率图像处理的同时，避免了传统高分辨率视觉 transformer 随分辨率增加而出现的二次方计算开销。",
+      "quote": "This design preserves the advantages of vision transformers with local attention, enabling rich feature extraction without the quadratic computational scaling typically associated with increasing image resolutions.",
+      "page": 3
+    },
+    {
+      "claim": "MLA 机制通过将 Key-Value cache 压缩为潜在向量来提升推理效率和吞吐能力。",
+      "quote": "MLA enhances inference efficiency by compressing the Key-Value cache into a latent vector, enabling increased throughput capacity.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "论文未提供动态 tiling 与固定分辨率编码之间关于视觉 token 数、FLOPs 或推理延迟的量化对比。",
+    "论文未报告 MoE 路由和 MLA 在真实吞吐/延迟层面的单独消融基准。",
+    "评估 InfoVQA 时将候选分辨率上限从 mn≤9 扩展到 mn≤18，论文未说明这种扩展对计算效率的具体影响。"
+  ]
+}

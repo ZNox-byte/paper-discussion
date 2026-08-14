@@ -1,0 +1,48 @@
+{
+  "task_id": "P12",
+  "paper_id": "2411.18424",
+  "title": "FastSwitch: Optimizing Context Switching Efficiency in Fairness-aware Large Language Model Serving",
+  "one_sentence_summary": "FastSwitch 面向公平性驱动的 LLM 推理服务，通过动态块组 KV cache 管理、多线程异步交换和跨轮次 KV cache 复用，降低抢占式调度中上下文切换带来的 I/O 开销与 GPU 空闲，从而改进 TTFT/TBT 等 SLO。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？",
+  "methodology": "论文剖析了现有 vLLM 式分页 KV cache 在公平性抢占调度中引发上下文切换开销的三个挑战：I/O 带宽利用不足、GPU 空闲、多轮对话中重复 I/O；对应设计 Dynamic Block Group Manager（buddy 式粗粒度块组分配）、Multithreading Swap Manager（异步/同步自适应交换并规避 Python GIL 与多流 cudaMemcpyAsync 顺序问题）、KV Cache Reuse Mechanism（跟踪 CPU 中未污染块组并预分配下一轮增量空间）。实现基于 vLLM，用约 5000 行 Python 和 1000 行 C++/CUDA，并使用 lightllm 的 prefill-with-prefix kernel。",
+  "experimental_setup": "使用 LLaMA-8B 在 NVIDIA A10 24GB 和 Qwen-32B 在 A100 80GB 上评估，每个 GPU 配 60GB CPU swap 空间，PCIe 4.0 x16（理论单向 32GB/s 传输带宽）；数据集为 Multi-Round ShareGPT，随机选 1000 条多轮对话，平均 5.5 轮，泊松到达率 1 req/s；由于缺乏公开 LLMaaS 上下文切换 trace，按 (Yin et al., 2024) 模拟 Random 与 Markov 两种模式，优先级离线预计算；LLaMA-8B 使用 priority-update frequency 0.04，Qwen-32B 使用 0.02；基线是 vLLM 0.3.3，指标包括 P95/P99/P99.9 TTFT、P99.9 TBT 和端到端吞吐。",
+  "main_contributions": [
+    "刻画并指出公平性感知 LLM 服务中优先级调整导致上下文切换开销的三个未解决挑战：I/O 未充分利用、GPU 空闲、多轮对话冗余 I/O。",
+    "提出 FastSwitch，包含 Dynamic Block Group Manager、Multithreading Swap Manager、KV Cache Reuse Mechanism，三者协同优化抢占式上下文切换效率。",
+    "在与 vLLM 的端到端对比中，报告 TTFT 最高 1.4-5.8×、TBT 最高 11.2×、吞吐最高 1.44× 的提升。"
+  ],
+  "key_findings": [
+    "FastSwitch 在不同模型和切换模式下的尾部 TTFT/TBT 延迟显著低于 vLLM：LLaMA-8B 在 P95/P99/P99.9 TTFT 与 P99.9 TBT 上分别获得 4.3-5.8×、3.7-4.1×、2.5-3.7×、2.0-2.7× 加速，Qwen-32B 分别获得 1.4-1.7×、1.5-1.6×、1.3-1.4×、3.6-11.2× 加速。",
+    "端到端吞吐提升：LLaMA-8B 最高 1.334×，Qwen-32B 最高 1.444×；Qwen-32B 增益更大归因于其交换延迟相对推理时间更高。",
+    "KV Cache Reuse Mechanism 在微基准中将交换出块数减少 53%（从 122030 到 58187），交换出延迟从 15.5s 降到 6.7s。",
+    "Multithreading Swap Manager 使 token 生成效率在高百分位明显提升，P99 提升 21.8%，P99.9 提升 12.6%。"
+  ],
+  "limitations": [
+    "论文没有可用的真实 LLMaaS 上下文切换 trace，只能参照 (Yin et al., 2024) 模拟 Random/Markov 两种模式，且优先级是离线预计算而非运行时动态生成，可能低估真实在线调度中的复杂情况。",
+    "论文报告的实验配置只覆盖 LLaMA-8B 和 Qwen-32B 在 A10/A100 上的评估，未报告与 Llumnix、AttentionStore、FastServe 等方法的直接实验对比。"
+  ],
+  "relation_to_topic": "论文属于以 vLLM 为代表的 LLM 推理系统研究，直接关注 KV cache 内存布局如何影响抢占式公平调度中的上下文切换成本：它指出 vLLM 的非连续分页块式 KV cache 虽减少内存碎片，却造成交换粒度小、PCIe I/O 带宽利用率差，并通过块组化内存分配、异步交换和跨轮 KV cache 复用等机制提升吞吐、尾部延迟和可靠性相关 SLO，与内存管理、请求调度、性能评测主题紧密相关。",
+  "categories": [
+    "推理服务与请求调度",
+    "KV Cache与内存管理",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "FastSwitch 的核心观察是，现有系统的基于块的 KV cache 内存策略虽然近零内存浪费，却导致 KV cache 内存不连续且粒度不足，从而放大抢占式上下文切换开销。",
+      "quote": "Our key insight is that the block-based KV cache memory policy in existing systems, while achieving near-zero memory waste, leads to discontinuity and insufficient granularity in the KV cache memory.",
+      "page": 1
+    },
+    {
+      "claim": "vLLM 的非连续分页 KV cache 在提高吞吐的同时会造成碎片化内存分配，进而在上下文切换时无法充分利用 PCIe I/O 带宽。",
+      "quote": "In existing system (Kwon et al., 2023), the non-contiguous paged memory for KV cache to achieve higher throughput causes fragmented memory allocation, leading to poor utilization of PCIe I/O bandwidth when context switching.",
+      "page": 2
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "在真实生产环境中的在线优先级调整和上下文切换 trace 下，FastSwitch 的收益是否保持？",
+    "FastSwitch 的块组机制在更长上下文、更大模型、多GPU/分布式推理或 prefill-decode disaggregation 下的表现如何？",
+    "与 Llumnix、AttentionStore、FastServe 等系统在同一 workload 下的定量对比结果如何？"
+  ]
+}

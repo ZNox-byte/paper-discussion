@@ -1,0 +1,294 @@
+{
+  "round_number": 1,
+  "total_unique_papers": 32,
+  "papers": [
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P01",
+      "paper_id": "2309.06180",
+      "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2309.06180v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P02",
+      "paper_id": "2312.07104",
+      "title": "SGLang: Efficient Execution of Structured Language Model Programs",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2312.07104v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P03",
+      "paper_id": "2405.04437",
+      "title": "vAttention: Dynamic Memory Management for Serving LLMs without PagedAttention",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2405.04437v3"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P04",
+      "paper_id": "2401.17644",
+      "title": "BurstGPT: A Real-world Workload Dataset to Optimize LLM Serving Systems",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2401.17644v5"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P05",
+      "paper_id": "2408.12757",
+      "title": "NanoFlow: Towards Optimal Large Language Model Serving Throughput",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2408.12757v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P06",
+      "paper_id": "2406.03243",
+      "title": "Llumnix: Dynamic Scheduling for Large Language Model Serving",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2406.03243v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P07",
+      "paper_id": "2402.02750",
+      "title": "KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache",
+      "doi": "10.13140/RG.2.2.28167.37282",
+      "url": "https://arxiv.org/abs/2402.02750v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P08",
+      "paper_id": "2409.16997",
+      "title": "INT-FlashAttention: Enabling Flash Attention for INT8 Quantization",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2409.16997v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P09",
+      "paper_id": "2405.16444",
+      "title": "CacheBlend: Fast Large Language Model Serving for RAG with Cached Knowledge Fusion",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2405.16444v3"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P10",
+      "paper_id": "2310.07240",
+      "title": "CacheGen: KV Cache Compression and Streaming for Fast Large Language Model Serving",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2310.07240v6"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P11",
+      "paper_id": "2312.05516",
+      "title": "Stateful Large Language Model Serving with Pensieve",
+      "doi": "10.1145/3689031.3696086",
+      "url": "https://arxiv.org/abs/2312.05516v3"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P12",
+      "paper_id": "2411.18424",
+      "title": "FastSwitch: Optimizing Context Switching Efficiency in Fairness-aware Large Language Model Serving",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2411.18424v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P13",
+      "paper_id": "2501.14312",
+      "title": "Locality-aware Fair Scheduling in LLM Serving",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2501.14312v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P14",
+      "paper_id": "2504.09285",
+      "title": "DynaServe: Unified and Elastic Execution for Dynamic Disaggregated LLM Serving",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2504.09285v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P15",
+      "paper_id": "2507.06608",
+      "title": "Nexus:Proactive Intra-GPU Disaggregation of Prefill and Decode in LLM Serving",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2507.06608v5"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P16",
+      "paper_id": "2504.09590",
+      "title": "Efficient LLM Serving on Hybrid Real-time and Best-effort Requests",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2504.09590v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P17",
+      "paper_id": "2605.03375",
+      "title": "Tutti: Making SSD-Backed KV Cache Practical for Long-Context LLM Serving",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2605.03375v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P18",
+      "paper_id": "2512.18194",
+      "title": "TraCT: Disaggregated LLM Serving with CXL Shared Memory KV Cache at Rack-Scale",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2512.18194v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P19",
+      "paper_id": "2508.18572",
+      "title": "Strata: Hierarchical Context Caching for Long Context Language Model Serving",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2508.18572v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P20",
+      "paper_id": "2509.00105",
+      "title": "AdaptCache: KV Cache Native Storage Hierarchy for Low-Delay and High-Quality Language Model Serving",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2509.00105v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P21",
+      "paper_id": "2512.14946",
+      "title": "EVICPRESS: Joint KV-Cache Compression and Eviction for Efficient LLM Serving",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2512.14946v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P22",
+      "paper_id": "2605.17613",
+      "title": "VeriCache: Turning Lossy KV Cache into Lossless LLM Inference",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2605.17613v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P23",
+      "paper_id": "2601.10729",
+      "title": "OrbitFlow: SLO-Aware Long-Context LLM Serving with Fine-Grained KV Cache Reconfiguration",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2601.10729v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P24",
+      "paper_id": "2608.13263",
+      "title": "vToken: Token-Level Virtualization for Reclaimable KV Caches",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2608.13263v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P25",
+      "paper_id": "2411.18077",
+      "title": "MiniKV: Pushing the Limits of LLM Inference via 2-Bit Layer-Discriminative KV Cache",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2411.18077v3"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P26",
+      "paper_id": "2503.18599",
+      "title": "Oaken: Fast and Efficient LLM Serving with Online-Offline Hybrid KV Cache Quantization",
+      "doi": "10.1145/3695053.3731019",
+      "url": "https://arxiv.org/abs/2503.18599v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P27",
+      "paper_id": "2407.00047",
+      "title": "Queue management for slo-oriented large language model serving",
+      "doi": "10.1145/3698038.369852",
+      "url": "https://arxiv.org/abs/2407.00047v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P28",
+      "paper_id": "2505.09999",
+      "title": "ServeGen: Workload Characterization and Generation of Large Language Model Serving in Production",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2505.09999v3"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P29",
+      "paper_id": "2607.09172",
+      "title": "Attention to Detail: Evaluating Energy, Performance, and Accuracy Trade-offs Across vLLM Configurations",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2607.09172v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P30",
+      "paper_id": "2605.11202",
+      "title": "Continuous Discovery of Vulnerabilities in LLM Serving Systems with Fuzzing",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2605.11202v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P31",
+      "paper_id": "2511.17826",
+      "title": "Deterministic Inference across Tensor Parallel Sizes That Eliminates Training-Inference Mismatch",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2511.17826v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260814T035053Z",
+      "task_id": "P32",
+      "paper_id": "2607.28848",
+      "title": "DeltaServe: Host-Agnostic Co-Serving of Inference and Fine-Tuning for LLMs",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2607.28848v1"
+    }
+  ]
+}

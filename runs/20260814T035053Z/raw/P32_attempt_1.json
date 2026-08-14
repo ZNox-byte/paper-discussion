@@ -1,0 +1,54 @@
+{
+  "task_id": "P32",
+  "paper_id": "2607.28848",
+  "title": "DeltaServe: Host-Agnostic Co-Serving of Inference and Fine-Tuning for LLMs",
+  "one_sentence_summary": "DeltaServe 提出一种宿主无关的协同服务设计，将推理负载低于峰值时闲置的 GPU 算力转化为 LoRA 微调吞吐，通过 SLO 感知调度器与 CUDA-graph-aware 延迟模型，在不增加硬件且不破坏推理 SLO 的前提下，在 vLLM、SGLang 和 S-LoRA 上实现推理与微调共置。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？",
+  "methodology": "DeltaServe 将 LoRA 微调前向视为与推理 prefill 结构相同的单步、仅 prefill 请求，并通过保留的微调 adapter 进入宿主引擎的多 LoRA 批量路径；调度器在宿主调度循环中拦截每步，用解析式延迟模型（区分 CUDA graph 与 eager 执行）预测加入微调样本后的延迟增量，按 TTFT/TPOT 预算决定准入数量；反向传播在独立的 CUDA MPS GPU 子进程中执行，在 transformer 层边界让位于推理，并通过共享 GPU 内存零拷贝读取激活；激活捕获通过模型级 hook 完成，支持按 token 约 0.25MB 的残差流存储以换取重计算。",
+  "experimental_setup": "实验使用消费级单卡 NVIDIA RTX 5090 (32GB) 和数据中心级 4×NVIDIA A100 (40GB) 两种环境，模型为 Llama 3-8B，LoRA rank=16、alpha=32、dropout=0.05，在 Alpaca 数据集上微调。实现包括 DeltaServe-vLLM、DeltaServe-SGLang 和 DeltaServe-S-LoRA，对比基线为 LLMStation 和 vLLM+torchtune 分池部署。推理负载包括 burst-light、burst-dense 两种合成突发模式和 Nutanix 20 分钟生产 trace；SLO 在 A100 上设为 400ms TTFT / 120ms TPOT，在 RTX 5090 上设为 200ms TTFT / 100ms TPOT。",
+  "main_contributions": [
+    "提出宿主无关的推理与微调协同服务设计，将 SLO 感知的共置逻辑封装为可复用核心和紧凑的接入钩子，仅要求宿主引擎支持 multi-LoRA batching。",
+    "设计并实现 SLO-aware 微调准入机制，利用推理 prefill 与 LoRA 前向的共享执行结构，将微调样本并入推理批次并按 TTFT/TPOT 预算准入。",
+    "提出 CUDA-graph-aware 解析式延迟模型，离线校准、在线精修，支持 graph/eager 两种执行模式下的延迟预测。",
+    "设计解耦的反向传播子进程，在独立 CUDA 上下文（CUDA MPS）中执行梯度与优化器更新，并通过层边界让位和新请求到达时抢占来保护推理。",
+    "在 vLLM、SGLang、S-LoRA 三个宿主引擎上实现同一核心，验证可移植性并开源。"
+  ],
+  "key_findings": [
+    "在 Nutanix 生产 trace 上，DeltaServe-vLLM 实现 1418 tok/s 微调吞吐，是 LLMStation 的 2.9 倍，同时保持 100% 推理 SLO 满足率，而 LLMStation 仅 85.5%。",
+    "相比 vLLM+torchtune 分池基线（单独用一张 GPU 做微调），DeltaServe-vLLM 在 Nutanix trace 上微调吞吐高约 39%，且不使用额外硬件。",
+    "在 burst-dense 高负载下，DeltaServe-vLLM 仍保持 100% SLO 满足率并达到 1233 tok/s 微调吞吐，而 LLMStation 只有 83.3% SLO 满足率。",
+    "可移植性实验显示，DeltaServe-SGLang 在单张 RTX 5090 上达到 972 tok/s 微调吞吐，DeltaServe-S-LoRA 达到 484 tok/s，且均保持完整 SLO 合规。",
+    "消融实验表明，启用前向批量共置将微调吞吐从 507 tok/s 提升到 934 tok/s（+84%）；关闭微调单独步骤中断会使 5% 尾延迟开销从 +8% 升至 +27%，说明层边界中断机制能显著保护推理尾延迟。",
+    "SLO 感知调度在突发高峰时收缩微调带宽、在低负载时扩展，将延迟成本控制在 SLO 预算内，同时收获推理闲置容量。"
+  ],
+  "limitations": [
+    "DeltaServe 依赖宿主推理引擎已经支持 multi-LoRA batching，该能力是接入的前提。",
+    "论文的评估主要在单机 4×A100 和单张 RTX 5090 上进行，未覆盖多节点、多租户集群或更长时间的长期运行稳定性。",
+    "论文聚焦 LoRA 这类参数高效微调场景，未讨论全参数微调或其他 PEFT 方法下的协同服务。",
+    "论文没有单独量化激活缓存与 KV cache 之间的 GPU 内存竞争对批大小和可准入微调样本数的影响。"
+  ],
+  "relation_to_topic": "该论文直接展示了 AI Infra 系统如何通过请求调度（SLO-aware 准入、节流、暂停/恢复）、软硬件协同（CUDA graph 与 eager 模式区分、CUDA MPS 子进程、共享 GPU 内存）以及共享前向执行结构，在不增加硬件且不牺牲推理延迟目标的前提下，把闲置 GPU 容量转化为微调吞吐，从而提高总体吞吐和成本效率；其三个宿主引擎集成也验证了调度与执行机制的可移植性。",
+  "categories": [
+    "推理服务与请求调度",
+    "训练系统与优化",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "DeltaServe 的核心目标是利用推理负载低于峰值时闲置的 GPU 容量执行 LoRA 微调，同时保持推理服务级目标（SLO）不受影响。",
+      "quote": "We present DeltaServe, a host-agnostic co-serving design that converts this idle inference capacity into LoRA fine-tuning throughput while preserving inference service-level objectives (SLOs).",
+      "page": 1
+    },
+    {
+      "claim": "其调度机制以批为粒度，在准入前用解析模型预测微调会对推理负载增加多少延迟，从而在保留 TTFT 和 TPOT 目标的前提下决定是否准入、节流或暂停微调。",
+      "quote": "At the core of DeltaServe is an SLO-aware admission scheduler built on this observation, driven by an analytical model that predicts how much latency the fine-tuning would add to the inference workload at the batch-granularity before it is admitted.",
+      "page": 2
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "在更大规模多节点或真实多租户集群中，DeltaServe 的 SLO 感知调度与反向子进程抢占机制如何扩展？",
+    "论文未讨论与低精度计算（如 FP8/INT8 量化、量化注意力）结合时的延迟模型校准和微调吞吐表现。",
+    "如何进一步精细化激活缓存与 KV cache 之间的内存分配策略，以最大化可同时容纳的推理请求和微调样本数量？"
+  ]
+}

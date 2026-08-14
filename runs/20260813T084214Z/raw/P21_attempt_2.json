@@ -1,0 +1,56 @@
+{
+  "task_id": "P21",
+  "paper_id": "2505.02390",
+  "title": "Quantitative Analysis of Performance Drop in DeepSeek Model Quantization",
+  "one_sentence_summary": "论文首次系统评估了 DeepSeek 全系列模型（含 671B 满血版与 32B 蒸馏版）在 2/3/4/8-bit 量化下的性能下降，并提出动态 3-bit 量化方法 DQ3_K_M，其性能超越标准 Q3_K_M 并接近 4-bit 量化，同时支持单机部署。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "使用 llama.cpp 和 Unsloth 进行 weights-only 后训练量化（PTQ），在 MATH-500、AIME 2024、GPQA、MBPP、LiveCodeBench、MMLU、CMMLU、C-Eval 等基准上对比 FP8 官方 API、Q4_K_M、Q3_K_M、Q2_K_L/UD-Q2_K_XL 以及提出的 DQ3_K_M；对小型基准进行多次采样（4 或 8 次）取平均并报告标准差。",
+  "data_and_training": "论文未涉及训练，仅对预训练模型进行量化评估；量化配置基于 llama.cpp 和 Unsloth；评估数据包括上述基准，具体统计见 Table 8。",
+  "main_contributions": [
+    "首次对满参数 DeepSeek 模型进行多比特量化效果评估。",
+    "提出 DQ3_K_M 动态 3-bit 量化方法，超越 llama.cpp 的 Q3_K_M，接近 Q4_K_M。",
+    "开源 3-bit 量化 DeepSeek 模型实现（https://github.com/UnicomAI/DeepSeek-Eval）。"
+  ],
+  "key_findings": [
+    "4-bit 量化相比 FP8 仅有轻微性能下降，并可在标准 Nvidia GPU 单机部署。",
+    "DQ3_K_M 在 R1 上平均分 83.03，超过标准 3-bit 实现，接近 Q4_K_M；在 V3 上加权平均 75.73，与 Q4_K_M 的 75.79 和 FP8 的 75.45 相当。",
+    "DQ3_K_M 相比 Q3_K_M 在 R1 和 V3 上平均分别提升 1.48% 和 0.89%。",
+    "2-bit 量化性能严重下降。"
+  ],
+  "limitations": [
+    "评估仅覆盖 weights-only PTQ，未涉及 weight-activation 量化或 QAT。",
+    "论文仅在有限基准和模型版本上测试，未讨论更长上下文或商业化推理服务下的表现。"
+  ],
+  "relation_to_deepseek": "论文直接评估 DeepSeek-R1、DeepSeek-V3 及其 0324 版本、DeepSeek-R1-distill-Qwen-32B 的量化效果，并提出可部署于单机 8 GPU/NPU 的 3-bit 量化方案，属于系统效率与部署方向。",
+  "categories": [
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "4-bit 量化相比 FP8 保持很小性能退化，并支持单机部署。",
+      "quote": "Key findings reveal that 4-bit quantization maintains little performance degradation versus FP8 while enabling single-machine deployment on standard Nvidia GPU devices.",
+      "page": 1
+    },
+    {
+      "claim": "DQ3_K_M 显著优于传统 Q3_K_M，在多数任务上与 4-bit 量化（Q4_K_M）相当。",
+      "quote": "We further propose DQ3 K M, a dynamic 3-bit quantization method that significantly outperforms traditional Q3 K M variant on various benchmarks, which is also comparable with 4-bit quantization (Q4 K M) approach in most tasks.",
+      "page": 1
+    },
+    {
+      "claim": "DQ3_K_M 在 R1 上平均分 83.03，超过标准 3-bit 实现并接近 Q4_K_M。",
+      "quote": "The proposed DQ3 K M approach attaining an average score of 83.03 that surpasses standard 3-bit implementations and closely matches the performance of Q4 K M.",
+      "page": 9
+    },
+    {
+      "claim": "DQ3_K_M 相比 Q3_K_M 在 R1 和 V3 上平均分别提升 1.48% 和 0.89%。",
+      "quote": "achieves 1.48% and 0.89% improvement on average on R1 and V3, respectively.",
+      "page": 10
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "DQ3_K_M 在更长上下文或更大规模推理下的稳定性如何？",
+    "是否可以将 DQ3_K_M 推广到其他非 DeepSeek 模型？",
+    "论文未讨论 KV cache 和激活量化的影响。"
+  ]
+}

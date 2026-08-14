@@ -1,0 +1,61 @@
+{
+  "task_id": "P08",
+  "paper_id": "2503.10460",
+  "title": "Light-R1: Curriculum SFT, DPO and RL for Long COT from Scratch and Beyond",
+  "one_sentence_summary": "Light-R1提出基于公开数据和模型的课程式多阶段训练方法（SFT、DPO、RL），在数学推理上达到或超越DeepSeek-R1蒸馏模型性能，并实现了低成本训练。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "采用课程学习策略，包含两个SFT阶段（难度递增的数据集）和DPO阶段，并在部分模型上应用GRPO强化学习；数据通过多轮难度过滤和去污染处理。",
+  "data_and_training": "收集约100万道数学题，经过去重、多样性过滤和难度过滤，生成76k SFT阶段1数据和3k阶段2挑战性数据；使用DeepSeek-R1生成CoT答案；训练成本约1000美元。",
+  "main_contributions": [
+    "完全开源的课程后训练方法，训练Light-R1-32B仅需1000美元，并可迁移到7B/14B模型。",
+    "构建了3k高质量SFT阶段2数据集，可显著提升所有DeepSeek-R1-Distill模型，产生SOTA 7B模型Light-R1-7B-DS。",
+    "首次在14B长CoT模型上展示RL有效性，通过GRPO实现约2%绝对提升，得到SOTA 14B模型Light-R1-14B-DS。"
+  ],
+  "key_findings": [
+    "Light-R1-32B（从Qwen2.5-32B-Instruct训练）在数学推理上超过DeepSeek-R1-Distill-Qwen-32B。",
+    "使用3k挑战性数据微调DeepSeek-R1-Distill模型可实现普遍提升，Light-R1-32B-DS性能与QwQ-32B和DeepSeek-R1相当。",
+    "RL训练（GRPO）在14B模型上实现响应长度和奖励同时增长，最终模型在AIME24&25上取得74.0和60.2，超越许多32B模型和DeepSeek-R1-Distill-Llama-70B。"
+  ],
+  "limitations": [
+    "数学聚焦的训练导致Light-R1-32B在GPQA科学问题上出现遗忘。",
+    "Light-R1-7B-DS的提升仅局限于领域内任务，跨领域泛化有限。"
+  ],
+  "relation_to_deepseek": "使用DeepSeek-R1生成训练数据，以DeepSeek-R1-Distill模型为基座进行微调和强化学习，并在多个基准上与DeepSeek-R1及蒸馏模型对比，验证课程训练方法可达到R1级别性能。",
+  "categories": [
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "代码与数学"
+  ],
+  "evidence": [
+    {
+      "claim": "论文采用课程训练，逐步增加数据难度并结合多阶段后训练。",
+      "quote": "Our curriculum training progressively increases data difficulty, combined with multi-staged post-training.",
+      "page": 1
+    },
+    {
+      "claim": "方法包含两个难度递增的SFT阶段和DPO阶段。",
+      "quote": "we implemented a multi-staged curriculum training strategy comprising two consecutive SFT stages with progressively increasing difficulty, followed by a DPO stage",
+      "page": 2
+    },
+    {
+      "claim": "训练成本极低，仅需1000美元。",
+      "quote": "requiring only $1000 training cost (6 hours on 12×H800 GPUs)",
+      "page": 2
+    },
+    {
+      "claim": "Light-R1-32B在数学推理上超过DeepSeek-R1-Distill-Qwen-32B。",
+      "quote": "Our Light-R1-32B model, trained from Qwen2.5-32B-Instruct, outperforms DeepSeek-R1-Distill-Qwen-32B in math reasoning.",
+      "page": 1
+    },
+    {
+      "claim": "3k挑战性数据可普遍提升DeepSeek-R1-Distill模型性能。",
+      "quote": "we could achieve universal improvement on DeepSeek-R1-Distill-Qwen models with this 3k data alone, demonstrating the high quality of the stage 2 data.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "论文未提供Light-R1系列在代码生成等非数学领域的详细评估结果。",
+    "未来工作将探索增强泛化能力和优化RL训练效率，表明当前模型在这两方面仍有提升空间。"
+  ]
+}

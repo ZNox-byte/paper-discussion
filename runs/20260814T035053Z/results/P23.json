@@ -1,0 +1,52 @@
+{
+  "task_id": "P23",
+  "paper_id": "2601.10729",
+  "title": "OrbitFlow: SLO-Aware Long-Context LLM Serving with Fine-Grained KV Cache Reconfiguration",
+  "one_sentence_summary": "OrbitFlow通过轻量级ILP求解器为每个请求按层动态决定KV cache在GPU/CPU间的放置，并配合Token-Deposit与Pause-Resume，在长上下文LLM推理中提升SLO达成率与吞吐。",
+  "research_question": "在线ILP放置如何适应不断变化的KV cache内存需求？",
+  "methodology": "OrbitFlow采用闭环控制：Runtime Executor执行每个decode步骤并记录计算时间、传输时间和GPU内存用量；Adaptive Controller根据profile偏差触发和batch变化触发判断当前放置是否失效，并在必要时启动Pause-Resume fallback；Placement Planner使用经过搜索空间剪枝的ILP求解器，为每个请求独立选择距离驱动的层级offload距离，并通过decode window控制求解频率；求解器提前一个decode step在独立线程运行以隐藏开销。分布式场景下在tensor parallelism的一个worker上求解并广播放置。",
+  "experimental_setup": "默认配置为LLaMA3-8B在单张NVIDIA RTX A5000 (24GB) GPU上运行，主机内存384GB，PCIe 3.0 x16；长上下文实验使用LLaMA3-70B在4张RTX A6000 (48GB) GPU节点上运行。工作负载基于ShareGPT采样合成，使用Poisson到达率模拟在线服务。基线包括DeepSpeed-Inference、FlexGen、FlexGen+、SLO-aware Offloading和Dynamic Heuristic。评估指标包括TBT和TPOT SLO达成率、P95/P99时延、端到端时延、吞吐量和GPU内存利用率。",
+  "main_contributions": [
+    "提出OrbitFlow，实现请求级细粒度KV cache放置，每个请求可以选择不同的层间offload距离。",
+    "设计轻量级ILP求解器，在GPU容量、SLO违规上限和decode window约束下最小化batch级decode延迟。",
+    "引入动态重配置机制，通过profile-mismatch和batch-change触发器随KV cache增长和batch组成变化持续更新放置。",
+    "提出Token-Deposit和Pause-Resume两种fallback机制，在过载时通过缓冲输出和暂停大内存footprint请求保障整体SLO。",
+    "在vLLM上实现并验证，支持tensor parallelism扩展到单节点多GPU场景。"
+  ],
+  "key_findings": [
+    "相比现有offloading方法，OrbitFlow将TPOT和TBT SLO达成率分别提高62%和66%，P95时延降低38%，吞吐最高提升3.3倍。",
+    "在LLaMA3-70B、128K上下文和2-way TP下，OrbitFlow仍保持85%以上的SLO达成率，而FlexGen+和Dynamic Heuristic分别降至69.2%和32.9%。",
+    "组件增量实验显示：Batch-Uniform的SLO达成率为45.1%，加入Request-Wise后升至54.5%，再加入Pause-Resume升至71.0%，最终加入Token-Deposit后达到85.6%。",
+    "接受SRTF调度时，P95 TTFT降低24%，但由于长请求聚集导致额外KV传输，TPOT SLO达成率比FCFS低4.8%，P95 TPOT增加29%。",
+    "搜索空间剪枝使80.9%的Full解与Pruned解的decode延迟相同；严格更优的16.7%情形中位延迟仅改善2.29%，而完整搜索平均需要7.74倍求解时间。"
+  ],
+  "limitations": [
+    "OrbitFlow当前仅扩展至单节点多GPU的tensor parallelism，跨节点pipeline parallelism和数据并行场景留作未来工作。",
+    "在服务器严重过载时OrbitFlow仍可能无法满足所有SLO，Pause-Resume只能缓解瞬时过载而不是提供严格保证。",
+    "搜索空间剪枝会跳过非均匀间隔的层数组合，约16.7%的Full解严格更优，尽管中位改善较小且完整搜索开销过高。",
+    "Pause-Resume会延迟被暂停请求的完成时间，使端到端时延比自适应基线高12-21%。"
+  ],
+  "relation_to_topic": "该论文属于AI Infra Systems中的KV Cache与内存管理以及推理服务与请求调度方向，核心贡献是用在线ILP优化request-level KV cache放置，以应对长上下文推理中token维度和batch维度导致的内存需求动态变化，从而提高SLO达成率、降低尾部时延并提升吞吐。",
+  "categories": [
+    "KV Cache与内存管理",
+    "推理服务与请求调度"
+  ],
+  "evidence": [
+    {
+      "claim": "OrbitFlow的核心是一个轻量级ILP求解器，动态优化批处理请求之间的GPU内存使用，以最小化SLO违规。",
+      "quote": "OrbitFlowemploys a lightweight ILP-based solver that dynamically optimizes GPU memory usage across batched requests to minimize SLO violations.",
+      "page": 2
+    },
+    {
+      "claim": "解码早期的最优KV放置会随着KV cache增长而变得次优甚至不可行，因此需要动态重配置。",
+      "quote": "A placement that was optimal early in decoding can later become suboptimal—or even infeasible—as KV caches grow. A single, static placement therefore cannot serve all decode steps;dynamic reconfigurationis required.",
+      "page": 4
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "OrbitFlow在真实生产环境的长上下文服务轨迹上的表现尚未验证，因为论文使用的是ShareGPT合成的轨迹。",
+    "如何将OrbitFlow扩展到多节点pipeline parallelism和数据并行以支持更大规模部署？",
+    "在更深的模型或更大batch size下，ILP求解器的延迟和内存开销是否仍能维持可忽略水平？"
+  ]
+}

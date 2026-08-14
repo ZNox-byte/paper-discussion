@@ -1,0 +1,47 @@
+{
+  "task_id": "P14",
+  "paper_id": "2504.09285",
+  "title": "DynaServe: Unified and Elastic Execution for Dynamic Disaggregated LLM Serving",
+  "one_sentence_summary": "DynaServe 提出 micro-request 抽象与两级调度，将共置与分离式 LLM serving 统一起来，在 100ms TBT SLO 下显著提升 goodput 与服务容量。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？",
+  "methodology": "基于 vLLM 实现 DynaServe，提出 Adaptive Request Partitioning and Scheduling (APS)：每个请求可在任意 token 边界切成至多两个 micro-request；全局调度器使用轻量性能预测器和有界二分搜索快速选择切分点并路由；本地调度器依据 profile table 做 SLO-aware 批次组成；运行时采用 chunk-based KV cache transfer 支持跨实例微请求执行。在 A100 集群上使用 Qwen-2.5 系列模型和真实负载与 vLLM 共置/分离基线对比。",
+  "experimental_setup": "两台服务器各含 4 张 NVIDIA A100 80GB GPU、128 CPU、1TB 内存、4×200Gbps RoCE NICs，使用 PyTorch 2.5.1 与 CUDA 12.4；模型为 Qwen-2.5-14B/32B/72B；负载包括 BurstGPT、Azure Code、arXiv Summarization、Mini Reasoning，请求到达服从 Poisson 分布；基线为 vLLM PD Colocation（chunked prefill）和 PD Disaggregation；SLO 为 100ms P99 TBT；DynaServe 与 PD Disaggregation 使用相同 GPU 数量，按 TP/DP 配置部署。",
+  "main_contributions": [
+    "对 PD disaggregation 与 PD colocation 进行综合分析，指出其在不平衡动态负载下的尾延迟和吞吐缺陷。",
+    "提出 Adaptive Request Partitioning and Scheduling (APS) 与 micro-request 抽象，可在任意 token 边界将请求切分为最多两个协作 micro-request，并跨多个 GPU 动态执行。",
+    "设计两级动态调度框架，联合优化 micro-request 放置、批次组成与切分比例，在满足延迟 SLO 的同时最大化 GPU 利用率。",
+    "使用多种真实负载进行端到端评测，展示 DynaServe 相对共置和分离式基线的 goodput 与 serving capacity 提升。"
+  ],
+  "key_findings": [
+    "在真实 trace 上，DynaServe 相对 PD colocation 将 serving capacity 提升 1.15×–3.07×，相对 PD disaggregation 提升 1.09×–1.67×。",
+    "DynaServe 的 goodput 相对 PD colocation 最高提升 1.91×，相对 PD disaggregation 最高提升 1.61×。",
+    "在 50% BurstGPT + 50% Azure Code 的混合负载下，DynaServe 的 serving capacity 比 PD Colocation 高 60%，比 PD Disaggregation 高 25%。",
+    "SLO-aware batching 将 100ms TBT SLO 内的 token 比例从无该机制时的 52% 提升到 99%。",
+    "chunk-based KV transfer 将 non-overlapped 传输减少 94%；全局调度器每请求开销保持在 20ms 以下。"
+  ],
+  "limitations": [
+    "论文未提供对超长上下文（如生产环境中超过百万 token）或超过 8 GPU 的更大规模集群的专门评估。",
+    "输出长度预测依赖现有方法；敏感性分析仅覆盖到 σ=100 的中等误差范围，极端预测偏差下的 SLO 保证未被充分说明。"
+  ],
+  "relation_to_topic": "核心相关：micro-request 抽象允许在任意 token 边界切分请求，使 prefill/decode 的放置不再局限于共置或分离二选一；两级调度在统一 GPU 池上按负载与 SLO 动态路由和分片，chunk-based KV transfer 则支撑跨实例状态传递。该设计直接面向在线推理的吞吐、延迟与成本效率，属于 AI Infra 系统中的请求调度、KV Cache/内存管理与分布式执行交叉方向。",
+  "categories": [
+    "推理服务与请求调度",
+    "KV Cache与内存管理",
+    "并行计算与分布式执行",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "DynaServe 通过 micro-request 抽象（在任意 token 边界把一个请求切成至多两个协作片段）和两级调度框架，在统一 GPU 实例间平衡负载，从而支持灵活的 prefill/decode 放置。",
+      "quote": "It relies on a micro-request abstraction, which arbitrarily splits each request at any token boundary into at most two cooperating segments. A two-level scheduling framework then balances micro-request load across unified GPU instances.",
+      "page": 1
+    },
+    {
+      "claim": "相比 PD colocation 只能在 prefill 阶段内切分、PD disaggregation 只能在 prefill 与 decode 之间切分，APS 可在任意 token 位置切分请求，因而在放置空间上更灵活。",
+      "quote": "The abstraction makes APS more flexible than prior architectures: PD colocation partitions a request only within the prefill stage, while PD disaggregation splits a request strictly between prefill and decode. APS, on the other hand, can split a request at any token position.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": []
+}

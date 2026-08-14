@@ -1,0 +1,51 @@
+{
+  "task_id": "P31",
+  "paper_id": "2506.01257",
+  "title": "DeepSeek in Healthcare: A Survey of Capabilities, Risks, and Clinical Applications of Open-Source Large Language Models",
+  "one_sentence_summary": "这篇综述评估了开源大模型DeepSeek-R1在医疗保健中的能力、风险与临床应用，指出其通过MoE、CoT和强化学习实现高性价比推理，但在安全对齐、偏见和对抗性攻击方面存在显著风险，限制了临床部署。",
+  "research_question": "DeepSeek-R1在医疗临床部署中面临哪些主要的安全与对齐风险？",
+  "methodology": "作为综述性论文，作者汇总并分析了DeepSeek-R1的架构、训练流程、基准评测及医疗应用相关研究，通过文献比较和表格总结其能力、风险与伦理考量。",
+  "data_and_training": "论文描述DeepSeek-R1采用多阶段训练：先基于DeepSeek-V3的MoE架构进行预训练，再经监督微调（SFT），随后使用GRPO进行基于人类反馈的强化学习（RLHF），并引入自我反思和链式思考（CoT）推理。",
+  "main_contributions": [
+    "系统梳理DeepSeek-R1在医疗保健中的能力、风险与临床应用",
+    "比较DeepSeek-R1与开源及闭源模型在架构、性能、成本、透明度和安全方面的差异",
+    "总结儿科、眼科、医学教育、药物相互作用预测等临床应用及部署障碍",
+    "提出未来改进方向：安全对齐、偏见缓解、计算效率、自然语言理解、透明治理"
+  ],
+  "key_findings": [
+    "DeepSeek-R1在USMLE、AIME、Codeforces等结构化推理基准上表现优秀，并在眼科任务中以约82%准确率匹配GPT-o1，成本低约15倍",
+    "开放性和MoE架构带来推理效率与成本优势，但也使其更易受对抗性微调、提示注入和CoT劫持等攻击",
+    "DeepSeek-R1比Claude-3 Opus更易产生偏见（约3倍），比GPT-4o更易传播错误信息（约4倍），在约83%的政治、种族和性别相关提示中表现出偏见",
+    "在儿科MedQA任务中DeepSeek-R1准确率为87.0%，低于ChatGPT-o1的92.8%",
+    "临床部署仍面临监管合规、公众信任和领域验证等障碍"
+  ],
+  "limitations": [
+    "安全风险：易受对抗性微调、提示注入和H-CoT攻击，可能产生有害输出",
+    "偏见与错误信息：在政治、种族、性别等提示中约83%出现偏见，且比闭源模型更易传播错误信息",
+    "自然语言理解和创造力较弱，在开放对话、文学生成等任务上表现不佳",
+    "CoT推理导致token消耗高，在实时或高吞吐场景产生延迟和计算开销",
+    "存在监管与法律模糊性，如GDPR、HIPAA合规不明确"
+  ],
+  "relation_to_deepseek": "论文聚焦DeepSeek公司发布的DeepSeek-R1开源模型，描述其MoE/CoT/RL架构、MIT许可开放生态、在医疗领域的应用与安全对齐挑战；本调查与DeepSeek-R1临床部署的安全风险直接相关。",
+  "categories": [
+    "对齐、安全与评测",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-R1的CoT推理管线存在可被利用的安全漏洞，引发AI对齐、安全性和可信度方面的未解决问题。",
+      "quote": "Security researchers have uncovered vulnerabilities in its CoT reasoning pipeline—an essential component intended to replicate human-like step-by-step thought processes[6]. Techniques such as Hijacking Chain-of-Thought (H-CoT) have been used to manipulate the model’s outputs by exploiting this reasoning structure, highlighting unresolved concerns related to AI alignment, safety, and trustworthiness[7].",
+      "page": 4
+    },
+    {
+      "claim": "研究表明DeepSeek-R1相比Claude-3 Opus更易产生偏见（约3倍），相比GPT-4o更易传播错误信息（约4倍），这类风险在医疗等场景后果严重。",
+      "quote": "Studies suggest that DeepSeek-R1 is substantially more likely to produce biased or misleading outputs compared to its proprietary peers. It is reportedly three times more prone to bias than Claude-3 Opus and four times more likely to propagate misinformation than GPT-4o.",
+      "page": 25
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "如何在不牺牲推理能力的前提下实现医疗场景所需的安全对齐？",
+    "DeepSeek-R1在真实临床前瞻性研究中的安全性和有效性尚待验证。"
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "task_id": "P18",
+  "paper_id": "2512.18194",
+  "title": "TraCT: Disaggregated LLM Serving with CXL Shared Memory KV Cache at Rack-Scale",
+  "one_sentence_summary": "论文提出 TraCT，将 CXL 共享内存同时用作机架级 KV 传输介质和前缀感知 KV 缓存，使 GPU 通过 CXL load/store 与 DMA 直接读写 KV 块，从而消除 RDMA/NIC 跳数，显著降低 TTFT 并提高吞吐。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？本文聚焦其中的 KV Cache 跨节点共享：CXL load/store 与 DMA 如何替代 RDMA 成为机架级 KV 传输路径。",
+  "methodology": "本文采用系统设计、实现和受控对比评测的方法。作者分析了 CXL Type-3 设备缺少跨节点原子操作和全设备一致性的特点，提出了两层跨节点锁、基于 clflush 的元数据可见性机制、偏移寻址的共享内存分配器与对象存储，以及基于块哈希的前缀感知 KV 缓存。系统基于 NVIDIA Dynamo 和 vLLM 的 KV connector 层实现，并在真实 CXL 硬件上将 TraCT 与 NIXL/UCX 和 LMCache 基线进行对比。",
+  "experimental_setup": "评估环境包含 2 台服务器：Server 1 运行基准客户端和除 prefill worker 外的运行时组件，Server 2 仅执行 prefill 任务。每台服务器配备 NVIDIA A6000 GPU（48 GB GDDR）和 512 GB 主机 DRAM；RDMA 基线使用 100 Gbps Mellanox MT2892 NIC；CXL 实验使用 Niagara 2.0 Type-3 内存扩展器，配置 64 GB 共享内存，MLC 测得访问延迟 640 ns、带宽 10.1 GB/s。软件栈为 Dynamo v0.5.0 + vLLM v0.10.1.1，模型为 DeepSeek-R1-Distill-Llama-8B。对比配置包括 NIXL/UCX、LMCache 和 TraCT；工作负载包括固定输入长度（1500/3000/4500/6000 token）的静态负载以及 Dynamo 生成器产生的合成负载 A/B/C。",
+  "main_contributions": [
+    "提出将 CXL 共享内存同时作为机架级 KV 传输层和前缀感知 KV 缓存，完全移除 RDMA/NIC 跳数。",
+    "设计并实现无硬件原子操作支持的两层跨节点锁，解决非一致 CXL 内存上的互斥问题。",
+    "提出基于 clflush 的细粒度缓存行刷新和元数据可见性策略，保证非相干共享内存上的正确性。",
+    "设计偏移寻址的共享内存分配器和对象存储，支持跨节点共享层级结构并降低元数据管理开销。",
+    "在 Dynamo-vLLM 上实现 TraCT，并在真实 CXL Type-3 硬件上展示其相对 RDMA/DRAM 缓存的性能优势。"
+  ],
+  "key_findings": [
+    "在静态和合成负载下，TraCT 相比 RDMA/DRAM 缓存基线使平均 TTFT 最高降低 9.8×，P99 TTFT 最高降低 6.2×，峰值吞吐最高提升 1.6×。",
+    "即使禁用前缀缓存，TraCT 的直接 GPU-CXL DMA 路径也提供比 NIXL/UCX 更低且更稳定的 prefill 延迟，并保持相当的吞吐。",
+    "TraCT 通过消除缓存命中块的网络传输和额外主机拷贝，使 KV read 时间随负载保持近似恒定，而 LMCache 和 NIXL 的 KV read 时间随负载增长。",
+    "性能与资源分解显示 TraCT 降低 GPU SM 利用率，提升解码侧有效 GPU RX 带宽，并降低功耗，从而改善能效和 TCO。"
+  ],
+  "limitations": [
+    "评估只使用 2 台服务器，作者明确说明这是受控实验，与生产系统中 prefill/decode 角色通常共置的情况不同。",
+    "当前前缀缓存采用朴素的 LRU 淘汰策略，作者表示更复杂的替换策略留待未来工作。",
+    "由于 CXL Type-3 设备没有跨节点原子操作和全设备一致性，TraCT 依赖软件锁和 clflush 等显式 flush 机制，作者也指出 clflush 具有较高延迟。"
+  ],
+  "relation_to_topic": "该论文直接回应调查问题中关于推理服务、内存管理和软硬件协同的部分：解耦式 LLM 服务的 KV 跨节点传输是关键瓶颈，TraCT 用 CXL 共享内存替代 RDMA，让 KV 块通过 load/store 和 GPU-CXL DMA 在机架内共享，从而降低延迟、提高吞吐和能效。这属于 KV Cache 与内存管理、推理服务与请求调度、异构硬件与内核优化以及性能成本分析的交叉研究。",
+  "categories": [
+    "KV Cache与内存管理",
+    "推理服务与请求调度",
+    "异构硬件与内核优化",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "TraCT 的核心设计是让 GPU 通过 CXL load/store 与 DMA 直接读写 KV 块，从而消除现有解耦流水线中的 NIC 跳数。",
+      "quote": "TraCT enables GPUs to write and read KV blocks directly through CXL load/store and DMA operations, eliminating the NIC hop that constrains existing disaggregated pipelines.",
+      "page": 1
+    },
+    {
+      "claim": "该研究明确将 CXL 共享内存作为机架级 KV cache 和传输层，所有参与主机和 GPU 通过 load/store 与 DMA 直接访问，从而移除 KV 复用时的网络跳数，同时需要解决非一致 CXL 内存上的同步、一致性与数据管理挑战。",
+      "quote": "In contrast to network-centric designs, this study explores using CXL shared memory as a rack-scale KV cache and transfer layer directly accessible to all participating hosts and GPUs through load/store and DMA. This approach removes the network hop for KV reuse but raises new challenges such as synchronization, consistency, and data management on non-coherent CXL memory.",
+      "page": 3
+    }
+  ],
+  "confidence": 0.92,
+  "unanswered_questions": [
+    "在更多节点、更大 CXL 容量和生产级工作负载下，TraCT 的 9.8×/6.2×/1.6× 性能优势是否仍能保持？",
+    "更先进的前缀缓存替换策略能在多大程度上进一步提升命中率和端到端性能？"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "task_id": "P31",
+  "paper_id": "2502.11164",
+  "title": "Quantifying the Capability Boundary of DeepSeek Models: An Application-Driven Performance Analysis",
+  "one_sentence_summary": "本文使用A-Eval-2.0基准对DeepSeek系列模型进行应用驱动的性能评测，量化其能力边界并提供模型选择手册。",
+  "research_question": "推理增强如何影响文本理解与逻辑任务？",
+  "methodology": "作者构建了A-Eval-2.0评测基准（包含678个人工标注的问答对，覆盖5大任务类别和27个子类别），评估了22个模型（包括DeepSeek-V3、DeepSeek-R1、蒸馏模型、量化模型和QwQ-32B）。评估流程采用自动评分结合两阶段专家审查，评分模型为DeepSeek-R1。",
+  "data_and_training": "A-Eval-2.0在原始A-Eval基础上添加了“方案优化”子类并细化了逻辑推理和任务规划的难度层级。评估数据集包含三个难度级别（Easy、Medium、Hard）。评估的模型包括指令微调模型、基于DeepSeek-R1数据蒸馏的模型、4-bit量化模型以及原生推理模型QwQ-32B。",
+  "main_contributions": [
+    "开源了A-Eval-2.0基准，包括数据集和评估工具包。",
+    "量化了DeepSeek系列模型的能力边界。",
+    "开发了模型选择手册，帮助用户选择最具成本效益的模型。"
+  ],
+  "key_findings": [
+    "推理增强模型在逻辑推理任务上显著提升，但在文本理解和生成任务上可能下降：DeepSeek-R1相比DeepSeek-V3在逻辑推理上提升5.4%，但在文本理解上下降2.1%。",
+    "蒸馏模型在逻辑推理任务上增益明显（Qwen和Llama系列分别提升9.50%和19.92%），但在文本理解、信息抽取和文本生成等任务上出现性能退化。",
+    "量化对逻辑推理影响最大（平均下降6.49%），对文本生成和任务规划影响最小（平均下降0.32%）。",
+    "随着数据难度增加，推理增强带来的性能增益更高，但对简单问题可能产生负面影响。"
+  ],
+  "limitations": [
+    "测试样本的选择、数据分布特征和评估标准的设置可能引入偏差。",
+    "论文声明将持续优化评估基准并定期更新结果。"
+  ],
+  "relation_to_deepseek": "本文直接评测DeepSeek系列模型（包括DeepSeek-V3、DeepSeek-R1及其蒸馏和量化版本），并与Qwen和Llama系列模型进行对比，旨在揭示DeepSeek模型在实际应用中的能力边界。",
+  "categories": [
+    "对齐、安全与评测",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "推理增强模型DeepSeek-R1相比指令微调模型DeepSeek-V3在逻辑推理上显著提升，但在文本理解和生成上下降。",
+      "quote": "Compared to instruction-tuned model DeepSeek-V3, reasoning model DeepSeek-R1 achieves significant gains of 5.4% and 3.0% in logical reasoning and task planning tasks, respectively. However, it demonstrates performance decreases of 2.1% and 1.6% in text understanding and generation tasks.",
+      "page": 7
+    },
+    {
+      "claim": "蒸馏模型在逻辑推理上大幅提升，但在文本理解等任务上出现性能退化。",
+      "quote": "Particularly in logical reasoning tasks, the distilled models achieve substantial gains of 9.50% and 19.92% respectively. However, Performance degradation occurs after distillation in: Text Understanding (Llama-3.1-8B, Qwen2.5-14B, Qwen2.5-32B, and DeepSeek-V3), Information Extraction (Llama-3.1-8B, Qwen2.5-14B), and Text Generation (Llama-3.1-8B, Qwen2.5-14B, DeepSeek-V3), and Task Planning (Llama-3.3-70B).",
+      "page": 7
+    },
+    {
+      "claim": "量化对逻辑推理影响最大，对文本生成影响最小。",
+      "quote": "Quantization affects different task types variably: Minimal impact on text generation and task planning (average performance drop: 0.32%); Moderate impact on text comprehension and information extraction (average drops: 1.58% and 1.09%); Significant impact on logical reasoning (average drop: 6.49%)",
+      "page": 7
+    },
+    {
+      "claim": "随着数据难度增加，推理增强带来的增益更高，但对简单问题可能有负面影响。",
+      "quote": "As the data difficulty increases, distillation or reasoning enhancements yield higher performance gains for the models. Interestingly, reasoning enhancements can even have a negative impact on simpler problems.",
+      "page": 12
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "论文未深入分析推理增强模型在文本理解任务上性能下降的根本原因。",
+    "论文未提供各模型在具体子任务上的详细得分数据表。",
+    "论文未探讨除4-bit量化以外的其他量化水平对模型性能的影响。"
+  ]
+}

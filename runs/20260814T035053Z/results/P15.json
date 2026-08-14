@@ -1,0 +1,49 @@
+{
+  "task_id": "P15",
+  "paper_id": "2507.06608",
+  "title": "Nexus:Proactive Intra-GPU Disaggregation of Prefill and Decode in LLM Serving",
+  "one_sentence_summary": "Nexus 提出在单个 GPU/单个 serving engine 内对 prefill 与 decode 进行主动的逻辑解耦，通过动态 SM 分区、成本模型、滞回控制与相位专属调度来同时降低 TTFT/TBT 并保持高吞吐。",
+  "research_question": "Nexus 如何预测并适应同一 GPU 内 prefill 与 decode 不断变化的资源需求冲突，在保持高 GPU 利用率的同时优化 TTFT 与 TBT？",
+  "methodology": "Nexus 使用分析型成本模型预测不同 SM 分配下 prefill 与 decode 的延迟：算子级延迟取计算时间和内存时间最大值，计算时间采用双区段饱和-衰减曲线，内存时间显式建模 prefill/decode 的带宽竞争（通过注意力重叠概率）。在此基础上，Nexus 以 KV cache 占用率在 prefill-prioritized 与 decode-prioritized 两种目标间切换，并用贪心搜索（通常 2–4 次成本模型评估）求解分区；滞回缓冲避免频繁切换。prefill 采用 Shortest Prompt First，decode 采用 FCFS。实现上基于 vLLM 扩展，使用 CUDA Green Context 动态重分配 SM。",
+  "experimental_setup": "评测平台为 Intel Xeon Platinum 8457C CPU 与两张 NVIDIA L20 48GB GPU，CUDA 12.8，PyTorch 2.6.0；模型包括 Qwen2.5-3B、LLaMA3.1-8B（单 GPU）与 Qwen2.5-14B（双 GPU）；工作负载为 Long Data Collections、Arxiv Summarization 和 Mixed（60% ShareGPT + 40% Long Data Collections），请求按 Poisson 过程到达；对比基线为 vLLM、FastServe、SGLang、vLLM-P/D；指标为 TTFT、TBT、Normalized Latency 及其 P95。",
+  "main_contributions": [
+    "提出 intra-engine prefill–decode disaggregation，在单个 serving engine 内逻辑分离两个阶段。",
+    "设计轻量级自适应调度机制：分析型成本模型、双目标贪心 SM 搜索、滞回缓冲控制和分阶段调度器。",
+    "作为 vLLM 的 drop-in 扩展实现（约 6K 行 Python/CUDA/C++），使用 CUDA Green Context 实现动态 SM 分区。",
+    "在多种生产规模模型和工作负载上评估，展示相比 vLLM、SGLang 和 vLLM-P/D 的吞吐与延迟优势。"
+  ],
+  "key_findings": [
+    "Chunked prefill 与 decode 混批会产生细粒度干扰，混合批次平均 250 ms，而 decode-only 批次仅 15 ms，TBT 被抬高超过 8×。",
+    "prefill 与 decode 在 SM 分配上均呈现收益递减，decode 在 SM 超过约 50% 后每增加 10% SM 的延迟改善不足 3%。",
+    "静态 SM 分区不足以应对动态内存带宽竞争：prefill KV 长度从 2000 增至 10000 时，相同 decode 批延迟增加 36%。",
+    "端到端单 GPU 评测中，Nexus 相对 vLLM 最高提升 2.2× 吞吐、降低 20× TTFT 和 2.5× TBT；相对 SGLang 最高提升 2× 吞吐、降低 2× TTFT 和 1.7× TBT；相对 vLLM-P/D 用一半 GPU 达到 1.4× 吞吐。",
+    "消融实验显示 SPF 与动态 SM 调整组合时，TTFT 比仅用 SPF 改善 23%，TBT 下降 26%。"
+  ],
+  "limitations": [
+    "论文未设独立 Limitations 节，但从实验结果可见：Mixed Workload 下因 prompt 长度多样性高，Nexus 的 P95 TTFT 较差；Arxiv Workload 下输入长度均匀导致动态分区较少触发，P95 TBT 落后。",
+    "当前实现针对 decoder-only LLM，且成本模型中的 R_sat 与 λ 等参数需要为每个模型和工作负载离线 profiling 标定。"
+  ],
+  "relation_to_topic": "Nexus 属于推理服务与请求调度方向，同时涉及并行计算与软硬件协同：它在单 GPU 内动态划分 SM 使 prefill 与 decode 并行执行，利用 KV cache 占用作为运行时反馈，并通过成本模型与贪心搜索实现资源自适应分配，直接服务于调查问题中吞吐、延迟、成本效率与可靠性的优化目标。",
+  "categories": [
+    "推理服务与请求调度",
+    "并行计算与分布式执行",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "GPU 资源存在收益递减，Nexus 据此可以在单个 GPU 内动态分配资源给 prefill 与 decode，实现片内解耦。",
+      "quote": "Second, we find that GPU resource exhibits diminishing returns—beyond a saturation point, increasing GPU allocation yields negligible latency improvements. This insight enables us to split a single GPU’s resources and dynamically allocate them to prefill and decode on the fly, effectively disaggregating the two phases within the same GPU.",
+      "page": 1
+    },
+    {
+      "claim": "Nexus 的三个核心组件构成闭环控制系统，能够持续调整 GPU 资源分配以适应负载变化，同时保持高利用率。",
+      "quote": "These components form a closed-loop control system that continuously adapts GPU resource allocation to match workload demands, preserving high utilization without reintroducing interference.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.92,
+  "unanswered_questions": [
+    "成本模型参数（R_sat、λ、α、β、δ）是否需要在真实部署中在线自适应更新，还是离线一次性标定即可？",
+    "Nexus 的 SM 分区机制在非 NVIDIA 或更细粒度硬件抽象上的可移植性如何？"
+  ]
+}

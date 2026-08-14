@@ -1,0 +1,4 @@
+[
+  "P25 failed evidence/schema validation: ['evidence[1] quote is not verbatim in supplied text', 'evidence[2] quote is not verbatim in supplied text', 'only 0 grounded evidence items; at least 2 required']",
+  "P05 failed evidence/schema validation: ['evidence[2] quote is not verbatim in supplied text', 'only 1 grounded evidence items; at least 2 required']"
+]

@@ -1,0 +1,48 @@
+{
+  "task_id": "P04",
+  "paper_id": "2401.06066",
+  "title": "DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models",
+  "one_sentence_summary": "DeepSeekMoE 提出细粒度专家切分与共享专家隔离的 MoE 架构，在 2B、16B 和 145B 规模上以更低计算量达到与更大密集模型相当的性能。",
+  "research_question": "共享专家和细粒度专家切分如何改进专家专业化并减少冗余？",
+  "methodology": "提出 DeepSeekMoE 架构：在保持专家参数与计算量不变的情况下，将专家 FFN 切分为更细粒度并激活更多细粒度专家；同时隔离 Ks 个共享专家始终激活，以捕获通用知识并缓解路由专家冗余。引入 expert-level 与 device-level 平衡损失。通过 2B 验证实验、消融研究、专家冗余分析、16B 扩展及监督微调对齐验证架构有效性。",
+  "data_and_training": "训练数据来自 DeepSeek-AI 创建的大规模多语语料，以英文和中文为主；验证实验使用 100B token 子集，DeepSeekMoE 16B 使用 2T token，DeepSeekMoE 145B 初步研究使用 245B token。分词采用 BPE，验证实验词表 8K，16B 与 145B 词表 100K。训练使用 AdamW，采用 warmup-and-step-decay 或 warmup-and-constant 学习率调度，并设置 expert-level/device-level 平衡损失。",
+  "main_contributions": [
+    "架构创新：提出 DeepSeekMoE，采用细粒度专家切分与共享专家隔离两大策略以实现极致专家专业化。",
+    "实证验证：通过 2B 模型实验验证 DeepSeekMoE 的高专家专业化水平，并接近 MoE 模型上界性能。",
+    "可扩展性：将 DeepSeekMoE 扩展到 16B，用约 40% 计算量达到与 DeepSeek 7B 和 LLaMA2 7B 相当的性能；并初步扩展到 145B，验证对 GShard 架构的持续优势。",
+    "对齐能力：对 DeepSeekMoE 16B 进行监督微调得到 Chat 模型，展示 MoE 模型可从对齐中受益。",
+    "开源发布：公开 DeepSeekMoE 16B 模型权重，可在 40GB 显存单 GPU 上部署。"
+  ],
+  "key_findings": [
+    "DeepSeekMoE 2B 以相同总参数量显著超越 GShard 2B，并与 GShard 2.9B（1.5 倍专家参数和计算）性能相当。",
+    "DeepSeekMoE 2B 接近 Dense×16 的上界性能，该上界由同等总参数量的密集模型设定。",
+    "DeepSeekMoE 16B 使用约 40% 计算量达到与 DeepSeek 7B 和 LLaMA2 7B 相当或更优的性能。",
+    "DeepSeekMoE 145B 使用 28.5% 计算量达到与 DeepSeek 67B 相当性能；半激活版本 142B 使用 18.2% 计算量仍匹配 DeepSeek 67B。",
+    "消融与冗余分析表明，细粒度专家切分和共享专家隔离均提升整体性能，且共享专家不可被路由专家替代。"
+  ],
+  "limitations": [
+    "DeepSeekMoE 在 MMLU、CEval、CMMLU 等多项选择任务上落后于同规模密集模型，论文归因于注意力参数较少。",
+    "DeepSeekMoE 145B 仅报告了 245B tokens 的初步训练结果，尚未完成完整训练。"
+  ],
+  "relation_to_deepseek": "本文由 DeepSeek-AI 主导，是 DeepSeekMoE 系列架构的基础论文，确立了细粒度专家切分与共享专家隔离两条关键技术路线，并在 2B、16B、145B 规模上验证了该架构的有效性和高效性。",
+  "categories": [
+    "基础模型与架构",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "细粒度专家切分能将不同知识更精细地分解到不同专家中，使每个专家保持更高的专业化水平。",
+      "quote": "Fine-grained expert segmentation allows diverse knowledge to be decomposed more finely and be learned more precisely into different experts, where each expert will retain a higher level of specialization.",
+      "page": 3
+    },
+    {
+      "claim": "共享专家隔离通过将通用知识压缩到始终激活的共享专家中，缓解其他路由专家的参数冗余。",
+      "quote": "Shared Expert Isolation: we isolate certain experts to serve as shared experts that are always activated, aiming at capturing and consolidating common knowledge across varying contexts. Through compressing common knowledge into these shared experts, redundancy among other routed experts will be mitigated.",
+      "page": 3
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "在更大规模或更长训练下，共享专家与路由专家的最优比例是否会发生变化？"
+  ]
+}

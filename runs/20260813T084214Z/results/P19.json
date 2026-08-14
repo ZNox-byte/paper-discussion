@@ -1,0 +1,69 @@
+{
+  "task_id": "P19",
+  "paper_id": "2510.18234",
+  "title": "DeepSeek-OCR: Contexts Optical Compression",
+  "one_sentence_summary": "DeepSeek-OCR提出了一种基于光学2D映射的上下文压缩方法，通过由SAM和CLIP串联并经过16倍卷积压缩的DeepEncoder以及DeepSeek3B-MoE解码器，实现了在低视觉token数量下的高精度OCR解码。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "本文提出DeepSeek-OCR模型，由DeepEncoder和DeepSeek3B-MoE-A570M解码器组成。DeepEncoder以80M的SAM-base（窗口注意力）和300M的CLIP-large（全局注意力）串联，两者之间通过2层卷积模块进行16倍下采样，总参数约380M。该编码器支持多种分辨率模式（Tiny/Small/Base/Large/Gundam/Gundam-M），通过动态位置编码插值实现可变视觉token数。解码器采用3B参数MoE架构，激活570M参数。训练分为两阶段：先独立训练DeepEncoder，再联合训练整个模型。数据引擎包括OCR1.0数据（30M页多语言PDF）、OCR2.0数据（图表、化学公式、平面几何）、通用视觉数据和文本数据。",
+  "data_and_training": "训练数据包括：OCR1.0数据30M页PDF覆盖约100种语言（中英25M，其他5M），含粗标注和2M页中英细标注；OCR2.0数据包括10M图表（HTML表格格式）、5M化学公式（SMILES渲染）和1M平面几何（Slow Perception格式）；通用视觉数据占20%；文本数据占10%，长度8192。训练DeepEncoder使用紧凑语言模型和next token prediction，2个epoch，batch size 1280，AdamW，学习率5e-5，序列长度4096。训练DeepSeek-OCR在HAI-LLM平台，使用20节点（每节点8 A100-40G），流水线并行4部分，数据并行40，全局batch size 640，学习率3e-5，文本数据训练速度90B tokens/day，多模态70B tokens/day。Gundam-master模式通过继续训练6M样本得到。",
+  "main_contributions": [
+    "提供了视觉-文本token压缩比的定量分析，证明在压缩比<10×时OCR精度可达97%，20×时仍有约60%。",
+    "设计了DeepEncoder架构，通过窗口注意力与全局注意力串联和16倍卷积压缩器，在高分辨率输入下保持低激活和少量视觉token。",
+    "开发了DeepSeek-OCR模型，在OmniDocBench上以最少的视觉token实现了端到端模型的SOTA性能，并展示了大规模训练数据生成能力。"
+  ],
+  "key_findings": [
+    "当文本token数在视觉token数的10倍以内时，OCR解码精度达到97%；压缩比20×时精度约60%。",
+    "在OmniDocBench上，仅使用100个视觉token的DeepSeek-OCR超过了使用256个token的GOT-OCR2.0；使用少于800个token超过了平均使用6000+ token的MinerU2.0。",
+    "DeepEncoder通过16倍压缩将4096个patch token减少到256个，有效控制了激活内存。",
+    "生产环境中，单个A100-40G GPU每天可生成200k+页训练数据，20节点每天可生成3300万页。",
+    "不同文档类型对视觉token需求差异大，幻灯片仅需64 token即可达到良好性能，而报纸需要Gundam模式。"
+  ],
+  "limitations": [
+    "论文指出OCR alone不足以完全验证真实的上下文光学压缩，未来需要数字-光学文本交织预训练和needle-in-a-haystack测试等。",
+    "模型没有经过SFT阶段，不是聊天机器人，部分能力需要通过完成提示激活。",
+    "Gundam-master模式由于分辨率过大，需要单独继续训练，无法与其他模式同时训练。",
+    "对于超过1000个文本token的文档，低分辨率模式下性能下降明显，需要更高分辨率模式。"
+  ],
+  "relation_to_deepseek": "本文由DeepSeek-AI团队完成，是DeepSeek系列模型在光学压缩方向的初步探索。模型采用DeepSeek3B-MoE作为解码器，该MoE架构源自DeepSeek-V2/V3，体现了DeepSeek在高效架构（MoE）和多模态压缩方面的技术路线。DeepEncoder的设计也为DeepSeek系列在视觉编码器方面提供了新方案。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "多模态",
+    "系统效率与部署",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepEncoder通过串联窗口注意力和全局注意力，并用16倍卷积压缩器减少视觉token。",
+      "quote": "It serially connects window attention and global attention encoder components through a 16× convolutional compressor.",
+      "page": 3
+    },
+    {
+      "claim": "当压缩比小于10倍时，OCR解码精度达到97%。",
+      "quote": "when the number of text tokens is within 10 times that of vision tokens (i.e., a compression ratio < 10×), the model can achieve decoding (OCR) precision of 97%.",
+      "page": 1
+    },
+    {
+      "claim": "在OmniDocBench上，DeepSeek-OCR使用100个视觉token超过了使用256个token的GOT-OCR2.0。",
+      "quote": "On OmniDocBench, it surpasses GOT-OCR2.0 (256 tokens/page) using only 100 vision tokens",
+      "page": 1
+    },
+    {
+      "claim": "生产环境中，单个A100-40G GPU每天可生成200k+页训练数据。",
+      "quote": "In production, DeepSeek-OCR can generate training data for LLMs/VLMs at a scale of 200k+ pages per day (a single A100-40G).",
+      "page": 1
+    },
+    {
+      "claim": "DeepEncoder由80M的SAM-base和300M的CLIP-large串联，总参数约380M。",
+      "quote": "DeepEncoder is approximately 380M in parameters, mainly composed of an 80M SAM-base [17] and a 300M CLIP-large [29] connected in series.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "如何将光学压缩方法推广到更大的LLM上，并验证其在真实长上下文任务中的有效性？",
+    "数字-光学文本交织预训练和needle-in-a-haystack测试的具体设计和结果如何？",
+    "如何进一步优化DeepEncoder以支持更高的压缩比（如20×以上）而不严重损失精度？",
+    "该模型在非OCR任务（如通用视觉理解）上的扩展性和局限性如何？"
+  ]
+}

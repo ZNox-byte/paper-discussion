@@ -1,0 +1,60 @@
+{
+  "task_id": "P07",
+  "paper_id": "2505.00551",
+  "title": "100 Days After DeepSeek-R1: A Survey on Replication Studies and More Directions for Reasoning Language Models",
+  "one_sentence_summary": "本综述总结了DeepSeek-R1发布后的复制研究，重点关注监督微调（SFT）和基于可验证奖励的强化学习（RLVR）在数据构建、方法设计和训练流程方面的细节。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "该综述通过系统梳理复制研究，对SFT数据集构建（数据收集、去重、验证等）和RLVR组件（数据、算法、奖励、采样策略）进行比较分析，并从实验报告中总结共同实践。",
+  "data_and_training": "重点介绍SFT数据集详情（如OpenThoughts-114k、OpenR1-Math-220k、Light-R1-SFT、LIMO等）和RL数据集（如DeepScaleR、DAPO-Math-17k等），讨论数据清洗、去污染、难度筛选、训练设置（学习率、上下文长度、打包等）。",
+  "main_contributions": [
+    "系统综述了DeepSeek-R1发布100天内的复制研究工作，聚焦SFT和RLVR两大方向",
+    "详细比较了多个SFT数据集（如OpenThoughts-114k、OpenR1-Math-220k、Light-R1-SFT等）的数据构建流程和特点",
+    "梳理了RLVR中的算法变体（PPO、GRPO、DAPO、Dr. GRPO等）及奖励设计和采样策略",
+    "从现有复制研究的实验报告和实现细节中总结出可复用的训练配方",
+    "探讨了过程奖励建模、偏好优化、泛化性、安全性、多模态和多语言等未来方向"
+  ],
+  "key_findings": [
+    "高质量且精心筛选的小型SFT数据集（如LIMO的817样本、s1K-1.1的1000样本）可以取得与大规模数据集相媲美的推理性能",
+    "RL训练数据应选择模型既非一贯正确也非完全失败的样本，以提供有效学习信号",
+    "在部分复制研究中，省略KL正则化项仍能取得强性能，且KL损失可能限制响应长度增长；但其他工作保留KL损失也有效",
+    "仅使用准确率奖励并配合良好提示，模型也能快速学会期望格式，显式格式奖励可能不必要",
+    "适当增加最大响应长度（如从8k渐进到24k）与推理能力提升相关",
+    "DAPO、Dr. GRPO等GRPO变体通过去除归一化项、动态采样等修正原始算法偏差，提升训练稳定性和效率"
+  ],
+  "limitations": [
+    "综述仅基于已公开的复制研究工作，DeepSeek官方未完全公开的训练细节仍难以直接核实",
+    "多个开源SFT数据集存在与流行基准（如MATH500）的潜在污染，可能影响评估公平性",
+    "RLVR的现有探索主要集中于数学和代码推理，在其他领域的泛化和验证仍有限",
+    "安全对齐与推理能力之间可能存在权衡，增加了部署推理模型的挑战"
+  ],
+  "relation_to_deepseek": "本文综述的是受DeepSeek-R1启发、旨在复现其推理能力的开源研究，重点分析SFT和RLVR阶段的数据构建、算法选择和训练配置，以弥补DeepSeek未完全开源实现细节的不足。",
+  "categories": [
+    "训练数据与训练方法",
+    "推理与强化学习"
+  ],
+  "evidence": [
+    {
+      "claim": "该综述重点关注SFT和RLVR两大方向，并介绍复制研究中的数据构建、方法设计和训练流程细节。",
+      "quote": "We primarily focus on SFT and RLVR as two main directions, introducing the details for data construction, method design and training procedure of current replication studies.",
+      "page": 1
+    },
+    {
+      "claim": "RL训练数据集设计遵循一个一致趋势：包含模型容易犯错的数据（既不总是成功也不完全失败），以创造学习机会。",
+      "quote": "We observe a consistent trend: datasets used for RL training are carefully designed to include data where models are likely to make mistakes (i.e., models neither consistently succeed nor completely fail).",
+      "page": 18
+    },
+    {
+      "claim": "消融研究表明，在大规模RL中KL正则化可能不是必需的，有时会限制响应长度增加。",
+      "quote": "However, ablation studies in Open-Reasoner-Zero (Hu et al., 2025) suggest that KL regularization may not be essential for large-scale RL. In fact, it can significantly restrict the increase in response length.",
+      "page": 20
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "哪些具体配方（如数据规模、奖励设计、采样策略）能在不同模型规模和任务上稳定复现R1-Zero的推理涌现行为？",
+    "RL算法变体（如DAPO、Dr. GRPO、VC-PPO）之间的理论差异在更大规模和更广泛任务上的实际影响尚需统一基准评测",
+    "如何扩展RLVR到数学和代码以外的开放域任务，同时保证可验证奖励的可靠性？",
+    "安全对齐和推理能力之间的权衡如何优化，以在保持推理性能的同时增强对抗鲁棒性？",
+    "多模态和多语言推理模型的RLVR训练需要哪些特定调整？"
+  ]
+}

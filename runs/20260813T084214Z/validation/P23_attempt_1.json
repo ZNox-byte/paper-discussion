@@ -1,0 +1,8 @@
+{
+  "valid": false,
+  "errors": [
+    "evidence[3] quote is not verbatim in supplied text"
+  ],
+  "grounded_evidence_count": 4,
+  "total_evidence_count": 5
+}

@@ -1,0 +1,54 @@
+{
+  "task_id": "P24",
+  "paper_id": "2608.13263",
+  "title": "vToken: Token-Level Virtualization for Reclaimable KV Caches",
+  "one_sentence_summary": "vToken 在 PagedAttention 的块管理 KV 缓存之上引入 token 级虚拟化层，通过 token-table 间接寻址将逻辑 token 活跃性与物理块放置解耦，并借助异步重打包回收块内碎片，从而在不修改注意力内核的前提下提升 KV 内存可回收性与推理吞吐。",
+  "research_question": "token-table 间接层如何将逻辑 token 活跃性与物理块放置解耦，从而在不改动 PagedAttention 内核的前提下回收 token 级驱逐策略造成的块内碎片？",
+  "methodology": "基于 PagedAttention 块管理运行时设计 token 级虚拟化边界：每请求维护 token table，记录逻辑 token ID 到 (block, offset) 的映射及 liveness 位；向上对驱逐策略暴露 evict_token、sync_new_tokens 等块无关接口，向下由物理回收后端通过 lazy compaction 将低利用率块中的存活 token 重打包，并异步更新 token table 与 attention slot 映射；使用 CUDA event 建立 pre-attention 依赖以保证重定位后的 KV 可见性，同时保持 CUDA Graph 兼容。实现于 vLLM v0.18.0 之上，包含 TokenTable、ReclamationManager 和 CUDACopyEngine 三个组件。",
+  "experimental_setup": "单块 NVIDIA H100 80GB；主实验使用 Mistral-7B 与 Llama-3.1-8B，在 ShareGPT 和 LongBench 上评估，额外用 Qwen2.5-14B 做容量前沿验证；策略包括 H2O、Scissorhands、Random；对照基线为 Native vLLM（全保留）和 Naive-Evict（相同驱逐决策但禁用 vToken 物理回收）；配对对比使用相同提示、模型、策略与内存预算，默认 gpu_mem_util=0.90，容量前沿实验使用受控 KV 预算；所有报告实验启用 CUDA Graph。",
+  "main_contributions": [
+    "识别出 token 级 KV 驱逐与块级 KV 缓存管理之间的粒度失配是一个缺失的运行时抽象层，并通过初步实验量化了其内存代价",
+    "提出 vToken，一个 token 级虚拟化层，通过 token-table 间接寻址将逻辑 token 活跃性与物理块放置解耦，无需修改注意力内核即可提供稳定的每序列 token 视图和物理回收能力",
+    "在 vLLM 中实现 vToken，并跨模型与三种驱逐策略验证其效果：相比 Naive-Evict 减少保留 KV 块 27.2%–72.3%，SLA 约束吞吐最高提升 1.37×，受约束 active-KV 预算下最大可行并发最高扩展 2×，每策略集成代码从 500+ 行降至 50 行以内"
+  ],
+  "key_findings": [
+    "token 级驱逐会使大量已分配块利用率不超过 50%，块内浪费率 F 达 40%–60%，这些部分存活块在块粒度运行时中不可回收",
+    "相比 Naive-Evict，vToken 将 Llama-3.1-8B 平均内存利用率提高 21.88%，Mistral-7B 提高 21.67%，保留块数减少 27.2%–72.3%",
+    "在 Mistral-7B 上，vToken 将 SLA 约束下的可行吞吐提高 9.9%–37.3%，p95 延迟降低 9.9%–27.5%；在 Llama-3.1-8B 上平均吞吐提高 18.9%，p95 延迟降低 14.7%",
+    "在 gpu_mem_util=0.35 时，vToken 将验证可行的最大并发从 C=5 扩展到 C=8（+60%）；在 0.50 时从 C=11 扩展到 C=22（2×）；Qwen2.5-14B 检查中从 C=3 扩展到 C=6",
+    "仅安装 vToken 钩子而禁用驱逐与回收的 indirection-only 消融在 C=16 和 C=48 下吞吐与 p95 变化小于 1.0%；物理回收后端中 planner 侧机会检查主导 CPU 开销，异步拷贝避免了显式同步等待",
+    "重定位正确性检查在全部评估工作负载与策略的每次重定位事件中通过；生成稳定性配对比较显示 ROUGE-L F1 平均差仅为 -0.0016，93.1% 的配对差异不超过 0.01"
+  ],
+  "limitations": [
+    "当前原型只面向单节点、单 GPU 的 decoding fast path，未涉及分布式调度或跨设备 KV 移动",
+    "当前实现仅使用一个 runtime KV cache group，并保守地跳过共享前缀块以保持 prefix-cache 正确性",
+    "异步拷贝虽避免显式同步停顿，但仍可能与 decode 竞争 HBM 带宽；planner 侧机会检查的开销是主要测量成本",
+    "vLLM 版本要求 block size 至少为 16 tokens，因此 block-size 扫描受限，无法在更小块大小下评估",
+    "容量前沿与重定位效果的敏感性依赖于驱逐比例和碎片阈值，论文未将 vToken 与 KV 量化/混合精度等表示层优化结合评估"
+  ],
+  "relation_to_topic": "该工作属于 AI Infra 系统中的 KV Cache 与内存管理方向：vToken 通过 token 级虚拟化与异步重打包解决 token 级驱逐和块级管理之间的粒度失配，将逻辑活跃性转化为可回收的物理 KV 容量，从而提升在线推理的并发能力、SLA 约束吞吐与内存利用率，同时保持 PagedAttention 内核和 CUDA Graph 兼容，是 vLLM 类推理系统内存管理优化的重要示例。",
+  "categories": [
+    "KV Cache与内存管理",
+    "推理服务与请求调度",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "vToken 通过 token-table 间接层维持稳定的逻辑 token 视图，并以异步重打包存活 token 的方式实现物理回收，从而将逻辑 liveness 与物理块放置解耦。",
+      "quote": "maintains a stable logical token view through token-table indirection and realizes physical reclamation by repacking live tokens asynchronously.",
+      "page": 1
+    },
+    {
+      "claim": "标记 token 可回收只更新 token table 元数据，物理 KV 内存不会立即移动或释放；这种间接寻址把策略语义（驱逐什么）与物理布局维护（如何重打包存活 token）分离。",
+      "quote": "Marking a token reclaimable updates only this metadata; no KV memory is moved or freed until the reclamation backend acts. This indirection separates policy semantics (what to evict) from physical layout maintenance (how to repack live tokens).",
+      "page": 4
+    }
+  ],
+  "confidence": 0.93,
+  "unanswered_questions": [
+    "跨设备、多 GPU 或张量并行场景下 token-table 间接寻址与重定位如何协调，协调开销有多大？",
+    "多个 KV cache group、共享前缀 copy-on-write 等扩展在真实生产负载中的收益与代价如何？",
+    "如何通过批处理和索引优化进一步降低 planner 侧机会检查的 CPU 开销？",
+    "vToken 与 KV 量化、深度压缩等表示层优化（如 DiffKV、KIVI）叠加后的内存收益与内核兼容性如何？"
+  ]
+}

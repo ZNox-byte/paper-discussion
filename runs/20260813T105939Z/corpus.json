@@ -1,0 +1,294 @@
+{
+  "round_number": 1,
+  "total_unique_papers": 32,
+  "papers": [
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P01",
+      "paper_id": "2606.19348",
+      "title": "DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2606.19348v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P02",
+      "paper_id": "2412.19437",
+      "title": "DeepSeek-V3 Technical Report",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2412.19437v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P03",
+      "paper_id": "2405.04434",
+      "title": "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2405.04434v5"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P04",
+      "paper_id": "2401.06066",
+      "title": "DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2401.06066v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P05",
+      "paper_id": "2401.02954",
+      "title": "DeepSeek LLM: Scaling Open-Source Language Models with Longtermism",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2401.02954v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P06",
+      "paper_id": "2512.02556",
+      "title": "DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2512.02556v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P07",
+      "paper_id": "2402.03300",
+      "title": "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2402.03300v3"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P08",
+      "paper_id": "2503.10460",
+      "title": "Light-R1: Curriculum SFT, DPO and RL for Long COT from Scratch and Beyond",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2503.10460v4"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P09",
+      "paper_id": "2505.00551",
+      "title": "100 Days After DeepSeek-R1: A Survey on Replication Studies and More Directions for Reasoning Language Models",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2505.00551v3"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P10",
+      "paper_id": "2503.20783",
+      "title": "Understanding R1-Zero-Like Training: A Critical Perspective",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2503.20783v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P11",
+      "paper_id": "2504.07128",
+      "title": "DeepSeek-R1 Thoughtology: Let's think about LLM Reasoning",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2504.07128v3"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P12",
+      "paper_id": "2503.19855",
+      "title": "Think Twice: Enhancing LLM Reasoning by Scaling Multi-round Test-time Thinking",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2503.19855v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P13",
+      "paper_id": "2401.14196",
+      "title": "DeepSeek-Coder: When the Large Language Model Meets Programming -- The Rise of Code Intelligence",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2401.14196v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P14",
+      "paper_id": "2406.11931",
+      "title": "DeepSeek-Coder-V2: Breaking the Barrier of Closed-Source Models in Code Intelligence",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2406.11931v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P15",
+      "paper_id": "2408.08152",
+      "title": "DeepSeek-Prover-V1.5: Harnessing Proof Assistant Feedback for Reinforcement Learning and Monte-Carlo Tree Search",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2408.08152v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P16",
+      "paper_id": "2504.21801",
+      "title": "DeepSeek-Prover-V2: Advancing Formal Mathematical Reasoning via Reinforcement Learning for Subgoal Decomposition",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2504.21801v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P17",
+      "paper_id": "2511.22570",
+      "title": "DeepSeekMath-V2: Towards Self-Verifiable Mathematical Reasoning",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2511.22570v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P18",
+      "paper_id": "2403.05525",
+      "title": "DeepSeek-VL: Towards Real-World Vision-Language Understanding",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2403.05525v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P19",
+      "paper_id": "2412.10302",
+      "title": "DeepSeek-VL2: Mixture-of-Experts Vision-Language Models for Advanced Multimodal Understanding",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2412.10302v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P20",
+      "paper_id": "2510.18234",
+      "title": "DeepSeek-OCR: Contexts Optical Compression",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2510.18234v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P21",
+      "paper_id": "2505.09343",
+      "title": "Insights into DeepSeek-V3: Scaling Challenges and Reflections on Hardware for AI Architectures",
+      "doi": "10.1145/3695053.3731412",
+      "url": "https://arxiv.org/abs/2505.09343v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P22",
+      "paper_id": "2505.02390",
+      "title": "Quantitative Analysis of Performance Drop in DeepSeek Model Quantization",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2505.02390v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P23",
+      "paper_id": "2502.07864",
+      "title": "TransMLA: Multi-Head Latent Attention Is All You Need",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2502.07864v5"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P24",
+      "paper_id": "2508.15881",
+      "title": "TPLA: Tensor Parallel Latent Attention for Efficient Disaggregated Prefill and Decode Inference",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2508.15881v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P25",
+      "paper_id": "2502.12893",
+      "title": "H-CoT: Hijacking the Chain-of-Thought Safety Reasoning Mechanism to Jailbreak Large Reasoning Models, Including OpenAI o1/o3, DeepSeek-R1, and Gemini 2.0 Flash Thinking",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2502.12893v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P26",
+      "paper_id": "2503.15092",
+      "title": "Towards Understanding the Safety Boundaries of DeepSeek Models: Evaluation and Findings",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2503.15092v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P27",
+      "paper_id": "2504.10081",
+      "title": "RealSafe-R1: Safety-Aligned DeepSeek-R1 without Compromising Reasoning Capability",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2504.10081v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P28",
+      "paper_id": "2501.18438",
+      "title": "o3-mini vs DeepSeek-R1: Which One is Safer?",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2501.18438v2"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P29",
+      "paper_id": "2506.01814",
+      "title": "Analysis of LLM Bias (Chinese Propaganda & Anti-US Sentiment) in DeepSeek-R1 vs. ChatGPT o3-mini-high",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2506.01814v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P30",
+      "paper_id": "2502.17947",
+      "title": "DeepSeek-R1 Outperforms Gemini 2.0 Pro, OpenAI o1, and o3-mini in Bilingual Complex Ophthalmology Reasoning",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2502.17947v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P31",
+      "paper_id": "2506.01257",
+      "title": "DeepSeek in Healthcare: A Survey of Capabilities, Risks, and Clinical Applications of Open-Source Large Language Models",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2506.01257v1"
+    },
+    {
+      "round_number": 1,
+      "source_run": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T105939Z",
+      "task_id": "P32",
+      "paper_id": "2502.18505",
+      "title": "Comprehensive Analysis of Transparency and Accessibility of ChatGPT, DeepSeek, And other SoTA Large Language Models",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2502.18505v1"
+    }
+  ]
+}

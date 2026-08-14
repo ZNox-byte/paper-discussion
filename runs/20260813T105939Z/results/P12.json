@@ -1,0 +1,46 @@
+{
+  "task_id": "P12",
+  "paper_id": "2503.19855",
+  "title": "Think Twice: Enhancing LLM Reasoning by Scaling Multi-round Test-time Thinking",
+  "one_sentence_summary": "该论文提出Multi-round Thinking方法，通过将上一轮最终答案作为提示拼接进下一轮并丢弃中间推理步骤，迭代重答，从而在AIME 2024、MATH-500、GPQA-Diamond与LiveCodeBench上稳定提升QwQ-32B、DeepSeek-R1等模型的pass@1精度。",
+  "research_question": "仅将上一轮最终答案作为提示、丢弃中间推理步骤的迭代重答，能否以及如何在AIME和其他推理基准上提升LLM准确率？",
+  "methodology": "提出Multi-round Thinking：第1轮由模型M(Puser)生成推理与答案；第n轮将原问题与上一轮答案拼接为Pn=Puser⊕Answern−1，丢弃上轮推理轨迹，让模型独立重新推理。实验中统一设置最大生成长度32768、温度0.6、top-p 0.95，比较第1轮到第4轮的pass@1，并分析关键词频率、生成长度变化；另外进行了一个结合SFT的初步实验。",
+  "data_and_training": "使用AIME 2024、MATH-500、GPQA-Diamond、LiveCodeBench四类公开基准；AIME生成32个样本/查询，LiveCodeBench和GPQA-Diamond生成8个样本/查询，MATH-500生成4个样本/查询。评估模型包括DeepSeek-R1、QwQ-32B、DeepSeek-R1-Distill-Qwen-32B/7B和自训练的AM-Distill-Qwen-32B（基于Qwen2.5-32B并使用DeepSeek-R1的蒸馏数据训练）。SFT初步实验中用DeepSeek-R1通过多轮思考生成约10万个数学与编程示例微调AM-32B。",
+  "main_contributions": [
+    "提出了Multi-round Thinking这一无需额外训练的测试时扩展方法，仅用上一轮最终答案作为下一轮提示并丢弃推理链。",
+    "在DeepSeek-R1、QwQ-32B及其蒸馏模型上系统验证了该方法在AIME 2024、MATH-500、GPQA-Diamond与LiveCodeBench上第2轮到第4轮pass@1的稳定提升。",
+    "通过词汇频率与生成长度分析揭示多轮思考使模型回答更简洁、更少使用不确定性标记，并报告了与SFT结合的初步实验结论。"
+  ],
+  "key_findings": [
+    "Multi-round Thinking普遍提升各模型性能：DeepSeek-R1在AIME 2024上从79.7%提升到82.0%，QwQ-32B从80.3%提升到82.1%。",
+    "QwQ-32B从第1轮到第4轮在AIME 2024上从80.3%升至83.1%，GPQA-Diamond从65.9%升至68.1%，LiveCodeBench从63.0%升至65.9%，MATH-500保持在97.2%–97.8%。",
+    "第2轮回答中but、wait、maybe等犹豫词的频率下降，模型表达更果断；若上一轮正确而本轮错误，生成长度显著增加。",
+    "初步SFT实验未带来额外提升：AM-32B的Round 2(SFT)平均pass@1为73.5，低于Round 2的74.2。"
+  ],
+  "limitations": [
+    "论文明确指出SFT初步实验在当前评估中未带来性能提升，作者原话为“did not lead to performance improvements in our current evaluation”。",
+    "作者指出在实际产品中采用‘think twice’会引入额外等待时间，原话为“this inevitably introduces additional waiting time during the thinking phase”。"
+  ],
+  "relation_to_deepseek": "该工作将DeepSeek-R1作为核心实验对象之一，并指出DeepSeek-R1采用规则奖励+大规模RL以促进模型自我反思；本文提出的Multi-round Thinking是在推理阶段对DeepSeek-R1等模型的补充扩展，同时验证了基于DeepSeek-R1蒸馏数据的AM-Distill-Qwen-32B也能通过该方法获得提升。",
+  "categories": [
+    "推理与强化学习",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "论文摘要宣称，跨多个模型（包括QwQ-32B和DeepSeek-R1）的广泛实验在AIME 2024、MATH-500、GPQA-diamond与LiveCodeBench等多个基准上持续显示性能提升。",
+      "quote": "Extensive experiments across multiple models, including QwQ-32B and DeepSeek-R1, consistently show performance improvements on various benchmarks such as AIME 2024, MATH-500, GPQA-diamond, and LiveCodeBench.",
+      "page": 1
+    },
+    {
+      "claim": "论文报告在AIME 2024上，QwQ-32B准确率从第1轮80.3%提升到第2轮82.1%，DeepSeek-R1从79.7%提升到82.0%。",
+      "quote": "the accuracy of QwQ-32B improved from 80.3% (Round 1) to 82.1% (Round 2) on the AIME 2024 dataset, while DeepSeek-R1 showed a similar increase from 79.7% to 82.0%.",
+      "page": 1
+    }
+  ],
+  "confidence": 0.92,
+  "unanswered_questions": [
+    "如何确定最优的迭代轮数或何时停止多轮思考？",
+    "如何设计更合适的SFT数据质量与训练策略，使其能与Multi-round Thinking有效结合并减少错误传播？"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "task_id": "P31",
+  "paper_id": "2506.01257",
+  "title": "DeepSeek in Healthcare: A Survey of Capabilities, Risks, and Clinical Applications of Open-Source Large Language Models",
+  "one_sentence_summary": "该综述系统梳理了DeepSeek-R1在医疗保健中的能力、风险与应用，指出其MoE、CoT与强化学习架构带来高性能和低成本优势，但安全对齐、偏见、对抗性利用和监管不确定性是临床部署的主要限制。",
+  "research_question": "DeepSeek系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？具体到医疗场景，哪些安全与对齐风险限制了DeepSeek-R1的临床部署？",
+  "methodology": "该文是一篇叙述性综述，整合并引用了多份已发表的基准测试、安全性评估、临床决策支持研究和对比研究；通过表2归纳代表性研究的领域、目的与主要结论，并通过图1-3呈现训练流程、伦理考量和未来方向。",
+  "data_and_training": "DeepSeek-R1采用多阶段训练：在DeepSeek-V3的MoE架构上预训练，随后进行监督微调（SFT），并使用Group Relative Policy Optimization（GRPO）进行强化学习（RLHF）；训练中结合准确率、格式和语言连贯性等奖励信号，并包含自我反思和CoT推理优化。",
+  "main_contributions": [
+    "系统梳理DeepSeek-R1在医疗健康领域的临床应用，包括儿科临床决策支持、眼科诊断、医学教育、患者教育、药物相互作用预测和隐私保护本地部署。",
+    "总结DeepSeek-R1的架构与训练技术路线：MoE、MLA、CoT推理、GRPO强化学习及其对效率和推理深度的影响。",
+    "明确指出限制临床部署的安全与对齐风险，包括H-CoT劫持、对抗性微调、偏见、错误信息、有害内容生成和监管不确定性。",
+    "将DeepSeek-R1与开源和闭源LLM在架构、性能、可访问性、安全性和成本效率方面进行对比分析。",
+    "提出未来研究方向：安全对齐、偏见缓解、计算效率优化、领域验证、自然语言理解增强与透明治理。"
+  ],
+  "key_findings": [
+    "DeepSeek-R1在AIME 2024上达到86.7%准确率，在Codeforces上位于第96.3百分位，但GPQA Diamond仅71.5%，显示其优先结构化推理而非通用语言流畅性。",
+    "眼科学比较中DeepSeek-R1达到约82%准确率，与OpenAI o1相当，但查询成本约低15倍；文中还报告其推理成本比OpenAI o1便宜约27倍。",
+    "儿科MedQA数据集中DeepSeek-R1诊断准确率为87.0%，低于ChatGPT-o1的92.8%，但开放源码和较低成本使其适合资源受限环境。",
+    "安全评估显示DeepSeek-R1在约83%的政治、种族和性别相关提示中表现出偏见，且比Claude-3 Opus更易有偏见、比GPT-4o更易传播错误信息。",
+    "DeepSeek-R1的CoT推理可被H-CoT等对抗技术利用，使其安全对齐更容易被绕过；与o3-mini相比，它产生了更多不安全响应。"
+  ],
+  "limitations": [
+    "本文是综述而非原创实证研究，所引用的多数性能与安全数字来自其他研究，未在统一条件下独立验证。",
+    "论文未展示系统化文献检索与筛选协议，可能存在选择性纳入研究带来的偏差。",
+    "临床效果目前多在实验性或小规模数据上评估，尚不清楚真实多中心、多语言临床环境中的推广性和可靠性。"
+  ],
+  "relation_to_deepseek": "该论文将DeepSeek-R1置于医疗AI应用场景中进行全面评估，详细分析了其MoE架构、CoT推理和强化学习构成的技术路线，并同时讨论了开放生态带来的效率、透明性与安全对齐之间的权衡，对DeepSeek系列模型在医疗部署中的可落地性提供了系统视角。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "系统效率与部署",
+    "对齐、安全与评测",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-R1的CoT推理管线可被H-CoT等对抗手段劫持，从而操纵模型输出，引发AI对齐、安全性和可信度方面的未解决担忧，这对医疗等高风险领域尤为关键。",
+      "quote": "Techniques such as Hijacking Chain-of-Thought (H-CoT) have been used to manipulate the model’s outputs by exploiting this reasoning structure, highlighting unresolved concerns related to AI alignment, safety, and trustworthiness[6].",
+      "page": 4
+    },
+    {
+      "claim": "DeepSeek-R1在大量政治、种族和性别相关提示中存在偏见行为，这种偏见会削弱模型可信度，并可能在医疗等场景中加剧不公平。",
+      "quote": "DeepSeek-R1 exhibits biased behavior in approximately 83% of political, racial, and gender-related prompts[11].",
+      "page": 28
+    }
+  ],
+  "confidence": 0.93,
+  "unanswered_questions": [
+    "DeepSeek-R1在真实临床环境中的前瞻性、多中心验证结果会如何？",
+    "能否在保持开放性的同时有效消除对抗性微调、偏见和有害内容生成等安全问题？",
+    "如何为DeepSeek-R1的医疗部署建立符合HIPAA、GDPR等法规的可审计、可追责机制？"
+  ]
+}

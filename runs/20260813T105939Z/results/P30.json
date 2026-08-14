@@ -1,0 +1,46 @@
+{
+  "task_id": "P30",
+  "paper_id": "2502.17947",
+  "title": "DeepSeek-R1 Outperforms Gemini 2.0 Pro, OpenAI o1, and o3-mini in Bilingual Complex Ophthalmology Reasoning",
+  "one_sentence_summary": "该研究以中文与英文的130道复杂眼科多选题评估DeepSeek-R1、Gemini 2.0 Pro、OpenAI o1和o3-mini，发现DeepSeek-R1在双语任务中准确率最高，且四个模型的推理错误主要源于忽略关键病史/体征、误解医学数据与过度激进，而非推理逻辑的根本缺陷。",
+  "research_question": "DeepSeek-R1在双语复杂眼科临床推理中表现更优，其背后的推理错误模式是什么？",
+  "methodology": "收集130道中国眼科高级职称考试多选题（诊断39道、管理91道），用DeepSeek-R1翻译为英文；在2025年2月15日至20日以默认配置分别调用四个LLM生成回答；以完全正确为标准计算准确率，并将诊断题错误分为忽略关键阳性/阴性病史、忽略关键阳性/阴性体征、鉴别考虑不足五类，管理题错误分为诊断错误、过于保守、过于激进、误解医学数据、误解题目五类进行推理错误分析。",
+  "data_and_training": "题目来自百度文库VIP文档的中国眼科高级职称考试题，由一名六年以上临床经验的眼科医生审核；英文版由DeepSeek-R1在未输入参考答案的情况下翻译；DeepSeek-R1通过火山引擎API访问，Gemini 2.0 Pro和o3-mini通过官方API，o1通过官方聊天界面获取回答。",
+  "main_contributions": [
+    "首次在双语复杂眼科推理任务中对DeepSeek-R1与Gemini 2.0 Pro、OpenAI o1、o3-mini进行系统评估。",
+    "发现DeepSeek-R1在中文（0.862）和英文（0.808）多选题中均取得最高总体准确率。",
+    "提出并应用针对诊断题与管理题的推理错误分类框架，指出四模型共享相似推理逻辑，最常见的错误原因是忽略关键阳性病史、忽略关键阳性体征、误解医学数据和过于激进。"
+  ],
+  "key_findings": [
+    "DeepSeek-R1中文眼科复杂推理准确率为0.862，显著高于Gemini 2.0 Pro（0.715）、OpenAI o1（0.685）和o3-mini（0.692），P<0.001。",
+    "DeepSeek-R1英文准确率为0.808，高于Gemini 2.0 Pro（0.746，P=0.115）、OpenAI o1（0.723，P=0.027）和o3-mini（0.577，P<0.001）。",
+    "DeepSeek-R1在中文题中五个主题准确率最高，在管理类中文题中显著优于其他三个模型。",
+    "错误分析显示，四个LLM的推理逻辑相似；错误并非源于逻辑结构缺陷，而是未能识别最关键线索或选择最合适方法。"
+  ],
+  "limitations": [
+    "使用的MCQ发布于模型知识截止日期之前，无法完全排除题目进入模型训练数据的可能。",
+    "由于缺少推理过程的参考答案，未对模型推理能力进行量化评估。"
+  ],
+  "relation_to_deepseek": "论文将DeepSeek-R1的优异表现归因于其训练方法，包括在强化学习初始阶段使用数千条高质量思维链冷启动数据、面向推理的强化学习、拒绝采样和监督微调等；本研究是对DeepSeek-R1在双语医学推理这一垂直领域的外部评测，显示其临床决策支持潜力。",
+  "categories": [
+    "应用、生态与影响",
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "四个LLM最常见的推理错误原因是忽略关键阳性病史、忽略关键阳性体征、误解医学数据和过于激进，说明DeepSeek-R1的优势并非来自完全不同的推理逻辑，而是更少出现这些共性错误。",
+      "quote": "Ignoring key positive history, ignoring key positive signs, misinterpretation medical data , and too aggressive were the most common causes of reasoning errors.",
+      "page": 2
+    },
+    {
+      "claim": "即使发生推理错误，也不是因为逻辑结构根本缺陷，而是未能识别最关键线索或选择最合适方法；这解释了DeepSeek-R1的优越表现与错误模式的关系。",
+      "quote": "Even in cases where errors in reasoning occurred, they were not due to fundamental flaws in logical structure but rather a failure to identify the most critical clue or select the most appropriate method.",
+      "page": 12
+    }
+  ],
+  "confidence": 0.92,
+  "unanswered_questions": [
+    "OpenAI o3-mini在英文MCQ中表现更差的原因尚不清楚。",
+    "论文未量化四模型的推理能力，因缺少参考推理过程。"
+  ]
+}

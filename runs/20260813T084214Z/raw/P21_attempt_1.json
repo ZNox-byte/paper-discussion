@@ -1,0 +1,53 @@
+{
+  "task_id": "P21",
+  "paper_id": "2505.02390",
+  "title": "Quantitative Analysis of Performance Drop in DeepSeek Model Quantization",
+  "one_sentence_summary": "本文首次对DeepSeek-R1、V3及蒸馏模型进行多比特量化系统评估，发现4位量化性能损失极小，并提出动态3位量化DQ3_K_M，在性能上接近4位量化，同时降低内存占用，支持单机部署。",
+  "research_question": "量化后的DeepSeek模型与全精度版本相比性能下降多大？在特定硬件配置下应部署完整模型、蒸馏模型还是量化模型？",
+  "methodology": "采用后训练量化（PTQ）中的权重量化，使用llama.cpp和Unsloth框架，对DeepSeek-V3、DeepSeek-R1和DeepSeek-R1-distill-Qwen-32B进行2/3/4/8位量化，并在多个推理和通用能力基准上评估。基于层重要性动态分配位宽，对特定层（如ffn down exps）使用不同量化精度，提出DQ3_K_M。",
+  "data_and_training": "论文未涉及模型训练，仅使用校准数据集进行后训练量化校准。评估使用多个基准：MATH 500、AIME 2024、GPQA、MBPP、MBPP+、LiveCodeBench、MMLU、CMMLU、C-Eval。",
+  "main_contributions": [
+    "首次对全参数DeepSeek模型进行多比特量化系统评估",
+    "提出动态3位量化方法DQ3_K_M，在性能接近4位量化的同时降低内存占用",
+    "开源了3位量化DeepSeek模型和评估代码"
+  ],
+  "key_findings": [
+    "4位量化（Q4_K_M）相比FP8性能损失极小，在某些基准上甚至超过FP8",
+    "DQ3_K_M显著优于标准3位量化，并接近4位量化性能，内存占用更低",
+    "2位量化导致严重性能下降",
+    "DQ3_K_M支持在NVIDIA H100/A100和华为910B上单机部署"
+  ],
+  "limitations": [
+    "本研究仅采用权重量化的后训练量化范式，未涉及激活量化或量化感知训练"
+  ],
+  "relation_to_deepseek": "本文直接评估DeepSeek-R1、DeepSeek-V3及DeepSeek-R1-distill-Qwen-32B的量化性能，并提出适用于DeepSeek模型的动态量化方法，属于DeepSeek生态中的部署优化工作。",
+  "categories": [
+    "系统效率与部署",
+    "对齐、安全与评测",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "提出的DQ3_K_M动态3位量化方法在多个基准上显著优于传统Q3_K_M，并在大多数任务中与4位量化相当。",
+      "quote": "We further propose DQ3 K M, a dynamic 3-bit quantization method that significantly outperforms traditional Q3 K M variant on various benchmarks, which is also comparable with 4-bit quantization (Q4 K M) approach in most tasks.",
+      "page": 1
+    },
+    {
+      "claim": "在DeepSeek-R1上，DQ3_K_M平均得分83.03，超过标准3位实现，并接近Q4_K_M的性能。",
+      "quote": "The proposed DQ3 K M approach attaining an average score of 83.03 that surpasses standard 3-bit implementations and closely matches the performance of Q4 K M.",
+      "page": 8
+    },
+    {
+      "claim": "在DeepSeek-V3上，DQ3_K_M加权平均得分75.73，与Q4_K_M (75.79)和FP8 (75.45)性能相似。",
+      "quote": "With a weighted average benchmark score of 75.73, our proposed dynamic 3-bit quantization (DQ3 K M) performs similarly with Q4 K M (75.79) and FP8 (75.45).",
+      "page": 9
+    },
+    {
+      "claim": "在多数推理基准上，Q4_K_M与FP8相比没有显著性能下降，在MATH 500和GPQA上甚至略微优于官方FP8 API。",
+      "quote": "Across most reasoning benchmarks, Q4 K M shows no significant performance degradation, with its metrics on MATH 500 and GPQA even marginally outperforming the official FP8 API implementation.",
+      "page": 8
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": []
+}

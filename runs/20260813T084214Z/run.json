@@ -1,0 +1,9 @@
+{
+  "status": "failed",
+  "title": "DeepSeek 技术论文全景综述",
+  "target_papers": 32,
+  "model": "deepseek-v4-pro",
+  "reader_concurrency": 32,
+  "run_directory": "D:\\projects\\deepseek-paper-survey\\runs\\20260813T084214Z",
+  "error": "9 reading tasks failed; see failures.json"
+}

@@ -1,0 +1,47 @@
+{
+  "task_id": "P23",
+  "paper_id": "2502.07864",
+  "title": "TransMLA: Multi-Head Latent Attention Is All You Need",
+  "one_sentence_summary": "TransMLA 提出一种将 GQA 预训练模型无缝转换为 MLA 结构的框架，通过 RoRoPE、FreqFold 与平衡低秩压缩等创新，使转换后的模型可直接利用 DeepSeek 的推理优化栈，实现显著的 KV 缓存压缩与推理加速。",
+  "research_question": "如何将基于 GQA 的模型迁移到多头潜在注意力（MLA）结构，以利用 DeepSeek 的推理优化？",
+  "methodology": "论文先理论证明 MLA 在相同 KV 缓存开销下表达能力强于 GQA，再提出 TransMLA 转换框架：将 GQA 的多个 KV 头合并为单一潜在头；用 RoRoPE 将位置信息集中到第一个注意力头，FreqFold 利用相邻 RoPE 频率相似性强化集中；对无位置编码的键与值进行范数平衡后联合 PCA 低秩压缩。实验在 SmolLM-1.7B 与 LLaMA-2-7B 上转换并微调，在六个基准上评测，并在三种消费级 AI 加速器上用 vLLM 测量推理加速。",
+  "data_and_training": "微调使用 SmolLM 预训练语料子集，构成包括 fineweb-edu-dedup 0.70、cosmopedia-v2 0.15、python-edu 0.06、open-web-math 0.08、stackoverflow 0.01（表 2）。SmolLM-1.7B 使用 300M 至 1B tokens，LLaMA-2-7B 使用 500M 至 6B tokens（表 1 与表 3），序列长度 2048 或 4096。",
+  "main_contributions": [
+    "证明了在相同 KV 缓存开销下 MLA 的表达能力严格强于 GQA，给出了从 GQA 到 MLA 的变换依据。",
+    "提出 TransMLA 框架，可将任意 GQA 预训练模型（如 LLaMA、Qwen、Gemma、Mistral/Mixtral）无缝转换为 MLA 模型。",
+    "首次使转换后的模型直接兼容 DeepSeek 代码库，能够利用 vLLM、SGlang 等 DeepSeek 特定优化。",
+    "提出 RoRoPE、FreqFold、BKV（Balanced Key-Value）等关键技术，用于低损耗解耦 RoPE 和压缩 KV 缓存。"
+  ],
+  "key_findings": [
+    "在 LLaMA-2-7B 上压缩 93% KV 缓存，并在 8K 上下文长度下实现 10.6 倍加速。",
+    "TransMLA 将 LLaMA-2-7B 的 KV 缓存压缩到原始 7.03% 时，性能仍优于 MHA2MLA 压缩到 31.25% 的结果。",
+    "仅需 6B tokens 微调即可在多个基准上基本恢复原始模型性能。",
+    "KV 平衡显著降低联合低秩压缩的困惑度损失，activation-based PCA 优于 weight-based PCA。"
+  ],
+  "limitations": [
+    "论文指出现有 KV 平衡技术相对简单，可能存在更强大的数学工具来更好地处理键值范数差异并实现真正的免训练转换。",
+    "TransMLA 需要在更广泛的模型上进行验证，并应与剪枝、量化、token 选择等优化技术集成以探索推理加速上限。"
+  ],
+  "relation_to_deepseek": "TransMLA 将 GQA 模型转换为 MLA 结构，转换后的检查点可直接用于 DeepSeek 代码库，从而利用 DeepSeek 的 Absorb 操作、vLLM/SGlang、FP8 量化、Multi-Token Prediction 等优化，实现跨硬件的推理加速。",
+  "categories": [
+    "基础模型与架构",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "TransMLA 在 LLaMA-2-7B 上压缩 93% KV 缓存，并在 8K 上下文下实现 10.6 倍加速且保持有意义输出。",
+      "quote": "By compressing 93% of the KV cache in LLaMA-2-7B, we achieve a 10.6x speedup with an 8K context length while maintaining meaningful output.",
+      "page": 1
+    },
+    {
+      "claim": "TransMLA 首次将 GQA 模型直接转换为与 DeepSeek 代码库兼容的格式，可利用 vLLM 和 SGlang 等 DeepSeek 特有优化。",
+      "quote": "For the first time, our method enables direct conversion of these models into a format compatible with DeepSeek’s codebase , allowing them to fully leverage DeepSeek-specific optimizations such as vLLM and SGlang.",
+      "page": 1
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "如何设计比简单范数缩放更强的数学工具以完全消除键值范数差异？",
+    "TransMLA 在更大规模及更多架构的 GQA 模型（如 Qwen、Mixtral）上的泛化表现如何？"
+  ]
+}

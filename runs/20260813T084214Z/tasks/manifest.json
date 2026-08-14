@@ -1,0 +1,226 @@
+[
+  {
+    "task_id": "P01",
+    "paper_id": "2412.19437",
+    "title": "DeepSeek-V3 Technical Report",
+    "reading_focus": "How do MLA and DeepSeekMoE reduce inference cost and training instability?",
+    "category_hint": "基础模型与架构"
+  },
+  {
+    "task_id": "P02",
+    "paper_id": "2405.04434",
+    "title": "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model",
+    "reading_focus": "What architectural innovations enable 42.5% training cost reduction and 93.3% KV cache compression?",
+    "category_hint": "基础模型与架构"
+  },
+  {
+    "task_id": "P03",
+    "paper_id": "2606.19348",
+    "title": "DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence",
+    "reading_focus": "How do CSA and HCA achieve long-context efficiency at 1M tokens?",
+    "category_hint": "基础模型与架构"
+  },
+  {
+    "task_id": "P04",
+    "paper_id": "2401.06066",
+    "title": "DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models",
+    "reading_focus": "What are the effects of expert segmentation and shared expert isolation on specialization?",
+    "category_hint": "基础模型与架构"
+  },
+  {
+    "task_id": "P05",
+    "paper_id": "2512.02556",
+    "title": "DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models",
+    "reading_focus": "How does DeepSeek Sparse Attention balance long-context efficiency and reasoning performance?",
+    "category_hint": "基础模型与架构"
+  },
+  {
+    "task_id": "P06",
+    "paper_id": "2401.02954",
+    "title": "DeepSeek LLM: Scaling Open-Source Language Models with Longtermism",
+    "reading_focus": "What scaling law findings guide 7B and 67B model training?",
+    "category_hint": "训练数据与训练方法"
+  },
+  {
+    "task_id": "P07",
+    "paper_id": "2505.00551",
+    "title": "100 Days After DeepSeek-R1: A Survey on Replication Studies and More Directions for Reasoning Language Models",
+    "reading_focus": "What common recipes emerge for reproducing R1-like reasoning with public data?",
+    "category_hint": "训练数据与训练方法"
+  },
+  {
+    "task_id": "P08",
+    "paper_id": "2503.10460",
+    "title": "Light-R1: Curriculum SFT, DPO and RL for Long COT from Scratch and Beyond",
+    "reading_focus": "How does curriculum training with public data approach R1 performance?",
+    "category_hint": "训练数据与训练方法"
+  },
+  {
+    "task_id": "P09",
+    "paper_id": "2504.07128",
+    "title": "DeepSeek-R1 Thoughtology: Let's think about LLM Reasoning",
+    "reading_focus": "What are the observed failure modes in R1's long chain-of-thought?",
+    "category_hint": "推理与强化学习"
+  },
+  {
+    "task_id": "P10",
+    "paper_id": "2503.19855",
+    "title": "Think Twice: Enhancing LLM Reasoning by Scaling Multi-round Test-time Thinking",
+    "reading_focus": "How does iterative answer refinement affect reasoning performance and cost?",
+    "category_hint": "推理与强化学习"
+  },
+  {
+    "task_id": "P11",
+    "paper_id": "2503.20783",
+    "title": "Understanding R1-Zero-Like Training: A Critical Perspective",
+    "reading_focus": "What optimization bias in GRPO artificially inflates response length?",
+    "category_hint": "推理与强化学习"
+  },
+  {
+    "task_id": "P12",
+    "paper_id": "2606.07410",
+    "title": "A Comprehensive Anatomy of Human and DeepSeek-R1 LLM Mathematical Reasoning",
+    "reading_focus": "What structural differences exist between successful human and model reasoning traces?",
+    "category_hint": "推理与强化学习"
+  },
+  {
+    "task_id": "P13",
+    "paper_id": "2401.14196",
+    "title": "DeepSeek-Coder: When the Large Language Model Meets Programming -- The Rise of Code Intelligence",
+    "reading_focus": "How does project-level pretraining improve code generation and infilling?",
+    "category_hint": "代码与数学"
+  },
+  {
+    "task_id": "P14",
+    "paper_id": "2406.11931",
+    "title": "DeepSeek-Coder-V2: Breaking the Barrier of Closed-Source Models in Code Intelligence",
+    "reading_focus": "How does continued pretraining from the V2 checkpoint enhance coding and math?",
+    "category_hint": "代码与数学"
+  },
+  {
+    "task_id": "P15",
+    "paper_id": "2402.03300",
+    "title": "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models",
+    "reading_focus": "How does GRPO improve math reasoning while reducing memory compared with PPO?",
+    "category_hint": "代码与数学"
+  },
+  {
+    "task_id": "P16",
+    "paper_id": "2504.21801",
+    "title": "DeepSeek-Prover-V2: Advancing Formal Mathematical Reasoning via Reinforcement Learning for Subgoal Decomposition",
+    "reading_focus": "How does subgoal decomposition integrate informal and formal reasoning?",
+    "category_hint": "代码与数学"
+  },
+  {
+    "task_id": "P17",
+    "paper_id": "2403.05525",
+    "title": "DeepSeek-VL: Towards Real-World Vision-Language Understanding",
+    "reading_focus": "How does the hybrid vision encoder handle high-resolution images efficiently?",
+    "category_hint": "多模态"
+  },
+  {
+    "task_id": "P18",
+    "paper_id": "2412.10302",
+    "title": "DeepSeek-VL2: Mixture-of-Experts Vision-Language Models for Advanced Multimodal Understanding",
+    "reading_focus": "What improvements do dynamic tiling and MoE language model bring to VL tasks?",
+    "category_hint": "多模态"
+  },
+  {
+    "task_id": "P19",
+    "paper_id": "2510.18234",
+    "title": "DeepSeek-OCR: Contexts Optical Compression",
+    "reading_focus": "How does DeepEncoder achieve high compression with low activations for OCR?",
+    "category_hint": "多模态"
+  },
+  {
+    "task_id": "P20",
+    "paper_id": "2505.09343",
+    "title": "Insights into DeepSeek-V3: Scaling Challenges and Reflections on Hardware for AI Architectures",
+    "reading_focus": "What hardware bottlenecks and co-design choices enabled cost-efficient training?",
+    "category_hint": "系统效率与部署"
+  },
+  {
+    "task_id": "P21",
+    "paper_id": "2505.02390",
+    "title": "Quantitative Analysis of Performance Drop in DeepSeek Model Quantization",
+    "reading_focus": "How does 3-bit dynamic quantization compare with FP8 and 4-bit?",
+    "category_hint": "系统效率与部署"
+  },
+  {
+    "task_id": "P22",
+    "paper_id": "2504.06792",
+    "title": "Domain-Specific Pruning of Large Mixture-of-Experts Models with Few-shot Demonstrations",
+    "reading_focus": "How can expert localization enable half-expert pruning with comparable quality?",
+    "category_hint": "系统效率与部署"
+  },
+  {
+    "task_id": "P23",
+    "paper_id": "2502.07864",
+    "title": "TransMLA: Multi-Head Latent Attention Is All You Need",
+    "reading_focus": "What gains does MLA conversion offer for KV cache and throughput?",
+    "category_hint": "系统效率与部署"
+  },
+  {
+    "task_id": "P24",
+    "paper_id": "2503.16529",
+    "title": "Safety Evaluation and Enhancement of DeepSeek Models in Chinese Contexts",
+    "reading_focus": "How does distillation affect safety, and what enhancement methods preserve reasoning?",
+    "category_hint": "对齐、安全与评测"
+  },
+  {
+    "task_id": "P25",
+    "paper_id": "2504.10081",
+    "title": "RealSafe-R1: Safety-Aligned DeepSeek-R1 without Compromising Reasoning Capability",
+    "reading_focus": "How can safety alignment maintain the original reasoning distribution?",
+    "category_hint": "对齐、安全与评测"
+  },
+  {
+    "task_id": "P26",
+    "paper_id": "2502.11137",
+    "title": "Safety Evaluation of DeepSeek Models in Chinese Contexts",
+    "reading_focus": "What safety deficiencies emerge in Chinese contexts?",
+    "category_hint": "对齐、安全与评测"
+  },
+  {
+    "task_id": "P27",
+    "paper_id": "2501.18438",
+    "title": "o3-mini vs DeepSeek-R1: Which One is Safer?",
+    "reading_focus": "What unsafe response rate differences exist between models?",
+    "category_hint": "对齐、安全与评测"
+  },
+  {
+    "task_id": "P28",
+    "paper_id": "2506.14374",
+    "title": "Excessive Reasoning Attack on Reasoning LLMs",
+    "reading_focus": "How do adversarial inputs exploit reasoning length without harming utility?",
+    "category_hint": "对齐、安全与评测"
+  },
+  {
+    "task_id": "P29",
+    "paper_id": "2507.09955",
+    "title": "DeepSeek: Paradigm Shifts and Technical Evolution in Large AI Models",
+    "reading_focus": "What algorithm and engineering breakthroughs define the DeepSeek paradigm?",
+    "category_hint": "应用、生态与影响"
+  },
+  {
+    "task_id": "P30",
+    "paper_id": "2506.01257",
+    "title": "DeepSeek in Healthcare: A Survey of Capabilities, Risks, and Clinical Applications of Open-Source Large Language Models",
+    "reading_focus": "What are key strengths and safety risks for DeepSeek-R1 in healthcare?",
+    "category_hint": "应用、生态与影响"
+  },
+  {
+    "task_id": "P31",
+    "paper_id": "2502.11164",
+    "title": "Quantifying the Capability Boundary of DeepSeek Models: An Application-Driven Performance Analysis",
+    "reading_focus": "How does reasoning enhancement impact text understanding versus logic tasks?",
+    "category_hint": "应用、生态与影响"
+  },
+  {
+    "task_id": "P32",
+    "paper_id": "2503.16040",
+    "title": "Evaluating Test-Time Scaling LLMs for Legal Reasoning: OpenAI o1, DeepSeek-R1, and Beyond",
+    "reading_focus": "What recurring errors appear in legal reasoning, and how does domain specialization help?",
+    "category_hint": "应用、生态与影响"
+  }
+]

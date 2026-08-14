@@ -1,0 +1,54 @@
+{
+  "task_id": "P03",
+  "paper_id": "2606.19348",
+  "title": "DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence",
+  "one_sentence_summary": "DeepSeek-V4 预览版通过混合压缩稀疏注意力（CSA）和重压缩注意力（HCA）的混合注意力架构、流形约束超连接（mHC）和 Muon 优化器，实现了百万令牌上下文的显著效率提升和模型性能突破。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "论文介绍了DeepSeek-V4系列的架构设计和训练方法：采用混合注意力机制（CSA压缩KV缓存后应用稀疏注意力，HCA进行更激进的压缩但保留稠密注意力），结合Manifold-Constrained Hyper-Connections（mHC）增强残差连接，使用Muon优化器加速收敛；预训练在超过32T tokens上进行，后训练采用两阶段范式（领域专家独立训练后通过在线蒸馏合并），并配套一系列基础设施优化（如FP4量化、KV缓存管理等）。",
+  "data_and_training": "预训练数据超过32T tokens，DeepSeek-V4-Flash在32T tokens上训练，DeepSeek-V4-Pro在33T tokens上训练，序列长度从4K逐步扩展到1M；采用AdamW和Muon混合优化器，批量调度和负载均衡策略；后训练先独立训练领域专家（数学、编码、智能体、指令跟随），再通过多教师在线蒸馏（OPD）融合为统一模型。",
+  "main_contributions": [
+    "提出并实现混合注意力架构，结合CSA和HCA，大幅降低长上下文推理FLOPs和KV缓存。",
+    "引入流形约束超连接（mHC）增强残差连接稳定性和模型表达力。",
+    "采用Muon优化器提升训练收敛速度和稳定性。",
+    "训练了两个不同规模的MoE模型：1.6T参数的Pro和284B参数的Flash，均支持百万令牌上下文。",
+    "开源模型检查点，并在多项基准上重新定义开源模型SOTA。"
+  ],
+  "key_findings": [
+    "在1M令牌上下文下，DeepSeek-V4-Pro的推理FLOPs仅为DeepSeek-V3.2的27%，KV缓存为10%；Flash更低至10%和7%。",
+    "DeepSeek-V4-Pro-Base在多数基准上超越DeepSeek-V3.2-Base，成为新的基础模型性能标杆。",
+    "DeepSeek-V4-Pro-Max在知识基准（如SimpleQA）和推理基准上显著领先现有开源模型，接近前沿闭源模型。",
+    "混合注意力架构（CSA/HCA）和低精度存储（BF16/FP8混合）等实现了约2%的基线KV缓存大小。"
+  ],
+  "limitations": [
+    "架构相对复杂，未来需简化为更优雅的基本设计。",
+    "Anticipatory Routing和SwiGLU Clamping等训练稳定性方法的内在机理尚不充分理解。",
+    "在知识评测上仍落后于领先闭源模型（如Gemini-3.1-Pro）。",
+    "研究仍在进行中，部分能力（如多模态）尚未融入。"
+  ],
+  "relation_to_deepseek": "本文是DeepSeek-AI发布的DeepSeek-V4系列技术报告预览版，直接延续DeepSeek系列模型，保留DeepSeekMoE框架和多令牌预测（MTP），并在此基础上引入新架构和训练优化。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-V4采用混合注意力架构（CSA和HCA）提升长上下文效率。",
+      "quote": "a hybrid attention architecture that combines Compressed Sparse Attention (CSA) and Heavily Compressed Attention (HCA) to improve long-context efficiency",
+      "page": 1
+    },
+    {
+      "claim": "在百万令牌上下文下，DeepSeek-V4-Pro相比DeepSeek-V3.2大幅降低推理FLOPs和KV缓存。",
+      "quote": "In the one-million-token context setting, DeepSeek-V4-Pro requires only 27% of single-token inference FLOPs and 10% of KV cache compared with DeepSeek-V3.2.",
+      "page": 1
+    },
+    {
+      "claim": "CSA沿着序列维度压缩KV缓存并执行DeepSeek稀疏注意力，而HCA进行更激进的压缩但保持稠密注意力。",
+      "quote": "CSA compresses the KV caches along the sequence dimension and then performs DeepSeek Sparse Attention (DSA) (DeepSeek-AI, 2025), whereas HCA applies more aggressive compression to the KV caches but keeps dense attention.",
+      "page": 4
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": []
+}

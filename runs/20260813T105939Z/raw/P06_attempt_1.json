@@ -1,0 +1,52 @@
+{
+  "task_id": "P06",
+  "paper_id": "2512.02556",
+  "title": "DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models",
+  "one_sentence_summary": "DeepSeek-V3.2 是 DeepSeek-AI 发布的开源大模型，通过 DeepSeek Sparse Attention、可扩展的 GRPO 强化学习框架和大规模智能体任务合成管线，在降低长序列计算复杂度的同时保持长上下文性能，并在推理与智能体基准上接近或超越 GPT-5、Gemini-3.0-Pro 等前沿闭源模型。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？具体关注 DeepSeek Sparse Attention 如何在降低计算复杂度的同时保持长上下文性能。",
+  "methodology": "本文采用架构创新与后训练扩展相结合的方法。架构上，DSA 由 lightning indexer 计算查询-前序 token 的索引分数，再用 fine-grained token selection 只取 top-k 的 KV 条目做注意力；DSA 基于 MLA 的 MQA 模式实例化，并通过两阶段继续预训练（稠密热身 + 稀疏训练）从 DeepSeek-V3.1-Terminus 适配。后训练上，先进行 specialist distillation（数学、编程、逻辑、通用 agent、agentic coding、agentic search 等），再混合 RL；GRPO 扩展了无偏 KL 估计、Off-Policy Sequence Masking、Keep Routing、Keep Sampling Mask。智能体方面，设计 thinking context management、cold-start 提示，并用自动环境合成、GitHub issue-PR 挖掘、搜索多智能体管线等大规模合成任务进行 RL。评测涵盖推理、代码、数学、搜索、工具使用等基准，并报告上下文管理策略在 BrowseComp 上的效果。",
+  "data_and_training": "DSA 的继续预训练分两个阶段：先用 1000 步（每步 16 条 128K 序列，共 2.1B tokens）以 10^-3 学习率冻结除 lightning indexer 外的参数进行稠密热身；再用 15000 步（每步 480 条 128K 序列，共 943.7B tokens）以 7.3e-6 学习率进行稀疏训练，每个查询选择 2048 个 KV token。后训练沿用 DeepSeek-V3.2-Exp 的流水线，包括 specialist distillation 和混合 RL 训练（GRPO），融合推理、智能体与人类对齐任务。智能体任务数据包括 24,667 个代码 agent 任务、50,275 个搜索 agent 任务、4,417 个综合 agent 任务（对应 1,827 个环境）和 5,908 个代码解释器任务；综合管线共生成 1,800+ 环境和 85,000+ 复杂提示。后训练计算预算超过预训练成本的 10%。",
+  "main_contributions": [
+    "提出 DeepSeek Sparse Attention (DSA)，将主模型核心注意力复杂度从 O(L^2) 降至 O(Lk)，并基于 MLA 实现，支持从 DeepSeek-V3.1-Terminus 继续训练。",
+    "提出可扩展的 GRPO 强化学习框架，包含无偏 KL 估计、Off-Policy Sequence Masking、Keep Routing 和 Keep Sampling Mask 等稳定训练策略，将后训练计算预算扩展到预训练成本的 10% 以上。",
+    "构建大规模智能体任务合成管线，生成 1,800+ 环境和 85,000 复杂提示，提升工具使用场景中的泛化与指令跟随能力。",
+    "发布 DeepSeek-V3.2-Speciale 高算力变体，在 IMO 2025、IOI 2025 等竞赛中达到金牌水平，并开源模型实现。"
+  ],
+  "key_findings": [
+    "DSA 在长序列上显著提升计算效率，且未观察到与 DeepSeek-V3.1-Terminus 相比的明显性能退化，长上下文评测（如 AA-LCR、Fiction.liveBench）也未出现回退。",
+    "DeepSeek-V3.2 在推理基准上与 GPT-5 相当；DeepSeek-V3.2-Speciale 在多个基准上超过 GPT-5，并与 Gemini-3.0-Pro 达到同级，IMO/IOI 金牌。",
+    "仅在合成智能体数据上进行 RL 即可提升 Tau2Bench、MCP-Mark、MCP-Universe 等基准上的表现，而仅在代码和搜索环境上 RL 无此提升。",
+    "上下文管理策略（Summary/Discard-75%/Discard-all）能有效扩展测试时计算，BrowseComp 上 Discard-all 达到 67.6，接近并行扩展。"
+  ],
+  "limitations": [
+    "由于总训练 FLOPs 较少，DeepSeek-V3.2 的世界知识广度仍落后于领先闭源模型。",
+    "Token 效率仍是挑战，DeepSeek-V3.2 通常需要更长生成轨迹才能匹配 Gemini-3.0-Pro 等模型的质量。",
+    "复杂任务解决能力仍逊于前沿模型，需进一步改进基础模型和后训练配方。"
+  ],
+  "relation_to_deepseek": "本文是 DeepSeek-AI 官方技术报告，介绍 DeepSeek-V3.2 及其高算力变体 Speciale。架构上从 DeepSeek-V3.1-Terminus 演进，用基于 MLA 的 DSA 替代稠密注意力；训练上延续 DeepSeek-V3/R1 的 GRPO RL 与 DeepSeekMath-V2 方法，并开源模型实现，属于 DeepSeek 开放模型系列。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "系统效率与部署",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek Sparse Attention (DSA) 被设计为在长上下文场景下大幅降低计算复杂度，同时保持模型性能。",
+      "quote": "We introduce DSA, an efficient attention mechanism that substantially reduces computational complexity while preserving model performance in long-context scenarios.",
+      "page": 1
+    },
+    {
+      "claim": "与 DeepSeek-V3.1-Terminus 相比，DSA 在长序列上显著提升计算效率，且未观察到短/长上下文任务上的明显性能退化。",
+      "quote": "While DeepSeek V3.2 Exp significantly improves computational efficiency on long sequences, we do not observe substantial performance degradation compared with DeepSeek-V3.1-Terminus, on both short- and long-context tasks.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "如何进一步降低 lightning indexer 的 O(L^2) 复杂度或将其稀疏化？",
+    "如何找到串行上下文管理与并行扩展的最优组合以兼顾效率与可扩展性？",
+    "如何在不增加 FLOPs 的前提下扩展世界知识广度并提升 token 效率？"
+  ]
+}

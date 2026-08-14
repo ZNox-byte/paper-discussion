@@ -1,0 +1,62 @@
+{
+  "task_id": "P08",
+  "paper_id": "2503.10460",
+  "title": "Light-R1: Curriculum SFT, DPO and RL for Long COT from Scratch and Beyond",
+  "one_sentence_summary": "Light-R1 提出一种基于公开数据和课程式监督微调、DPO 与 GRPO 强化学习的低成本长思维链训练方案，在数学推理上达到或超越 DeepSeek-R1 蒸馏模型的表现。",
+  "research_question": "How does curriculum training with public data approach R1 performance?",
+  "methodology": "采用多阶段课程训练：收集约100万数学问题，经去重、去污染和难度过滤后生成约7.6万条SFT阶段1数据和约3千条阶段2数据；从 Qwen2.5-32B-Instruct 依次进行两阶段 SFT、DPO（NCA损失）和模型合并；对 DeepSeek-R1-Distill-Qwen-14B 进行 SFT 阶段2 后应用 GRPO 强化学习，包括离线数据筛选、长度奖励裁剪和重要性采样权重裁剪。评估使用每题64次采样计算 pass@1。",
+  "data_and_training": "数据来自 OpenR1-Math-220k、OpenThoughts-114k、OpenMathInstruct-2、OmniMath、s1K-1.1、LIMO、Hendrycks-MATH 及自建数学数据集；使用 DeepScaleR-1.5B 和 DeepSeek-R1 进行难度过滤并生成长思维链答案。训练超参数：32B SFT 阶段1 学习率5e-5、批次96、序列长度20k；阶段2 学习率1e-5、批次32；DPO 学习率5e-7、批次16、序列长度32k；GRPO 学习率1e-6、批次128、序列长度24k。32B 从零训练成本约1000美元（12×H800 GPU 6小时）；GRPO 在16×8 A100 GPU 上离线筛选4小时，在线RL 140步26小时，220步42小时。",
+  "main_contributions": [
+    "提出完全开源的课程式后训练方法，从零训练长思维链模型，成本约1000美元，验证于 Qwen2.5-32B-Instruct 并可迁移至7B/14B。",
+    "构建高质量3k数学题SFT阶段2数据集，显著提升所有 DeepSeek-R1-Distill 模型，得到 SOTA 7B 模型 Light-R1-7B-DS。",
+    "首次在14B长思维链模型上展示 RL 有效性，数学推理提升约2个百分点，得到 SOTA 14B 模型 Light-R1-14B-DS。"
+  ],
+  "key_findings": [
+    "Light-R1-32B 从 Qwen2.5-32B-Instruct 训练后 AIME24 76.6、AIME25 64.6，超越 DeepSeek-R1-Distill-Qwen-32B（72.6/54.9）。",
+    "3k 高质量数据对 DeepSeek-R1-Distill 7B/14B/32B 均有提升，Light-R1-32B-DS 达到 AIME24 78.1、AIME25 65.9，与 QwQ-32B 和 DeepSeek-R1 相当。",
+    "GRPO 强化学习使 Light-R1-14B-DS 在 AIME24/25 达到 74.0/60.2，超越许多32B模型和 DeepSeek-R1-Distill-Llama-70B，且训练中响应长度和奖励同步增长，无初始长度下降。",
+    "使用64次采样可复现 DeepSeek-R1-Distill 和 QwQ 的分数，偏差约1点。",
+    "数学专注训练导致 Light-R1-32B 在 GPQA 科学题目上出现遗忘，但仍保持强泛化；Light-R1-7B-DS 改进仅限于域内任务。"
+  ],
+  "limitations": [
+    "数学专注训练导致部分遗忘：Light-R1-32B 的 GPQA 分数从阶段1后下降，表明在未训练科学问题上泛化受损。",
+    "Light-R1-7B-DS 的改进仅限于域内任务，对跨领域任务提升有限。",
+    "尽管部分模型有跨域表现，但训练和评测主要围绕数学，代码和科学领域仅用 GPQA/LCB 简单验证，未系统研究。",
+    "强化学习实验仅在14B模型上进行，且前两个 epoch 提升不明显，长程稳定性和更大规模扩展性仍需探索。"
+  ],
+  "relation_to_deepseek": "Light-R1 受 DeepSeek-R1 启发，完全基于公开数据和模型复现其长思维链推理能力。它使用 DeepSeek-R1 生成的长思维链答案作为监督信号，并以 DeepSeek-R1-Distill-Qwen 系列模型为部分基础进行微调和强化学习，最终在数学基准上超越或接近 DeepSeek-R1 蒸馏模型及完整 R1 表现。",
+  "categories": [
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "代码与数学"
+  ],
+  "evidence": [
+    {
+      "claim": "Light-R1 使用公开数据和模型进行课程训练，其32B模型超越 DeepSeek-R1-Distill-Qwen-32B 数学推理。",
+      "quote": "Given the proprietary nature of data used in the DeepSeek-R1 series, we develop an alternative approach leveraging exclusively public data and models. Our curriculum training progressively increases data difficulty, combined with multi-staged post-training. Our Light-R1-32B model, trained from Qwen2.5-32B-Instruct, outperforms DeepSeek-R1-Distill-Qwen-32B in math reasoning.",
+      "page": 1
+    },
+    {
+      "claim": "对 DeepSeek-R1-Distill 模型使用3千条挑战性数据微调，得到 SOTA 7B/14B 模型，32B 模型与 QwQ-32B 和 DeepSeek-R1 相当。",
+      "quote": "fine-tuning DeepSeek-R1-Distilled models (pre-tuned by DeepSeek team on proprietary data) with 3,000 challenging examples from our curriculum dataset yielded state-of-the-art 7B and 14B models, while the 32B model, Light-R1-32B-DS performed comparably to QwQ-32B and DeepSeek-R1.",
+      "page": 1
+    },
+    {
+      "claim": "Light-R1-14B-DS 通过 GRPO 在数学上达到14B模型 SOTA，AIME24/25 分别为 74.0/60.2，超越许多32B模型和 DeepSeek-R1-Distill-Llama-70B。",
+      "quote": "Our final Light-R1-14B-DS achieves SOTA performance among 14B models in math, with AIME24 & 25 scores of 74.0 and 60.2 respectively, surpassing many 32B models and DeepSeek-R1-Distill-Llama-70B.",
+      "page": 1
+    },
+    {
+      "claim": "课程训练中从零训练的32B模型存在数学专注导致的 GPQA 遗忘，但仍具强泛化。",
+      "quote": "Although our mathematics-focused training led to some forgetting on untrained GPQA scientific questions, Light-R1-32B still demonstrates strong generalization capabilities.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "课程训练方法在非数学领域（如科学、代码）的泛化性如何？",
+    "32B 从零训练模型与完整 DeepSeek-R1（671B）的差距有多大？",
+    "使用 DeepSeek-R1 生成数据是否存在数据泄露或偏差？",
+    "更大规模模型或更多数据下的扩展性如何？"
+  ]
+}

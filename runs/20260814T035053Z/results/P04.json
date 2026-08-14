@@ -1,0 +1,49 @@
+{
+  "task_id": "P04",
+  "paper_id": "2401.17644",
+  "title": "BurstGPT: A Real-world Workload Dataset to Optimize LLM Serving Systems",
+  "one_sentence_summary": "BurstGPT 提供了一个来自 Azure OpenAI GPT 服务的大规模真实 LLM 推理负载数据集，涵盖请求突发性、对话模式、响应长度和系统失败，以支持更实际的调度、KV 缓存和分离优化评估。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？",
+  "methodology": "作者收集并分析区域 Azure OpenAI GPT 服务在 213 天内的 10.31 百万条追踪记录，从用户请求并发、用户对话模式、模型响应长度和系统响应失败四个维度刻画 LLM 服务负载，并通过演示评估说明数据集在服务优化评估中的用途。",
+  "experimental_setup": "摘要仅提及演示评估（demo evaluation），未提供具体实验环境、基线模型、硬件配置或指标细节；数据集公开于 https://github.com/HPMLL/BurstGPT，并已被工业界用于开发 LLM 服务框架原型。",
+  "main_contributions": [
+    "提出 BurstGPT 数据集，包含来自区域 Azure OpenAI GPT 服务、覆盖 213 天的 10.31 百万条追踪记录。",
+    "从用户、模型和系统三个视角刻画 LLM 服务负载特征：请求并发突发性、对话模式、模型响应长度和系统响应失败。",
+    "通过演示评估指出，KV 缓存管理、调度和分离优化的泛化性可以在真实负载评估下得到改进。",
+    "公开数据集并说明其已被工业界广泛用于开发 LLM 服务框架原型。"
+  ],
+  "key_findings": [
+    "BurstGPT 显示不同服务和模型类型下请求并发具有多样化的突发性模式。",
+    "对话中的请求计数与间隔可作为服务优化的依据。",
+    "模型响应长度与请求之间存在统计关系，反映自回归服务过程。",
+    "系统响应失败显示 Azure 中 LLM 服务存在密集资源需求和有限可用性。",
+    "真实负载的频繁变化会揭示效率、稳定性或可靠性的下降。"
+  ],
+  "limitations": [
+    "由于仅提供摘要，文中未明确讨论数据集的局限性；本分析不臆测具体局限，例如地理覆盖范围、服务版本或隐私脱敏等细节均未在摘要中说明。"
+  ],
+  "relation_to_topic": "该论文提供真实世界 LLM 服务负载数据集，直接支撑在线推理服务的请求调度、KV Cache 管理与分离式架构等优化方向的现实评估，帮助避免基于不现实假设导致的性能退化。",
+  "categories": [
+    "推理服务与请求调度",
+    "KV Cache与内存管理",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "BurstGPT 是一个包含 10.31 百万条追踪记录、覆盖 213 天的区域 Azure OpenAI GPT 服务负载数据集。",
+      "quote": "BurstGPT, an LLM serving workload with 10.31 million traces from regional Azure OpenAI GPT services over 213 days.",
+      "page": null
+    },
+    {
+      "claim": "真实负载的频繁变化会暴露效率、稳定性或可靠性下降，且 KV 缓存管理、调度和分离优化的泛化性可通过真实负载评估得到改进。",
+      "quote": "frequent variations in BurstGPT reveal declines in efficiency, stability, or reliability in realistic LLM serving. We identify that the generalization of KV cache management, scheduling and disaggregation optimizations can be improved under realistic workload evaluations.",
+      "page": null
+    }
+  ],
+  "confidence": 0.85,
+  "unanswered_questions": [
+    "BurstGPT 的突发性如何随时间段、区域和模型版本变化？",
+    "系统响应失败模式具体如何与调度、KV 缓存和分离优化策略关联？",
+    "与其他 LLM 服务负载数据集相比，BurstGPT 对端到端服务性能评估的实际影响如何？"
+  ]
+}

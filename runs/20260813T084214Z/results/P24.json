@@ -1,0 +1,49 @@
+{
+  "task_id": "P24",
+  "paper_id": "2503.16529",
+  "title": "Safety Evaluation and Enhancement of DeepSeek Models in Chinese Contexts",
+  "one_sentence_summary": "本文对DeepSeek-R1系列蒸馏模型在中国语境下进行系统安全评估，发现蒸馏导致安全性下降，并通过构建包含安全指令和思维链推理样本的50K微调数据集进行监督微调，在不显著损害推理能力的前提下显著提升安全性能。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "采用CHiSafetyBench基准对六个DeepSeek-R1蒸馏模型进行安全评估，涵盖风险内容识别（多选题）和拒绝回答（风险题）两类任务；随后构建约50K样本的微调数据集（包含安全指令和思维链推理样本），对整个DeepSeek-R1模型系列进行全参数监督微调；并使用MATH-500、GPQA、LiveCodeBench评估推理能力。",
+  "data_and_training": "微调数据集约50K样本，包含安全指令（针对歧视、侵权等关键领域）和思维链推理样本；采用全参数监督微调；涉及模型为六个蒸馏模型（基于Qwen和Llama架构）和DeepSeek-R1 671B。",
+  "main_contributions": [
+    "首次完成对整个DeepSeek-R1系列（含六个蒸馏模型和671B主模型）在中国语境下的系统安全评估",
+    "量化了蒸馏对安全能力的负面影响，发现风险内容识别准确率下降2.17%，拒绝率RR-1下降1.29%，责任率RR-2下降4.93%",
+    "提出结合安全指令与思维链推理样本的监督微调安全增强方法，并开源全部安全增强模型",
+    "证明安全增强后模型安全指标大幅提升（ACC提升10.72%，RR-1提升18.39%，RR-2提升14.72%），且推理能力无显著下降"
+  ],
+  "key_findings": [
+    "蒸馏导致DeepSeek-R1蒸馏模型在中文安全基准上整体安全性能下降：风险内容识别准确率降低2.17%，拒绝率RR-1降低1.29%，责任率RR-2降低4.93%，危害率HR降低2.45%",
+    "安全增强后，全部七款模型在CHiSafetyBench上安全性能显著提升：ACC提升10.72%，RR-1提升18.39%，RR-2提升14.72%，HR降低1.45%",
+    "安全增强方法没有显著损害推理能力，在MATH-500、GPQA、LiveCodeBench上部分模型甚至有提升，最大退化不超过4.1%"
+  ],
+  "limitations": [
+    "论文未在文中明确讨论其方法的局限性，例如安全增强数据集的泛化能力或跨语言适用性。"
+  ],
+  "relation_to_deepseek": "本文直接评估DeepSeek-R1系列蒸馏模型的安全性，提出安全增强方法并开源DeepSeek-R1-Safe系列模型，是对DeepSeek模型安全对齐方面的重要补充。",
+  "categories": [
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "蒸馏导致DeepSeek-R1蒸馏模型在中文安全基准上的风险内容识别准确率下降2.17%，拒绝率RR-1下降1.29%，责任率RR-2下降4.93%，危害率HR下降2.45%。",
+      "quote": "Results demonstrate that in the risk content identification task, the distilled models exhibited a 2.17% accuracy reduction compared to their non-distilled base models. For the refusal-to-answer task, the distilled models showed decreases of 1.29% in RR-1, 4.93% in RR-2, and 2.45% in HR metrics.",
+      "page": 19
+    },
+    {
+      "claim": "安全增强不会显著损害模型推理能力，甚至在部分模型上有所提升。",
+      "quote": "As evidenced by the results, safety enhancement does not significantly impair the reasoning abilities of the models; on the contrary, it concurrently enhances safety while improving the reasoning performance of certain models.",
+      "page": 18
+    },
+    {
+      "claim": "安全增强模型在显著提升安全性的同时保持了推理能力，没有明显退化。",
+      "quote": "Evaluation results indicate that the enhanced models achieve significant improvements in safety while maintaining reasoning capabilities without notable degradation.",
+      "page": 1
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "论文未详细说明50K微调数据集中安全指令与思维链推理样本的具体比例和构建细节。",
+    "论文未提供安全增强后每个模型在MATH-500、GPQA、LiveCodeBench上的具体分数，仅以图形展示。"
+  ]
+}

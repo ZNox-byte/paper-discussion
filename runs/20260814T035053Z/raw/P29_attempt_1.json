@@ -1,0 +1,57 @@
+{
+  "task_id": "P29",
+  "paper_id": "2607.09172",
+  "title": "Attention to Detail: Evaluating Energy, Performance, and Accuracy Trade-offs Across vLLM Configurations",
+  "one_sentence_summary": "本文通过 9,000 次受控运行系统评估了 vLLM 的注意力内核、前缀缓存与分块预填配置在 5 个 LLM 和 5 类任务上对能耗、延迟和准确率的交互影响，发现配置效果高度依赖模型与任务，模型选择主导全局权衡，且推理配置可意外影响模型准确率。",
+  "research_question": "在给定 LLM 和任务类型下，vLLM 配置选项及其交互如何影响能耗、性能和准确率？vLLM 配置与任务类型之间存在哪些交互效应？在给定任务类型下，哪些 vLLM 配置能在能耗、性能和准确率之间达到帕累托最优？",
+  "methodology": "遵循实证软件工程与能耗测量指南的受控因子实验；使用全因子设计，组合 3 种注意力内核、2 个前缀缓存设置、2 个分块预填设置、5 个 LLM 与 5 个任务数据集，每个配置重复 30 次，共 9,000 次运行并收集 93,600 个数据点；采用 ART ANOVA（Aligned Rank Transform）进行非参数假设检验、Holm-Bonferroni 校正、Cliff's Delta 效应量估计，以及帕累托前沿分析回答三个研究问题。",
+  "experimental_setup": "5 个开放权重 LLM：Qwen3-32B、Qwen3-4B、Magistral-Small-2509（24B）、Llama-3.1-8B-Instruct、Llama-3.2-3B-Instruct；5 个任务数据集：AssistantTraces、EvoEval、LongBench-v2、Natural Questions、WildChat；3 种注意力内核 FlashAttention-2、FlashAttention-3、FlashInfer，前缀缓存与分块预填各开/关；运行于 4 台相同节点（AMD EPYC 7513、512 GiB 内存、4×Nvidia A100-SXM4-40GB），使用 vLLM 0.10.2、FlashInfer 0.4.1、CUDA 12.2.128；推理参数 temperature=0.4、top-p=0.95、max-tokens=2048，其余保持默认；能量通过 nvidia-smi 和 perf 以 1Hz 采样并按 E=W×T 计算。",
+  "main_contributions": [
+    "提供实证证据表明所选 vLLM 配置选项影响推理能耗与性能，且效应依赖任务类型",
+    "发现注意力类型与前缀缓存等配置选项存在交互，单个选项的影响不能孤立评估",
+    "证明模型选择主导能耗-延迟-准确率帕累托前沿，配置调优仅提供局部优化",
+    "揭示推理配置可能意外影响模型准确率，挑战其纯粹属于系统级优化的假设",
+    "发布完整复制包以支持可复现性与后续研究"
+  ],
+  "key_findings": [
+    "注意力类型和前缀缓存对能耗和性能的影响最频繁，FlashInfer 常降低能耗，但最快后端因模型和任务而异；前缀缓存主要影响 TTFT，分块预填在默认配置和所测负载下影响有限，即使在长提示任务上也是如此",
+    "注意力类型和前缀缓存与任务类型的交互在全部 15 个测试中显著，而分块预填没有显著的任务级交互（0/15）；任务类型是能耗和性能的主导因素",
+    "模型选择决定帕累托前沿的主权衡，vLLM 配置选项只带来局部调整；不同任务的最优配置不同，例如 AT 上唯一最优配置为 Llama-3B + FlashAttention-2 + 分块预填",
+    "推理配置会影响准确率：注意力类型和前缀缓存在多个模型-基准组合上显著改变准确率，例如 Qwen-4B 在 LongBench 上 FlashInfer 达到 0.37–0.43 而 FlashAttention 变体仅 0.20–0.35",
+    "能量与延迟并非成正比：FlashInfer 通常能耗最低，FlashAttention-3 通常延迟最低，优化目标不同需要不同配置"
+  ],
+  "limitations": [
+    "实验仅使用 NVIDIA A100-SXM4-40GB GPU；例如 FlashAttention-3 针对 H100 调优，结果可能无法推广到其他硬件平台",
+    "nvidia-smi 在 A100 上仅采样 25% 运行时间的功率，其余插值，在非常尖峰的工作负载下能耗误差可达 65%，能耗值应视为估计值",
+    "准确率仅在 EvoEval 和 LongBench 上评估，因为 AT、WC、NQ 缺少可靠真值；采样解码下准确率差异也可能部分反映随机生成效应",
+    "使用 vLLM 0.10.2 的离线批处理接口而非 HTTP 服务器模式，异步请求、调度与缓存行为可能不同；结论仅针对 vLLM，其他推理引擎可能不同",
+    "仅评估三个配置选项且其余参数保持默认；vLLM 默认设置下启用 chunked prefill 并不一定会为短提示任务触发分块机制",
+    "模型家族、规模、数据集和版本只覆盖部分设计空间，外部有效性有限；未来需扩展到其他 vLLM 参数、硬件、多 GPU 部署和 MoE 架构"
+  ],
+  "relation_to_topic": "该论文属于 AI Infra Systems 的性能评测方向，针对 vLLM 这一代表性推理引擎，系统评估注意力内核、前缀缓存（KV Cache 复用）和分块预填（prefill 调度）三类系统级配置对能耗、TTFT/请求延迟和输出准确率的交互影响；其结果直接服务于推理服务配置优化、KV Cache 内存管理策略选择与异构 GPU 内核选型，为理解 vLLM 配置空间对延迟、成本效率与可靠性的影响提供实证基础。",
+  "categories": [
+    "推理服务与请求调度",
+    "KV Cache与内存管理",
+    "异构硬件与内核优化",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "所研究的 vLLM 配置选项显著影响能耗和性能，主要由注意力类型和前缀缓存驱动；在所采用的默认 vLLM 配置与负载下分块预填影响有限。",
+      "quote": "Our results show that the studied configuration options significantly impact energy and performance, mainly driven by attention type and prefix caching, while chunked prefill has a limited effect under the default vLLM serving configuration and evaluated workloads.",
+      "page": 1
+    },
+    {
+      "claim": "注意力类型与前缀缓存存在交互效应；例如前缀缓存带来的延迟收益取决于使用的注意力后端，因此不能孤立评估单个配置选项。",
+      "quote": "the latency gain from prefix caching depends on the attention backend in use",
+      "page": 2
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "准确率变化是统计噪声还是真实数值效应（如浮点归约重排导致不同采样 token）？需要固定种子和逐 token logit 比较来区分。",
+    "为何 Qwen-32B 在 LongBench 上无重复前缀仍因启用前缀缓存而大幅降低能耗？需要插桩块级 KV cache 分配并在更多长上下文数据集上复现。",
+    "分块预填在真正触发 prefill chunking 的工作负载（如超过 max_num_batched_tokens 的长提示）上会有怎样的能耗/延迟/准确率影响？",
+    "其他 vLLM 参数、多 GPU 部署、MoE 架构以及 vLLM HTTP 服务模式下的结果是否一致？"
+  ]
+}

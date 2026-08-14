@@ -1,0 +1,58 @@
+{
+  "task_id": "P28",
+  "paper_id": "2506.14374",
+  "title": "Excessive Reasoning Attack on Reasoning LLMs",
+  "one_sentence_summary": "本文提出 Excessive Reasoning Attack，通过优化对抗后缀利用推理 LLM 的过度推理行为，在保持任务准确率的同时将推理长度提升 3–9 倍，显著增加计算开销并展现跨模型迁移性。",
+  "research_question": "对抗性输入如何在不损害模型效用的前提下利用推理长度膨胀计算开销？",
+  "methodology": "在白盒威胁模型下，用 DSPy 优化 CoT 提示生成长目标输出；设计由 Priority Cross-Entropy Loss、Excessive Reasoning Loss 和 Delayed Termination Loss 组成的复合损失，并通过 GCG 在 GSM8K 和 ORCA 上优化 10 个 token 的对抗后缀；在 DeepSeek-R1-Distill-LLaMA 和 DeepSeek-R1-Distill-Qwen 上评估输出长度、延迟、能耗和准确率。",
+  "data_and_training": "使用 GSM8K 和 ORCA 数学推理基准，各随机采样 50 例用于优化和评估；目标输出长度上限 3000 tokens；对抗后缀长度固定为 10 tokens；GCG 优化 1000 步、候选池 64；权重 α=1, β=50, γ=1。",
+  "main_contributions": [
+    "提出首个针对推理 LLM 的 Excessive Reasoning Attack，通过对抗后缀诱发过度推理。",
+    "设计由 PCE、ER、DT 三部分组成的损失函数，分别关注关键 token、分支推理和延迟终止。",
+    "在 DeepSeek-R1 蒸馏模型上实现 3–9 倍推理长度增加且准确率不降，并揭示对 o1-mini、o3-mini、DeepSeek-R1、QWQ 的迁移性。"
+  ],
+  "key_findings": [
+    "LLaMA 在 GSM8K 贪婪解码下平均推理长度从 574 增至 1914 tokens（3 倍），Qwen 增 9 倍，同时准确率保持或提高。",
+    "三个损失函数组合效果最佳：全损失组合在 LLaMA 上达到 2074 tokens、54.9s 延迟、12827J 能耗。",
+    "PCE 聚焦 top 1% 高重要性 token 比均匀优化更有效；ER Loss 自动发现 'Maybe'、'Hmm' 等过度推理触发 token。",
+    "迁移性依赖 tokenizer 对齐：Qwen 优化后缀对 DeepSeek-R1 和 QWQ 更有效，LLaMA 优化后缀对 DeepSeek-R1 无效。"
+  ],
+  "limitations": [
+    "当前框架假设白盒访问模型内部，包括梯度和 token 嵌入，未来需探索黑盒优化。",
+    "实验因计算资源限制，目标序列长度上限为 3000 tokens，未扩展到更长上下文。",
+    "迁移性部分依赖 tokenizer 兼容性，并非所有源模型后缀都能迁移到 DeepSeek-R1。"
+  ],
+  "relation_to_deepseek": "本文以 DeepSeek-R1-Distill-LLaMA-8B 和 DeepSeek-R1-Distill-Qwen-7B 为主要实验模型，并测试对 DeepSeek-R1 的迁移性，揭示了 DeepSeek 推理模型在面对对抗后缀时存在严重的计算效率脆弱性，为 DeepSeek 效率与安全性研究提供了攻击视角。",
+  "categories": [
+    "推理与强化学习",
+    "系统效率与部署",
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "本文首次提出利用推理低效的对抗攻击。",
+      "quote": "we introduce the first adversarial attack designed to exploit the reasoning inefficiencies in reasoning LLMs, thus inducing excessive computation during inference.",
+      "page": 1
+    },
+    {
+      "claim": "实验显示推理长度增加 3–9 倍且效用相当。",
+      "quote": "Empirical results demonstrate a 3x to 9x increase in reasoning length with comparable utility performance.",
+      "page": 1
+    },
+    {
+      "claim": "对抗后缀在增加计算开销的同时保持任务准确率。",
+      "quote": "our adversarial suffix substantially increases computational overhead while preserving task accuracy across all settings.",
+      "page": 4
+    },
+    {
+      "claim": "攻击假设白盒访问。",
+      "quote": "our current framework assumes white-box access to model internals, including gradients and token embeddings.",
+      "page": 7
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "黑盒场景下如何有效优化对抗后缀？",
+    "针对过度推理攻击的推理时防御机制有哪些？"
+  ]
+}

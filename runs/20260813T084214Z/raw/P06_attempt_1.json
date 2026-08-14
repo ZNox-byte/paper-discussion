@@ -1,0 +1,62 @@
+{
+  "task_id": "P06",
+  "paper_id": "2401.02954",
+  "title": "DeepSeek LLM: Scaling Open-Source Language Models with Longtermism",
+  "one_sentence_summary": "本文介绍了 DeepSeek LLM 7B 和 67B 模型，通过系统研究扩展律（scaling laws）为训练超参数和模型/数据规模分配提供指导，在 2 万亿 token 上预训练并进行 SFT 和 DPO 对齐，在多项基准上超越 LLaMA-2 70B 并与 GPT-3.5 相媲美。",
+  "research_question": "What scaling law findings guide 7B and 67B model training?",
+  "methodology": "论文使用 IsoFLOP 轮廓方法在小规模实验上拟合扩展曲线，首先通过网格搜索确定不同计算预算下的最优批量大小和学习率，建立幂律关系；其次引入非嵌入 FLOPs/token M 作为模型规模表示以更精确地描述计算成本；最后分析了模型/数据最优分配策略并研究数据质量对扩展律的影响，据此指导 7B 和 67B 模型的超参数选择与训练。",
+  "data_and_training": "预训练数据包含 2 万亿 token，以中英文为主，经过去重、过滤和重混合处理；使用 BBPE 分词器，词汇表大小为 102400。模型采用类似 LLaMA 的架构，但使用多步学习率调度器。7B 模型有 30 层，67B 模型有 95 层，均使用 AdamW 优化器，梯度裁剪为 1.0。SFT 阶段收集约 150 万条指令数据，涵盖有帮助性和无害性主题；DPO 阶段使用偏好数据进一步对齐。",
+  "main_contributions": [
+    "建立了超参数（批量大小和学习率）随计算预算变化的扩展律，并给出经验公式。",
+    "提出使用非嵌入 FLOPs/token M 作为模型规模表示，提高了扩展律拟合的准确性。",
+    "揭示了数据质量对最优模型/数据扩展分配策略的影响：数据质量越高，应更多地将计算预算分配给模型扩展。",
+    "构建并开源了 DeepSeek LLM 7B 和 67B 基础模型及对话模型，并在多项基准上验证了性能。"
+  ],
+  "key_findings": [
+    "最优批量大小 B_opt = 0.2920 * C^0.3271，最优学习率 η_opt = 0.3118 * C^-0.1250。",
+    "最优非嵌入 FLOPs/token M_opt = 0.1715 * C^0.5243，最优 token 数 D_opt = 5.8316 * C^0.4757，表明模型扩展和数据处理应大致均衡但偏向模型。",
+    "数据质量显著影响扩展律：在 OpenWebText2 上模型扩展指数 a=0.578，在当前内部数据上 a=0.524，而早期数据上 a=0.450。",
+    "DeepSeek LLM 67B 在代码、数学和推理等基准上超越 LLaMA-2 70B；对话模型在 AlignBench 和 MT-Bench 上超过 GPT-3.5。",
+    "多步学习率调度器与余弦调度器最终性能相当，但便于持续训练。"
+  ],
+  "limitations": [
+    "模型在预训练后缺乏持续知识更新，可能产生幻觉和非事实信息。",
+    "中文数据覆盖不够全面，某些中文特定主题上性能可能不佳。",
+    "模型主要基于中英文语料训练，其他语言能力较弱。",
+    "论文指出超参数选择尚未考虑除计算预算外的其他因素，需进一步研究。"
+  ],
+  "relation_to_deepseek": "本文是 DeepSeek 系列模型的开山之作，首次系统研究了扩展律并据此训练了 DeepSeek LLM 7B 和 67B 基础模型及对话模型，为后续 DeepSeek 系列在架构、训练和开源生态方面奠定了方法学基础。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "论文拟合了批量大小和学习率随计算预算变化的幂律公式，用于指导超参数设置。",
+      "quote": "The final formulae we fitted for batch size and learning rate are as follows: 𝜂opt = 0.3118·𝐶−0.1250, 𝐵opt = 0.2920·𝐶 0.3271",
+      "page": 9
+    },
+    {
+      "claim": "论文使用非嵌入 FLOPs/token M 表示模型规模，并得到最优模型/数据分配指数 a=0.5243, b=0.4757。",
+      "quote": "The specific formulae for the optimal non-embedding FLOPs/token 𝑀opt and optimal tokens 𝐷opt are as follows: 𝑀opt = 𝑀base·𝐶𝑎, 𝑀base = 0.1715, 𝑎 = 0.5243, 𝐷opt = 𝐷base·𝐶𝑏, 𝐷base = 5.8316, 𝑏 = 0.4757",
+      "page": 11
+    },
+    {
+      "claim": "数据质量提升时，模型扩展指数增大，数据扩展指数减小，表明应将更多计算分配给模型。",
+      "quote": "as data quality improves, the model scaling exponent 𝑎 gradually increases, while the data scaling exponent 𝑏 decreases",
+      "page": 12
+    },
+    {
+      "claim": "7B 和 67B 模型的超参数（如表 2 所示）是基于第 3 节的扩展律发现选择的。",
+      "quote": "Table 2| Detailed specs of DeepSeek LLM family of models. We choose the hyper-parameters based on our findings in Section 3",
+      "page": 5
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "论文未深入解释为何数据质量会影响扩展律的具体机制。",
+    "超参数扩展律的适用范围是否仅限本文使用的数据分布和模型架构？",
+    "对于更大规模模型（如数百 B 参数）扩展律预测是否仍然准确？"
+  ]
+}

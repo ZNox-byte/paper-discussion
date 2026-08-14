@@ -1,0 +1,49 @@
+{
+  "task_id": "P31",
+  "paper_id": "2511.17826",
+  "title": "Deterministic Inference across Tensor Parallel Sizes That Eliminates Training–Inference Mismatch",
+  "one_sentence_summary": "TBIK 通过将 GPU 内 MatMul 与 GPU 间 All-Reduce 统一为固定全二叉树归约顺序，实现跨张量并行规模的逐位一致推理，并消除 vLLM 与 FSDP 之间的 RL 训练-推理概率失配。",
+  "research_question": "分层归约顺序如何确保跨 TP 配置的确定性？论文通过固定全二叉树归约拓扑，使局部 MatMul 与跨 GPU All-Reduce 采用相同的层级归约顺序，从而让不同 TP 规模执行一致的浮点累加路径。",
+  "methodology": "提出 TBIK（Tree-Based Invariant Kernels）：(1) 将 K 维 tile 的局部归约组织为固定深度 log2(TK/C) 的二叉树，而非顺序累加；(2) 自研与局部相同二叉树拓扑的 Tree-Based All-Reduce，避免 NCCL 节点内链式归约；(3) 将 TBIK 与 Batch-Invariant Operations (BIO) 集成进 vLLM 和 FSDP，并修改 attention、线性层及其他 kernel 以保持对齐；附录给出层级归约顺序与 TP 大小无关的理论证明。",
+  "experimental_setup": "复现性实验：Qwen3-8B、Qwen3-32B、Mistral-7B-Instruct-v0.3、Llama-3.1-8B-Instruct；AIME24/AMC23；每种模型 12 种运行配置（TP=1/2/4/8 × BS=8/16/32，Qwen3-32B 为 TP=2/4/8 × BS=8/16/32 共 9 种）；NVIDIA L40S 与 RTX PRO 6000；vLLM eager 模式、固定 seed 42；性能实验：Qwen3-8B 在 4×NVIDIA H20 TP=4 测端到端时延；RL 实验：GSM8K 上 GRPO，Qwen3-1.7B，4×L40S，vLLM TP=4 vs FSDP TP=1。",
+  "main_contributions": [
+    "识别了不同 TP 规模下的张量并行引起的非确定性，并分析其对基准评测和 RL 训练的影响。",
+    "提出 Tree-Based Invariant Kernels，对 GPU 内矩阵乘法和 GPU 间 All-Reduce 强制使用固定且一致的二叉树计算顺序，消除 TP 引起的非确定性。",
+    "通过将 TBIK 集成到 vLLM 和 FSDP，实现完全确定性推理并解决 RL 管线中的概率失配，从而实现真正的 on-policy RL 训练。"
+  ],
+  "key_findings": [
+    "BF16 下平均唯一输出数接近运行配置数（如 Qwen3-8B AIME24=12.00），BIO 下降至 7.87，而 BIO+TBIK 在所有模型和数据集上均为 1。",
+    "BIO+TBIK 在所有测试设置中达到严格为零的最大概率散度（×10^-3），而 BF16 和 BIO 仍存在非零散度。",
+    "RL（GRPO/GSM8K）中 TBIK 实现 rollout 与训练引擎零 KL 散度，Pass@1 达 0.73（BIO 0.68，BF16 0.60），收敛更快、奖励更高。",
+    "确定性推理相对普通 BF16 的端到端开销为 22%–63%，其中 Tree-Based MatMul kernel 占 2%–25%，Tree-Based All-Reduce 最大约 10%。"
+  ],
+  "limitations": [
+    "当前 Tree-Based MatMul 实现主要验证可行性：小 M 时吞吐明显低于 cuBLAS（BF16 约达 cuBLAS 的 63%），端到端叠加 BIO 后开销达 22%–63%。",
+    "当前实现尚未支持量化数据类型，论文将量化场景下的确定性保证列为未来工作。",
+    "理论证明假设 TP 规模 C 是 2 的幂，实验也只覆盖 TP=1/2/4/8。"
+  ],
+  "relation_to_topic": "直接相关：论文聚焦 AI Infra 推理系统中的并行执行与软硬件协同。TP 作为默认节点内并行策略，因浮点运算非结合性和不同归约顺序导致跨 TP 规模输出不一致；TBIK 用树状层级归约统一 intra-GPU MatMul 与 inter-GPU All-Reduce 的累加路径，并将内核集成进 vLLM，使 vLLM 与 FSDP 在 RL 管线中逐位对齐，属于并行计算与分布式执行、推理服务与请求调度、可靠性与可观测性交叉主题。",
+  "categories": [
+    "并行计算与分布式执行",
+    "推理服务与请求调度",
+    "可靠性、弹性与可观测性"
+  ],
+  "evidence": [
+    {
+      "claim": "TBIK 的核心设计是让累加顺序与 TP 规模无关：通过全局限定的全二叉树归约拓扑，使局部 MatMul 和分布式集合通信遵循相同层级归约结构，从而消除 TP 规模变化带来的归约顺序差异。",
+      "quote": "The core principle of TBIK is to make the accumulation order independent of the TP size. Specifically, we impose a fixed full binary-tree reduction topology shared by local MatMul and distributed collective operations.",
+      "page": 5
+    },
+    {
+      "claim": "论文给出理论证明：当每块 GPU 获得的 tile 数按连续块划分时，层级二叉树归约与全局归约执行相同的两两加法序列，因此结果逐位相同。",
+      "quote": "Hence, by recursion, the hierarchical reduction executes the exact same sequence of pairwise ⊕ operations as the global reduction, so the result is bitwise-identical.",
+      "page": 13
+    }
+  ],
+  "confidence": 0.92,
+  "unanswered_questions": [
+    "如何通过块大小调优、warp specialization 等优化使 Tree-Based MatMul 吞吐接近 cuBLAS？",
+    "如何将树状归约的确定性保证扩展到 INT8/INT4 等量化数据类型？",
+    "TBIK 能否扩展到 TP 规模非 2 的幂、或 PP+DP+TP 混合并行配置？"
+  ]
+}

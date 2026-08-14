@@ -1,0 +1,79 @@
+{
+  "task_id": "P30",
+  "paper_id": "2506.01257",
+  "title": "DeepSeek in Healthcare: A Survey of Capabilities, Risks, and Clinical Applications of Open-Source Large Language Models",
+  "one_sentence_summary": "本文综述了DeepSeek-R1在医疗健康领域的能力、风险与临床应用，重点分析其混合架构、推理性能、成本效益以及安全对齐挑战。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "本论文为综述性研究，通过系统梳理现有文献与基准测试结果，对比DeepSeek-R1与其他开源/闭源LLM在医疗任务中的表现，并汇总多项评估研究（见表1和表2），重点分析其在临床决策支持、医学教育、药物研发等场景的应用与安全性。",
+  "data_and_training": "DeepSeek-R1首先在DeepSeek-V3上进行预训练，采用MoE架构处理大规模无标注数据；随后进行监督微调（SFT）以对齐下游任务；再通过基于人类反馈的强化学习（RLHF）和新型算法GRPO进行奖励优化，并引入自我反思机制产生“aha moments”。训练数据包括CoT示例，奖励信号涵盖准确性、格式和语言连贯性。",
+  "main_contributions": [
+    "系统总结了DeepSeek-R1的架构（MoE、MLA）、训练流程（SFT、RLHF/GRPO）和推理机制（CoT、自我反思）。",
+    "全面评估了DeepSeek-R1在医疗健康领域的应用场景，包括儿科、眼科、医学教育、患者教育和药物相互作用预测等。",
+    "对比了DeepSeek-R1与其他主流LLM的性能、成本、透明度和安全性，凸显其开源与高效优势。",
+    "深入分析了DeepSeek-R1的安全风险（偏见、对抗攻击、有害内容）并提出未来研究方向。"
+  ],
+  "key_findings": [
+    "DeepSeek-R1采用MoE、CoT和RL的混合架构，在数学、代码生成和医疗诊断等结构化推理任务中表现优异（AIME准确率86.7%，Codeforces排名96.3百分位）。",
+    "在医疗基准上具有竞争力：USMLE表现与GPT-4o相当，儿科MedQA准确率87.0%（略低于ChatGPT-o1的92.8%），眼科任务准确率82%且推理成本较OpenAI o1低约15倍。",
+    "开源MIT许可和极低推理成本（报告称比OpenAI o1便宜27倍）使其在资源受限环境中具有部署优势。",
+    "存在显著安全风险：易受对抗性微调、提示注入和CoT劫持攻击；在政治/种族/性别提示中偏见行为约83%，产生偏见概率比Claude-3 Opus高3倍，错误信息比GPT-4o高4倍。",
+    "在自然语言理解、创造性任务和伦理决策方面表现欠佳，且CoT推理带来高token消耗和延迟，不适合实时或高吞吐场景。"
+  ],
+  "limitations": [
+    "易受对抗性微调和安全对齐绕过，导致有害输出。",
+    "偏见和错误信息生成风险高，特别是在多语言和伦理敏感场景。",
+    "过度定制可能导致不可预测行为，影响可靠性。",
+    "复杂推理计算开销大，不适合实时或低延迟应用。",
+    "法规遵从性不明确（如HIPAA、GDPR），存在部署障碍。",
+    "自然语言理解和创造力不及闭源顶尖模型（如GPT-4o、Claude-3 Opus）。",
+    "需要持续监控和伦理监督，以确保安全与合规。"
+  ],
+  "relation_to_deepseek": "本文直接以DeepSeek系列中的DeepSeek-R1为研究对象，详细阐述了其架构、训练、推理、效率与开放生态，并重点聚焦医疗健康领域的应用与风险，为研究DeepSeek系列模型的技术路线提供了垂直领域综述证据。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "系统效率与部署",
+    "对齐、安全与评测",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-R1采用混合架构，融合MoE、CoT推理和强化学习，具备先进推理能力。",
+      "quote": "DeepSeek-R1 is a cutting-edge open-source large language model (LLM) developed by DeepSeek, showcasing advanced reasoning capabilities through a hybrid architecture that integrates mixture of experts (MoE), chain of thought (CoT) reasoning, and reinforcement learning.",
+      "page": 2
+    },
+    {
+      "claim": "DeepSeek-R1在医疗基准（如USMLE、AIME）上表现有竞争力，并在儿科和眼科临床决策支持中表现强劲。",
+      "quote": "The model demonstrates competitive performance on benchmarks like the United States Medical Licensing Examination (USMLE) and American Invitational Mathematics Examination (AIME), with strong results in pediatric and ophthalmologic clinical decision support tasks.",
+      "page": 2
+    },
+    {
+      "claim": "DeepSeek-R1存在偏见、错误信息、对抗操纵和安全失败等脆弱性，特别是在多语言和伦理敏感场景。",
+      "quote": "However, DeepSeek-R1 also exhibits increased vulnerability to bias, misinformation, adversarial manipulation, and safety failures - especially in multilingual and ethically sensitive contexts.",
+      "page": 2
+    },
+    {
+      "claim": "在眼科任务中，DeepSeek-R1准确率与OpenAI o1相当，但推理成本降低约15倍。",
+      "quote": "in ophthalmology tasks, DeepSeek-R1 performed comparably to OpenAI’s o1 model, but with inference costs almost 15 times lower",
+      "page": 16
+    },
+    {
+      "claim": "DeepSeek-R1的推理成本据报告比OpenAI o1低27倍，适合资源有限环境。",
+      "quote": "One of DeepSeek-R1's most compelling features is its exceptionally low inference cost—reportedly 27 times cheaper than OpenAI's o1 model.",
+      "page": 23
+    },
+    {
+      "claim": "DeepSeek-R1在政治、种族和性别相关提示中表现出约83%的偏见行为。",
+      "quote": "In addition, DeepSeek-R1 exhibits biased behavior in approximately 83% of political, racial, and gender-related prompts.",
+      "page": 28
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "如何有效缓解DeepSeek-R1在多语言和伦理敏感场景中的偏见和安全对齐问题？",
+    "缺乏大规模前瞻性临床验证，其在不同医疗专业和真实世界数据集上的表现尚需进一步研究。",
+    "监督学习与强化学习结合的具体比例和最优训练策略尚未明确。",
+    "在法规遵从（如HIPAA、GDPR）方面，DeepSeek-R1的合规路径仍不清晰。"
+  ]
+}

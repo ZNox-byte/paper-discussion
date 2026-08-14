@@ -1,0 +1,48 @@
+{
+  "task_id": "P15",
+  "paper_id": "2408.08152",
+  "title": "DeepSeek-Prover-V1.5: Harnessing Proof Assistant Feedback for Reinforcement Learning and Monte-Carlo Tree Search",
+  "one_sentence_summary": "DeepSeek-Prover-V1.5 在 DeepSeekMath-Base 上通过带形式语言偏好的继续预训练、SFT、基于 Lean 4 证明器反馈的 GRPO 强化学习以及内在奖励驱动的 RMaxTS 蒙特卡洛树搜索，显著提升形式定理证明能力，在 miniF2F-test 和 ProofNet 上取得新的 SOTA。",
+  "research_question": "证明助手反馈奖励和蒙特卡洛树搜索如何改进形式定理证明的生成？具体地，如何利用 proof assistant 的验证反馈作为奖励，并通过截断-恢复机制和内在奖励驱动的树搜索来缓解稀疏奖励和长证明中的复合误差？",
+  "methodology": "整体框架包括：(1) 在 DeepSeekMath-Base 上继续预训练，强化 Lean/Isabelle/Metamath 等形式语言；(2) 使用思维链注释和 tactic state 信息增强的 Lean 4 代码补全数据集进行 SFT；(3) 采用 GRPO 进行 RLPAF，以 Lean 验证结果作为 0/1 奖励；(4) 推理时提供单次整证生成或 RMaxTS 两种方式。RMaxTS 利用 truncate-and-resume 将整证生成分解为 tactic 级树节点，用内在奖励（新节点）驱动探索，并采用折扣 UCB 处理非平稳奖励，同时实现根并行、树并行和虚拟损失。",
+  "data_and_training": "预训练使用包含代码、自然语言数学和形式语言（Lean、Isabelle、Metamath）的高质量数据。SFT 数据为 9,645k 条 Lean 4 证明序列，来源包括 Mathlib4、DeepSeek-Prover-V1 合成定理、Lean Workbook、miniF2F/ProofNet 验证集，并通过专家迭代和 DeepSeek-Coder V2 236B 注释思维链进行增强；SFT 训练 9B tokens，batch 2048，lr 1e-4，上下文 4096。RL 阶段筛选约 4.5k 个定理作为 prompts，使用 GRPO 每组采样 32 个候选证明，lr 5e-6，KL 系数 0.02，batch 512，最大长度 2048。",
+  "main_contributions": [
+    "提出 DeepSeek-Prover-V1.5 开源模型，通过预训练、SFT、RLPAF 和 RMaxTS 形成完整的形式定理证明 pipeline。",
+    "在 SFT 数据中引入自然语言思维链注释和 tactic state 信息，训练模型利用编译器反馈。",
+    "提出 RMaxTS，一种基于内在奖励的蒙特卡洛树搜索变体，结合 truncate-and-resume 机制将整证生成与逐步证明生成统一。",
+    "在 miniF2F-test 上达到 63.5%，在 ProofNet 上达到 25.3%，均刷新 SOTA。"
+  ],
+  "key_findings": [
+    "DeepSeek-Prover-V1.5-RL 在单次整证生成设置下 miniF2F-test 通过率为 60.2%，较 DeepSeek-Prover-V1 的 50.0% 提升 10.2 个百分点；结合 RMaxTS 后达 63.5%。",
+    "在 ProofNet 上，DeepSeek-Prover-V1.5-RL + RMaxTS 达到 test 25.3% 的新 SOTA。",
+    "RL 带来的提升不仅体现在 TopK，而且在更大的采样预算下依然稳定，说明形式定理证明中 RL 增强了基础能力。",
+    "CoT 模式通常优于 non-CoT，两者互补，混合策略进一步提升性能（miniF2F-test 63.5%）。",
+    "消融显示内在奖励和折扣 UCB 对 RMaxTS 至关重要；缺少 tactic state 信息时树搜索的性能增益大幅降低。"
+  ],
+  "limitations": [
+    "论文指出 exploitation 方面（特别是 proof search 问题）仍未探索，未来需要训练 critic 模型来评估不完整证明并剪枝搜索分支。",
+    "开发用于评估长规划路径并提供指导奖励的 critic 模型仍是一个关键且困难的问题。"
+  ],
+  "relation_to_deepseek": "该工作是 DeepSeek 系列在形式数学定理证明方向的技术路线延伸：以 DeepSeekMath-Base 为基础继续预训练，继承并增强 DeepSeek-Prover-V1，并使用 DeepSeek-Coder V2 236B 进行数据注释；模型和 MCTS 代码开源，体现了 DeepSeek 在代码与数学、强化学习与推理方面的开放生态。",
+  "categories": [
+    "推理与强化学习",
+    "代码与数学"
+  ],
+  "evidence": [
+    {
+      "claim": "强化学习阶段使用 Lean 4 证明器的验证结果作为精确但稀疏的二元奖励（1 表示验证通过，0 表示失败）。",
+      "quote": "Specifically, each generated proof receives a reward of 1 if verified as correct, and 0 otherwise.",
+      "page": 6
+    },
+    {
+      "claim": "RMaxTS 通过判断搜索树是否新增节点来构造内在奖励，从而驱动对 tactic 状态空间的广泛探索。",
+      "quote": "The intrinsic reward of a tree expansion step is determined by whether a new node is added to the search tree,",
+      "page": 11
+    }
+  ],
+  "confidence": 0.98,
+  "unanswered_questions": [
+    "如何训练部分证明的 critic 模型以对不完整证明进行时间信用分配和分支剪枝？",
+    "如何将整证生成方法扩展到多定理的真实世界 Lean 文件级形式化场景？"
+  ]
+}

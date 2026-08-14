@@ -1,0 +1,63 @@
+{
+  "task_id": "P13",
+  "paper_id": "2401.14196",
+  "title": "DeepSeek-Coder: When the Large Language Model Meets Programming -- The Rise of Code Intelligence",
+  "one_sentence_summary": "DeepSeek-Coder 通过项目级代码语料库预训练和填空任务训练，在开源代码模型中实现了领先的代码生成与补全能力。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "本文构建了 DeepSeek-Coder 系列模型（1.3B、6.7B、33B），从零开始在 2 万亿 token 上训练。预训练数据经过依赖解析、仓库级去重、质量筛选等步骤，组织成项目级语料；训练目标采用下一 token 预测和 Fill-In-Middle (FIM)，FIM 使用 50% PSM 模式；上下文长度扩展到 16K。在此基础上进行指令微调得到 DeepSeek-Coder-Instruct，并在 HumanEval、MBPP、DS-1000、LeetCode、FIM、CrossCodeEval、数学推理等基准上进行评测。",
+  "data_and_training": "训练数据包含 87% 源代码、10% 英语代码相关自然语言语料和 3% 中文自然语言语料，覆盖 87 种编程语言。数据从 GitHub 爬取，经过基于 StarCoder 的规则过滤、依赖解析（拓扑排序按文件依赖关系组织顺序）、仓库级近重复去重、质量筛选和测试集去污染。模型架构基于 DeepSeek LLM，使用 SwiGLU、RoPE、GQA（33B 模型）等；优化器为 AdamW。FIM 采用文档级 PSM 模式，FIM 率为 0.5；上下文通过 RoPE 线性缩放从 4K 扩展到 16K。指令微调使用 Alpaca 格式的高质量数据。",
+  "main_contributions": [
+    "发布 DeepSeek-Coder-Base 和 DeepSeek-Coder-Instruct 系列开源代码模型，支持 87 种编程语言，提供多种规模。",
+    "首次在预训练阶段引入仓库级数据构建，显著提升跨文件代码生成能力。",
+    "系统分析 FIM 训练策略，确定 50% PSM 为平衡代码补全和生成能力的最佳配置。",
+    "在多个代码基准上广泛评估，DeepSeek-Coder-Base 超越现有开源代码模型，指令微调后超过 GPT-3.5 Turbo。"
+  ],
+  "key_findings": [
+    "项目级预训练通过依赖解析和文件顺序排列，使模型能利用跨文件上下文，在 CrossCodeEval 上优于仅使用文件级语料的版本，特别是在 Java、TypeScript 和 C# 语言上。",
+    "使用 50% PSM 的 FIM 训练策略能在代码补全和代码生成之间取得平衡。",
+    "DeepSeek-Coder-Base 33B 在 HumanEval 平均准确率 50.3%，MBPP 66.0%，超过 CodeLlama-34B 等开源模型。",
+    "DeepSeek-Coder-Base 6.7B 性能与五倍大的 CodeLlama-33B 相当。",
+    "DeepSeek-Coder-Instruct 33B 在多数代码任务上超过 GPT-3.5 Turbo，但与 GPT-4 仍有差距。"
+  ],
+  "limitations": [
+    "LeetCode 基准可能存在数据污染风险，尽管作者尝试收集最新题目。",
+    "与 GPT-4-Turbo 相比仍有较大性能差距。",
+    "长上下文理论上支持 64K token，但经验表明在 16K 范围内输出最可靠。"
+  ],
+  "relation_to_deepseek": "本文是 DeepSeek-AI 发布的 DeepSeek-Coder 系列技术报告，属于 DeepSeek 在代码智能方向的关键开源模型。模型架构和训练策略基于 DeepSeek LLM，DeepSeek-Coder-v1.5 进一步从 DeepSeek-LLM-7B 继续预训练，增强了自然语言和数学推理能力。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "代码与数学",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-Coder 使用项目级代码语料库预训练，并采用 16K 窗口的填空任务来增强代码生成和补全能力。",
+      "quote": "These models are pre-trained on a high-quality project-level code corpus and employ a fill-in-the-blank task with a 16K window to enhance code generation and infilling.",
+      "page": 1
+    },
+    {
+      "claim": "作者首次在预训练阶段引入仓库级数据构建，并发现其能显著提升跨文件代码生成能力。",
+      "quote": "We make the first attempt to incorporate repository-level data construction during the pre-training phase of our models. We find that it can significantly boost the capability of cross-file code generation.",
+      "page": 2
+    },
+    {
+      "claim": "在跨文件代码完成基准上，使用仓库级预训练的模型优于仅使用文件级语料训练的版本，特别是在 Java、TypeScript 和 C# 语言上，表明仓库级预训练的有效性。",
+      "quote": "When only utilizing file-level code corpus (w/o Repo Pre-training) to pre-train DeepSeek-Coder, we observe a decrease in performance in the Java, TypeScript, and C# languages, indicating the effectiveness of the repository-level pre-training.",
+      "page": 14
+    },
+    {
+      "claim": "为了平衡 FIM 效率和代码补全能力，最终选择 50% 的 PSM 模式作为训练策略。",
+      "quote": "To achieve a balance between FIM efficiency and code completion proficiency, we ultimately choose the 50% PSM rate as our preferred training policy.",
+      "page": 8
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "项目级预训练对单文件代码生成任务的独立贡献未单独量化。",
+    "FIM 训练策略的消融仅在 1.3B 模型和 Python 子集上进行，其结论是否适用于更大模型和全部语言尚不明确。",
+    "论文未讨论除指令微调外的其他对齐方法或安全机制。",
+    "仓库级数据构建在更大规模模型上的可扩展性和效率未深入分析。"
+  ]
+}

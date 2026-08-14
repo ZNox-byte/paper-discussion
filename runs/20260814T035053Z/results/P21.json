@@ -1,0 +1,51 @@
+{
+  "task_id": "P21",
+  "paper_id": "2512.14946",
+  "title": "EVICPRESS: Joint KV-Cache Compression and Eviction for Efficient LLM Serving",
+  "one_sentence_summary": "EVICPRESS 提出按上下文粒度的统一效用函数，将跨存储层的 KV cache 驱逐决策与损失压缩决策联合优化，使系统在保持生成质量的同时降低 TTFT/延迟，并基于 vLLM 与 LMCache 实现验证。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度等提升大模型推理效率？具体而言，如何在多级存储（GPU/CPU/SSD）中联合优化每个上下文 KV cache 的压缩与驱逐，在质量约束下最小化平均生成延迟/TTFT并提高吞吐？",
+  "methodology": "EVICPRESS 将 KV cache 管理建模为每个上下文选择（存储层、压缩方法、压缩率）的配置问题，并用效用函数 Util(method,ratio,device)=(α·quality−TTFT)·frequency 统一量化每个配置对质量与延迟的影响；离线 profiler 基于每个上下文的一组问题计算所有配置的效用分数，在线阶段按新请求周期性重剖并更新配置；当存储层满时，将配置选择建模为多选背包（NP-hard）并用贪心算法以最小效用损失不断调整/驱逐，直到空间满足。实现基于 vLLM v0.11.2 与 LMCache，约 3K 行 Python/PyTorch 代码，通过拦截 LMCache 的 lookup/retrieve/store 并接入 vLLM 的 paged GPU 内存管理来编排 GPU/CPU/SSD 间的移动。",
+  "experimental_setup": "评测使用 LongBench 12 个数据集、555 个上下文，每个上下文用 GPT-5 生成 100 条 QA（50 训练/50 测试）；硬件为单张 80GB H100 GPU、80GB CPU DRAM、800GB SSD，远程盘空间不限；模型包括 Llama-3.1-8B-Instruct、Qwen2.5-14B-Instruct、LongChat-7B、Mistral-7B-Instruct-v0.3 和 Qwen3-30B-A3B-Instruct-2507；基线与 Prefill、仅 LRU 驱逐、（keydiff/knorm/snapkv）压缩+LRU 驱逐、IMPRESS 对比；指标包括质量分数（MiniLM-L6-v2 余弦相似度）、TTFT、ITL、端到端延迟。",
+  "main_contributions": [
+    "首个联合考虑损失压缩与跨层驱逐的多层 KV cache 管理系统 EVICPRESS。",
+    "提出统一效用函数，可比较所有可行的压缩-驱逐配置，明确优化目标。",
+    "在 vLLM 和 LMCache 上实现，并在多模型多数据集上验证 TTFT 与吞吐收益。"
+  ],
+  "key_findings": [
+    "不同上下文对压缩误差的敏感度差异显著（Samsum 中位数 0.676 vs TriviaQA 0.392），最优压缩方法与比率不能被上下文长度或类型简单决定。",
+    "相比固定压缩+LRU 驱逐基线，EVICPRESS 在相同质量下降低 TTFT 1.43–3.77×；在 3% 质量损失内相比 full prefill/仅驱逐降低 TTFT 1.29–2.19×/1.22–1.56×；相比 IMPRESS，在相同 TTFT 下质量提升 14.29%–27.00%。",
+    "在 80% 质量目标下，EVICPRESS 在相同 TTFT 上相比最佳基线提升请求处理速率 2.0–3.6×，在相同 ITL 上提升 QPS 1.9–3.4×。",
+    "周期性重剖使质量收益随时间增加并最终约 11% 饱和，但重剖期间会有轻微延迟尖峰。"
+  ],
+  "limitations": [
+    "适用场景限于 GPU/CPU 内存有限的多级存储；若快存充足或各层带宽接近，联合优化收益会下降。",
+    "原型只在单节点 GPU 上评估，未扩展到多节点、跨 GPU 缓存共享、多租户隔离等场景。",
+    "假设各存储层带宽已知且相对稳定，带宽快速波动时预计算的效用分数可能暂时失配。",
+    "评测中压缩方法只包含三种 token dropping 方法，未纳入量化等更丰富方法。"
+  ],
+  "relation_to_topic": "该工作直接属于 LLM 推理系统中的 KV Cache 与内存管理，并通过请求调度（TTFT/QPS 优化）与损失压缩提升服务吞吐和成本效率，同时提供性能评测方法；其思想可被 vLLM 等 AI Infra 系统用于多级存储下的缓存决策。",
+  "categories": [
+    "KV Cache与内存管理",
+    "推理服务与请求调度",
+    "模型压缩与低精度计算",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "论文主张，EVICPRESS 对所有上下文的 KV cache 统一考虑压缩和驱逐对平均生成质量与延迟的影响，而不是独立决策。",
+      "quote": "Specifically, for each KV cache of a context, EVICPRESSconsiders the effect of compression and eviction of the KV cache on the average generation quality and delay across all contexts as a whole.",
+      "page": 1
+    },
+    {
+      "claim": "论文报告，与统一压缩+LRU 驱逐基线相比，EVICPRESS 在相同质量分数下可将 TTFT 降低 1.43–3.77 倍。",
+      "quote": "EVICPRESSreduces TTFT by 1.43 to 3.77× at the same quality score",
+      "page": 9
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "EVICPRESS 如何被扩展到多节点、跨 GPU 缓存共享和严格多租户隔离环境？",
+    "当存储带宽快速波动或与突发查询到达强相关时，如何更快地调整效用分数与调度策略？",
+    "能否将 token dropping 与量化等更多压缩方法同时纳入统一配置池并自适应选择？"
+  ]
+}

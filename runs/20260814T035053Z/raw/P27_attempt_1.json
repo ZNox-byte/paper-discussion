@@ -1,0 +1,55 @@
+{
+  "task_id": "P27",
+  "paper_id": "2407.00047",
+  "title": "Queue management for slo-oriented large language model serving",
+  "one_sentence_summary": "QLM 是一个面向 SLO 的 LLM 服务队列管理系统，通过请求等待时间（RWT）估计器预测请求在队列中的等待时间，并由全局调度器据此执行请求拉取、请求驱逐、负载均衡和模型切换，从而在 vLLM 等后端上提升 SLO 达成率与吞吐量。",
+  "research_question": "如何通过估计请求等待时间驱动请求拉取、请求驱逐和负载均衡等队列管理操作，以在面向 SLO 的 LLM 服务中最大化 SLO 达成率并提高资源利用率？",
+  "methodology": "QLM 将请求按模型、SLO 和 token 分布聚类为请求组（request groups），并映射到与 LLM 服务实例一一对应的虚拟队列（virtual queues）。RWT 估计器基于输出 token 数分布和 token 生成吞吐量，利用中心极限定理给出请求组等待时间的解析估计。全局调度器以线性规划求解请求组到虚拟队列位置的分配，最小化 SLO 违规惩罚，并将虚拟队列顺序转换为四种 LLM 服务操作（LSO）：请求拉取、请求驱逐、模型切换和负载均衡。实验在 vLLM 上实现并与 EDF、vLLM 默认调度和 SHEPHERD 对比。",
+  "experimental_setup": "使用 Mistral-7B、Vicuna-13B 和 Llama-70B 三个开源 LLM，测试床包含 30 张 NVIDIA A10（24GB）和 50 张 NVIDIA A100（80GB）GPU。工作负载基于 ShareGPT 数据集，每个 trace 使用 3,500 个请求，请求到达率用泊松分布建模；SLO 按 TTFT p99 设为三类：Interactive 20s、Batch-1 1min、Batch-2 1hour。对比基线包括 EDF、vLLM 和 SHEPHERD，并包含单模型混合负载（WA）、多模型批量负载（WB）和单模型 MegaPrompt 负载（WC）三种场景。",
+  "main_contributions": [
+    "提出 QLM，一个面向 SLO 的 LLM 服务队列管理框架，能够编排请求拉取、请求驱逐、负载均衡和模型切换等 LSO。",
+    "设计 RWT 估计器，利用连续批处理下的统计平均效应和中心极限定理解析估计请求等待时间。",
+    "引入请求组和虚拟队列抽象，将调度决策从单请求粒度提升到请求组粒度，降低优化开销并支持多模型场景。",
+    "实现基于线性规划的全局调度器，将请求组排序并映射到虚拟队列，以最大化 SLO 达成率。",
+    "在 vLLM 上实现 QLM 并开源，且已合入内部生产 LLM 路由服务。"
+  ],
+  "key_findings": [
+    "与 vanilla vLLM 相比，QLM 的 SLO 达成率提高 40–90%；与 SHEPHERD 等传统 ML serving 系统相比提高 50–90%。",
+    "QLM 在多模型服务中平均提高请求吞吐量 400%，在单模型服务中平均提高 20%。",
+    "LSO 消融实验表明，模型切换在多模型服务中使吞吐量提高 300%，请求驱逐在单模型服务中使 SLO 达成率提高 80%。",
+    "RWT 估计器在 4 个请求组时达到 0.99 的 R² 准确度，队列越大估计越准确。",
+    "硬件异构下 QLM 通过离线 profiling 和全局调度按 GPU 能力分配负载，在 A10 占比 20–50% 的异构集群中比 round-robin 策略提升 2–5 倍。"
+  ],
+  "limitations": [
+    "当请求组数量较少时，RWT 估计器会高估等待时间，导致系统相对最优情况可能利用不足。",
+    "当输出 token 数超出分布范围（如高于均值 5–10 个标准差）时，估计器可能低估完成时间，造成 SLO 违规。",
+    "QLM 主要针对 TTFT SLO，不保证 inter-token latency（ITL），需要与其他系统如 Andes 配合。",
+    "QLM 不实现抢占式负载均衡，请求组开始执行后不能迁移到其他实例。",
+    "多模型交互式负载中，由于模型切换时间超过 20s SLO，QLM 会为每个模型分配独立 GPU，不做模型切换。",
+    "请求驱逐和模型切换需要较大的 CPU 内存：Vicuna-13B/Mistral-7B 需额外 80GB，Llama-70B 需额外 320GB。"
+  ],
+  "relation_to_topic": "本文聚焦 AI Infra 中的推理服务与请求调度：通过请求等待时间估计驱动全局队列排序，进而控制请求拉取、驱逐、负载均衡和模型切换，以提升 vLLM 等 LLM serving 系统的 SLO 达成率、吞吐量和设备利用率，属于请求调度与队列管理方向的核心工作。",
+  "categories": [
+    "推理服务与请求调度",
+    "性能评测与成本分析"
+  ],
+  "evidence": [
+    {
+      "claim": "QLM 使用 RWT 估计器估计请求队列中的等待时间，这些估计由全局调度器用于编排请求拉取、请求驱逐、负载均衡和模型切换等 LLM 服务操作。",
+      "quote": "To generate this optimal ordering, QLM uses a Request Waiting Time (RWT) Estimator that estimates the waiting times for requests in the request queue. These estimates are used by a global scheduler to orchestrate LLM Serving Operations (LSOs) such as request pulling, request eviction, load balancing, and model swapping.",
+      "page": 1
+    },
+    {
+      "claim": "请求驱逐由 RWT 估计器检测到 SLO 违规时触发，全局调度器将某个请求组放到虚拟队列头部以替换原有请求组。",
+      "quote": "Request eviction is invoked when the RWT estimator detects an SLO violation, and the global scheduler replaces an existing request group by placing a request group at the head of the virtual queue.",
+      "page": 7
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "QLM 如何扩展到端到端完成时间 SLO 或 inter-token latency SLO 的联合优化？",
+    "如何将 GPU 分区（如 NVIDIA MIG）等新的 LSO 以额外约束形式加入线性规划模型？",
+    "在输出 token 数严重超出训练分布时，RWT 估计器能否通过在线自适应 profiling 降低 SLO 违规风险？",
+    "QLM 与 DistServe、Llumnix 等面向 LLM 的调度/切分系统在端到端性能上的直接对比尚未在本文中给出。"
+  ]
+}

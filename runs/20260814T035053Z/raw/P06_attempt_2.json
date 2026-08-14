@@ -1,0 +1,51 @@
+{
+  "task_id": "P06",
+  "paper_id": "2406.03243",
+  "title": "Llumnix: Dynamic Scheduling for Large Language Model Serving",
+  "one_sentence_summary": "Llumnix 通过跨模型实例的运行时请求重调度与基于 KV Cache 追加写特性的实时迁移，统一实现负载均衡、去碎片化、优先级隔离和自动扩缩容，从而显著改善 LLM 在线推理的尾延迟与成本效率。",
+  "research_question": "请求状态迁移如何使能跨模型实例的动态请求调度，从而应对 LLM 服务中异构、不可预测的负载并提升尾延迟、成本效率与 SLO 达成率？",
+  "methodology": "论文采用系统设计与实验评估相结合的方法：在 vLLM 之上实现 Llumnix 调度层；提出基于 KV Cache 追加写特性的多阶段实时迁移机制、全局调度器与分布式 llumlet 两级调度架构，以及以 virtual usage 统一负载均衡、去碎片化、优先级和自动扩缩容目标的动态调度策略；在 16 张 A10 GPU 集群上使用真实数据集（ShareGPT、BurstGPT）和合成幂律长度分布 trace 进行评测，并与 round-robin、INFaaS++ 和 Llumnix-base 对比。",
+  "experimental_setup": "16-GPU 集群，4 台阿里云 GPU 虚拟机（ecs.gn7i-c32g1.32xlarge），每台 4 张 NVIDIA A10（24 GB）GPU，PCIe 4.0，128 vCPU，752 GB 内存，64 Gb/s 网络带宽；模型为 LLaMA-7B（单 GPU）和 LLaMA-30B（4 GPU tensor parallelism），16 位精度；请求序列长度分布来自 ShareGPT、BurstGPT 以及合成的 Short/Medium/Long 幂律分布；基线包括 round-robin、INFaaS++ 和 Llumnix-base；指标包括端到端、prefill、decode 的 mean/P99 延迟、抢占损失和平均实例数成本。",
+  "main_contributions": [
+    "揭示了 LLM serving 中请求异构性和执行不可预测性带来的调度挑战，包括隔离性、内存碎片化和优先级区分。",
+    "提出将请求重调度作为实现这些目标的关键手段，并实现请求及其 GPU 内存状态（KV Cache）的高效实时迁移。",
+    "设计了一种结合全局调度器和分布式 llumlet 的调度架构，并引入 virtual usage 抽象，用统一的负载均衡策略表达多种重调度场景。",
+    "实现并评测了 Llumnix，实验显示其在尾延迟、高优先级请求加速和成本节约方面优于现有 LLM serving 系统。"
+  ],
+  "key_findings": [
+    "Llumnix 的迁移停机时间随序列长度近似恒定（约 20-30 ms），显著低于重计算和阻塞拷贝，且迁移对同实例其他请求的性能影响最高约 1%。",
+    "在 16 个 LLaMA-7B 实例上，Llumnix 相比 INFaaS++ 可将 prefill P99 延迟提升最高 15 倍（去碎片化场景），P99 decode 延迟提升最高 2 倍，并平均减少 70.4% 的抢占损失。",
+    "通过调度优先级和执行优先级隔离，Llumnix 可将高优先级请求的平均延迟提升最高 1.5 倍，同时普通请求的平均端到端延迟增加不超过 4.5%。",
+    "在自动扩缩容场景下，Llumnix 在保持相似 P99 prefill 延迟的同时，相比 INFaaS++ 可节省最高 36% 的成本。"
+  ],
+  "limitations": [
+    "目前 Llumnix 仅支持 vLLM 作为后端引擎，对其他推理引擎的适配尚未验证。",
+    "当前实现仅支持 high 和 normal 两种优先级类别，更多优先级类别仍需扩展。",
+    "实验主要基于 LLaMA 模型和 vLLM 当时支持的最大序列长度 2k，更长上下文和更多模型架构下的表现未直接验证。"
+  ],
+  "relation_to_topic": "本文属于推理服务与请求调度方向，核心贡献是将请求状态（KV Cache）迁移引入 LLM serving，使调度器能够在请求运行时跨模型实例动态移动请求，从而解决负载不均、碎片化、高优先级隔离和自动扩缩容等问题；同时通过 virtual usage 统一调度目标，与 KV Cache 内存管理、分布式执行和 SLO 保障紧密相关，直接回应了 AI Infra 系统如何提升在线推理延迟、成本效率与可靠性这一 survey 问题。",
+  "categories": [
+    "推理服务与请求调度",
+    "KV Cache与内存管理",
+    "并行计算与分布式执行"
+  ],
+  "evidence": [
+    {
+      "claim": "Llumnix 通过请求及其 GPU 内存状态的实时迁移机制，实现跨模型实例的请求重调度。",
+      "quote": "Llumnix reschedules requests via an efficient and scalable live migration mechanism of requests along with their GPU memory states across instances.",
+      "page": 2
+    },
+    {
+      "claim": "实时迁移之所以高效，是因为利用了 KV Cache 追加写的特性，将 KV Cache 拷贝与解码计算流水化重叠。",
+      "quote": "The live migration mechanism of Llumnix utilizes the inherent append-only characteristic of KV cache to pipeline the KV cache copying with the decoding computation.",
+      "page": 5
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "如何将 Llumnix 的跨实例动态调度扩展到多模型类型/变体（如不同微调模型、不同精度模型）的选择与调度？",
+    "Llumnix 的请求迁移与实例内的抢占式或公平调度如何结合，以进一步优化 SLO 和公平性？",
+    "在更长上下文（如 128k/256k）和更大规模集群下，KV Cache 迁移的带宽占用、调度可扩展性和故障恢复表现如何？",
+    "NCCL 并发安全限制下，是否有比 Gloo 更高带宽且仍能保持近零停机迁移的通信方案？"
+  ]
+}

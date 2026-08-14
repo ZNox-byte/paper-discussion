@@ -1,0 +1,51 @@
+{
+  "task_id": "P13",
+  "paper_id": "2401.14196",
+  "title": "DeepSeek-Coder: When the Large Language Model Meets Programming -- The Rise of Code Intelligence",
+  "one_sentence_summary": "DeepSeek-Coder 是 DeepSeek 推出的 1.3B 至 33B 开源代码模型系列，基于 2 万亿 token 的项目级代码语料与 16K 窗口的填空式（fill-in-the-blank）预训练任务，在代码生成、代码填充和跨文件补全等基准上达到开源模型领先水平，并缩小了与闭源模型的差距。",
+  "research_question": "填空式任务与项目级语料如何改进代码生成与代码填充？",
+  "methodology": "论文提出从零预训练的 DeepSeek-Coder 系列（1.3B/6.7B/33B），采用解码器 Transformer、RoPE、33B 上的 Grouped-Query-Attention、FlashAttention v2 和 HAI-LLM 框架。数据侧以仓库为单元进行抓取、规则过滤、依赖解析（拓扑排序）、仓库级去重、质量筛选与去污染；训练侧采用下一个 token 预测与 Fill-in-the-Middle（FIM）目标，通过消融实验选择 50% PSM 率，并将上下文扩展到 16K；之后用 Alpaca 格式指令数据微调得到 Instruct 版本，并在 HumanEval、MBPP、DS-1000、LeetCode、FIM、CrossCodeEval 和程序辅助数学推理等基准上评估。",
+  "data_and_training": "训练数据由 87% 源代码、10% 英文代码相关自然语言和 3% 中文自然语言组成，GitHub 数据收集于 2023 年 2 月之前，覆盖 87 种语言，清洗后总计约 798 GB、6.03 亿文件。通过依赖解析按拓扑序拼接同一仓库文件，并在仓库级做近重复去重；还使用编译器、质量模型和启发式规则过滤低质量数据，并针对 HumanEval/MBPP/GSM8K/MATH 等测试集进行 n-gram 去污染。训练采用 next token prediction 与 FIM（PSM/SPM），引入三个哨兵 token，最终选择 50% PSM 率；分词器为 BPE，词表大小 32,000；通过 RoPE 线性缩放（scale 从 1 到 4，base 从 10000 到 100000）将上下文扩展到 16K，并额外训练 1000 步。指令微调使用 Alpaca 格式、<|EOT|> 分隔符、cosine 调度，总计 2B tokens。",
+  "main_contributions": [
+    "引入 DeepSeek-Coder-Base 和 DeepSeek-Coder-Instruct 系列，覆盖 1.3B、6.7B、33B 参数规模，从零训练于 2 万亿 token，支持 87 种编程语言。",
+    "首次在代码模型预训练阶段引入仓库级数据构建，发现其能显著提升跨文件代码生成能力。",
+    "系统分析 FIM 训练策略对代码模型预训练的影响，发现 50% PSM 率能在 FIM 效率与代码补全能力之间取得平衡。",
+    "广泛评估显示 DeepSeek-Coder-Base 在多个基准上超越现有开源代码模型，Instruct 版本在代码相关任务上优于 GPT-3.5 Turbo。"
+  ],
+  "key_findings": [
+    "DeepSeek-Coder-Base 33B 在人类评估中达到平均 50.3% Pass@1，MBPP 上 66.0%，超越现有开源代码模型；6.7B 模型也超过 CodeLlama-Base 34B。",
+    "FIM 消融实验表明，100% FIM 率在 HumanEval-FIM 上性能最强但代码补全能力最弱，50% PSM 率综合最佳且优于 MSP 策略。",
+    "仓库级预训练有效提升跨文件代码补全：仅使用文件级语料时，Java、TypeScript、C# 上的性能出现下降。",
+    "DeepSeek-Coder-Instruct 33B 在多数代码任务上超过 GPT-3.5 Turbo，并显著缩小了与 GPT-4 的差距。",
+    "基于 DeepSeek-LLM-7B 继续预训练的 DeepSeek-Coder-v1.5 在数学推理和自然语言任务上显著提升，编程性能仅小幅下降。"
+  ],
+  "limitations": [
+    "LeetCode 评测中，论文承认尽管收集了最新题目，仍不能完全排除数据污染的可能性。",
+    "长上下文方面，论文指出理论上可处理最多 64K token，但经验观察显示模型在 16K token 范围内输出最可靠。"
+  ],
+  "relation_to_deepseek": "该论文是 DeepSeek 官方代码模型系列的技术报告，直接沿用 DeepSeek LLM 的模型架构、超参数策略与 HAI-LLM 训练框架，并在此基础上引入项目级语料和 FIM 预训练；后续 v1.5 从 DeepSeek-LLM-7B 继续预训练，说明 DeepSeek 代码模型与通用语言模型共享技术底座并相互迭代。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "代码与数学",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "论文在摘要中明确将项目级代码语料和填空式任务作为提升代码生成与填充能力的关键设计。",
+      "quote": "These models are pre-trained on a high-quality project-level code corpus and employ a fill-in-the-blank task with a 16K window to enhance code generation and infilling.",
+      "page": 1
+    },
+    {
+      "claim": "跨文件代码补全的消融实验表明，去掉仓库级预训练会在 Java、TypeScript、C# 上造成性能下降，证明项目级语料的有效性。",
+      "quote": "When only utilizing file-level code corpus (w/o Repo Pre-training) to pre-train DeepSeek-Coder,\nwe observe a decrease in performance in the Java, TypeScript, and C# languages, indicating the\neffectiveness of the repository-level pre-training.",
+      "page": 14
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "FIM 与代码补全能力之间权衡的深层机制是什么？论文给出了消融现象，但未完全解释其背后的原因。",
+    "项目级语料带来的提升主要来自依赖排序、仓库级去重还是拼接方式？论文未做更细粒度的归因分析。",
+    "长上下文在 16K 以外的可靠边界和扩展方法仍有待后续研究进一步细化。"
+  ]
+}

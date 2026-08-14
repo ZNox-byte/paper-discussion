@@ -1,0 +1,72 @@
+{
+  "task_id": "P12",
+  "paper_id": "2606.07410",
+  "title": "A Comprehensive Anatomy of Human and DeepSeek-R1 LLM Mathematical Reasoning",
+  "one_sentence_summary": "该论文通过对AIME 2025全部30道题上DeepSeek-R1与人类解题轨迹的10247个推理步骤进行功能标注和对比，发现模型推理与人类推理在结构上存在系统性差异，主要表现为拓扑模仿、控制不稳定和尺度错配，并据此提出评估与训练改进方向。",
+  "research_question": "How do the structural dynamics and control mechanisms within CoT differentiate genuine problem-solving from superficial imitation?",
+  "methodology": "对DeepSeek-R1在AIME 2025全部30题上的10247个推理步骤进行人工功能标注，将每一步归入五种模式（Analysis、Inference、Branch、Backtrace、Reflection，反射再分四种子类型）；由五名数学竞赛参与者标注并进行交叉验证（Fleiss' κ=0.81）；对比人类参考解；采用Welch t检验、F检验、Jensen-Shannon散度、N-gram三元组分析等统计方法。",
+  "data_and_training": "数据集为AIME 2025的30道数学题；10247个DeepSeek-R1推理步骤由五名数学竞赛参与者依据可验证的文本特征进行标注。论文未对模型进行训练，但提出了四项训练方向（利用回溯深度过滤偏好对、针对“空转”轨迹的DPO、上下文感知正则化、推理时计算再分配）。",
+  "main_contributions": [
+    "提出并定义“拓扑模仿（topological mimicry）”现象，用以描述失败轨迹复制成功推理表面结构但缺乏功能进展。",
+    "建立基于可观察文本特征的五模式功能标注体系，对10247个步骤进行系统标注并发布schema和标注。",
+    "揭示成功与失败轨迹的关键区别在于探索动作的跨轨迹方差和反思的语境定位，而非聚合组成或反思密度。",
+    "识别“尺度错配（scale mismatch）”失败机制：局部算术/格式检查无法捕获全局逻辑错误。",
+    "提出评估与训练改进方向，包括跨轨迹方差度量、回溯深度过滤、DPO对抗空转轨迹、上下文感知正则化和推理时计算再分配。"
+  ],
+  "key_findings": [
+    "人类解保持分析与推理的紧凑交替，DeepSeek-R1则频繁重访中间结果、进行浅层验证和局部循环，整体呈拓扑模仿。",
+    "正确与错误轨迹在模式占比、转移矩阵、反思密度等聚合指标上无显著差异；但探索动作（Branch/Backtrace）的跨轨迹方差显著不同（Branch p<0.001，Backtrace p=0.030）。",
+    "失败轨迹中绝大多数回溯深度η<0.1，仅为浅层局部回退，无法纠正上游前提错误。",
+    "反思密度不预测成功，反思位置才预测成功：与Inference结合的Logical reflection与成功相关，而陷入Analysis循环的Numerical/Formal reflection与失败相关（尺度错配）。",
+    "失败轨迹往往比成功轨迹更长、更复杂，表面复杂性不代表推理质量。"
+  ],
+  "limitations": [
+    "仅分析单一模型DeepSeek-R1-0120在单一基准AIME 2025上的表现，定量模式可能无法直接迁移到其他设置。",
+    "交叉验证子集仅734步（两个问题），相对于全量10247步规模较小；单标注者覆盖剩余问题可能引入标注噪声。",
+    "未验证所提出的训练干预（偏好过滤、DPO、正则化、计算再分配）的实际效果。"
+  ],
+  "relation_to_deepseek": "论文直接剖析DeepSeek-R1-0120在AIME数学题上的长链推理轨迹，将其与人类参考解对照，揭示DeepSeek-R1的推理表面模仿与功能不足，并提出针对性评估与训练方向，对理解DeepSeek系列长CoT模型的推理质量具有直接价值。",
+  "categories": [
+    "推理与强化学习",
+    "代码与数学",
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "人类与模型推理存在明显结构差异：人类保持紧凑的分析-推理交替，而DeepSeek-R1频繁重访、浅层验证并陷入局部循环。",
+      "quote": "We find a clear structural difference between human and model reasoning. Human solutions maintain a compact alternation between analysis and deduction, whereas DeepSeek-R1 frequently revisits intermediate results, performs shallow (sometime unnecessary) verification, and loops through local checks without meaningful logical progress.",
+      "page": 1
+    },
+    {
+      "claim": "作者将这种表面模仿推理形式但缺乏功能进展的行为称为拓扑模仿。",
+      "quote": "We describe this behaviour astopological mimicry: reproducing the surface form of reasoning without its functional role.",
+      "page": 1
+    },
+    {
+      "claim": "成功轨迹以稳定强度使用Branch和Backtrace，而失败轨迹的探索动作方差显著更高，表现为控制混沌。",
+      "quote": "Successful traces applyBranchandBacktracesteps with consistent intensity from one trace to the next, whereas incorrect traces show significantly higher variance (p<0.001 for Branch, p=0.030 for Backtrace).",
+      "page": 14
+    },
+    {
+      "claim": "失败轨迹中绝大多数回溯事件为浅层局部回退（η<0.1），而非纠正上游错误所需的深层重置。",
+      "quote": "Figure 5 shows that the overwhelming majority of Backtrace events in failed traces haveη<0.1 .",
+      "page": 14
+    },
+    {
+      "claim": "反思密度不预测成功，反思的语境位置才是关键。",
+      "quote": "Reflection density does not predict reasoning success; reflection placement does.",
+      "page": 17
+    },
+    {
+      "claim": "尺度错配：全局逻辑错误存在时，模型却在局部算术或格式层面进行验证，无法发现真正错误。",
+      "quote": "the failure mechanism we callscale mismatch: when the actual error is at the global logical level, such as a flawed premise, an incomplete case split, or an inapplicable strategy, the model’s reflective response sits at the local arithmetic or formatting level.",
+      "page": 18
+    }
+  ],
+  "confidence": 0.9,
+  "unanswered_questions": [
+    "所提出的训练方向（如回溯深度过滤、DPO对抗空转、上下文感知正则化）是否实际有效且可扩展？",
+    "自动分类器能否达到人类标注者的可靠性（Fleiss' κ=0.81）以支持大规模应用？",
+    "该框架和结构特征在其他模型（如非DeepSeek模型）和其他推理领域中的适用性如何？"
+  ]
+}

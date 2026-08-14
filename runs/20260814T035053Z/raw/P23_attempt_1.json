@@ -1,0 +1,49 @@
+{
+  "task_id": "P23",
+  "paper_id": "2601.10729",
+  "title": "OrbitFlow: SLO-Aware Long-Context LLM Serving with Fine-Grained KV Cache Reconfiguration",
+  "one_sentence_summary": "OrbitFlow 通过轻量 ILP 求解器以请求-层粒度动态重配置 KV 缓存放置，并配合 Token-Deposit 与 Pause-Resume 机制，在长上下文 LLM 推理中显著提高 SLO 达成率、降低尾延迟并提升吞吐。",
+  "research_question": "在线 ILP 求解器如何根据运行时反馈调整细粒度 KV 缓存放置，以适应长上下文推理中 token 维度和 batch 维度变化的显存需求？",
+  "methodology": "基于 vLLM v0.6.6 实现，OrbitFlow 由 Runtime Executor、Adaptive Controller 和 Placement Planner 组成闭环：Executor 执行解码、安装 KV 放置并启动异步传输，同时用 Token-Deposit 缓冲输出并按 SLO 速率释放；Planner 使用轻量 ILP 求解器在 GPU 容量与 SLO 约束下选择每个 request-layer 的离载距离，并自确定解码窗口 Δ；Controller 通过 profile-mismatch 与 batch-change 两个触发器在运行时重新调用 Planner，当求解器判定不可行时启动 Pause-Resume 回退。",
+  "experimental_setup": "默认使用 LLaMA3-8B 模型、单张 NVIDIA RTX A5000 (24GB) GPU、384GB 主机内存、PCIe 3.0×16；长上下文场景使用 LLaMA3-70B、4×RTX A6000 (48GB)、256GB 主机内存、PCIe 4.0×16。负载为 ShareGPT 派生的合成轨迹，采用泊松到达率，并对比 DeepSpeed-Inference、FlexGen、FlexGen+、SLO-aware Offloading 和 Dynamic Heuristic 等基线。",
+  "main_contributions": [
+    "提出请求级细粒度 KV 缓存放置，用 ILP 求解器在每个请求的层级上决策 GPU/CPU 驻留，以最小化解码延迟并满足 SLO",
+    "设计 Adaptive Controller 与自确定解码窗口 Δ，在 token 维度漂移和 batch 维度不匹配时动态重配置 KV 放置",
+    "引入 SLO-aware Token-Deposit 与 Pause-Resume 回退机制，平滑输出速率并缓解瞬时过载对整体 SLO 的影响",
+    "将系统扩展到单节点多 GPU 张量并行场景，在 worker 间同步一致的 KV 放置"
+  ],
+  "key_findings": [
+    "相比现有 offloading 方法，OrbitFlow 将 TPOT 与 TBT SLO 达成率分别提高 62% 和 66%",
+    "P95 TBT 延迟降低 38%，吞吐最高提升 3.3 倍",
+    "组件消融显示从 Batch-Uniform 到完整 OrbitFlow 的逐组件叠加使 SLO 达成率从 45.1% 提升到 85.6%",
+    "solver 在动态流量下占执行时间仅 0.64%，通常低于一个解码步并可在独立线程中隐藏"
+  ],
+  "limitations": [
+    "当服务器严重过载时，OrbitFlow 仍无法保证所有请求满足延迟 SLO",
+    "Pause-Resume 会暂时推迟大显存请求，使 E2E 延迟比自适应基线高 12–21%",
+    "仅扩展并验证了单节点内张量并行 (TP)，PP 与 DP 以及多节点场景留作未来工作"
+  ],
+  "relation_to_topic": "本文聚焦 AI Infra 中在线推理服务的 KV Cache 与显存管理，针对长上下文 LLM 在解码过程中显存需求快速波动的问题，利用轻量 ILP 求解器实现请求级、层级细粒度 KV 放置，并通过运行时反馈动态重配置、Token-Deposit 平滑输出和 Pause-Resume 过载回退，提升 SLO 达成率、吞吐和尾延迟表现，同时探讨了张量并行下的软硬件协同。",
+  "categories": [
+    "推理服务与请求调度",
+    "KV Cache与内存管理",
+    "并行计算与分布式执行"
+  ],
+  "evidence": [
+    {
+      "claim": "ILP 求解器利用实时的传输与计算成本反馈迭代优化放置方案，使系统能根据当前显存和算力约束快速调整决策。",
+      "quote": "The solver iteratively refines optimal offload plans using real-time feedback on varying state-transfer and GPU computation costs per layer, allowing OrbitFlow to quickly adjust decisions under current GPU memory and compute resource constraints.",
+      "page": 2
+    },
+    {
+      "claim": "解码窗口 Δ 随 SLO 松紧自适应：SLO 紧时窗口小、更早重新优化，SLO 裕量大时窗口大、避免频繁重优化。",
+      "quote": "Mechanically, if the SLO is tight, the solver chooses a smallΔ so that the average is dominated by the imminent steps, the KV placement will be re-optimized sooner. On the other hand, if the latency margin is ample, the solver chooses a larger Δ and amortizes minor violations over a longer period, avoiding redundant re-optimizations.",
+      "page": 7
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "OrbitFlow 如何扩展到多节点 PP/DP 场景，以应对跨节点较慢互联下的显存压力？",
+    "ILP 求解器在更大 batch size 或更长上下文下，NP-hard 最坏情况的求解时间能否继续保持可隐藏？"
+  ]
+}

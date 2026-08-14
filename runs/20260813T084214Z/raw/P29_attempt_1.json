@@ -1,0 +1,56 @@
+{
+  "task_id": "P29",
+  "paper_id": "2507.09955",
+  "title": "DeepSeek: Paradigm Shifts and Technical Evolution in Large AI Models",
+  "one_sentence_summary": "本文系统综述了DeepSeek系列模型在架构、训练、推理、对齐、效率和开放生态方面的技术路线，重点分析了MLA、DeepSeekMoE、MTP、GRPO等算法创新和FP8、DualPipe、DeepEP等工程突破，以及其对LLM范式转变的影响。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "本文为综述性论文，通过文献调研和综合分析，回顾LLM范式演进，归纳DeepSeek系列模型的技术报告与已发表成果，梳理其算法创新与工程优化，并分析影响和未来趋势。",
+  "data_and_training": "论文介绍了DeepSeek模型的核心训练数据与流程：DeepSeek-V3在14.8万亿多语言高质量语料上预训练，后训练使用1.5M规模的多领域指令数据集进行SFT和GRPO强化学习；DeepSeek-R1-Zero直接基于V3-Base进行纯强化学习（无SFT），DeepSeek-R1则采用冷启动+三阶段SFT/RL流水线（600K推理数据+200K非推理数据），并蒸馏出小模型。多模态模型DeepSeek-VL2训练于800B精心筛选tokens，Janus-Pro扩展至7B参数。",
+  "main_contributions": [
+    "总结了主流LLM范式及其演进，分析了DeepSeek系列模型引入的范式转变。",
+    "介绍了DeepSeek的核心技术创新，包括MLA、DeepSeekMoE、MTP和GRPO，并概述了训练、推理和系统级架构的工程优化。",
+    "分析了DeepSeek模型在各领域的影响，并讨论了LLM研究的未来趋势。"
+  ],
+  "key_findings": [
+    "DeepSeek-R1-Zero首次通过大规模GRPO强化学习（无SFT）实现推理能力提升，但存在语言混合和可读性问题。",
+    "MLA通过低秩压缩KV缓存降低内存消耗；DeepSeekMoE采用细粒度专家和共享专家隔离；MTP预测多token增强训练信号；GRPO摒弃价值模型，用组内相对优势简化训练。",
+    "DeepSeek-V3采用FP8混合精度训练，结合DualPipe流水线并行、跨节点通信优化和DeepEP，大幅降低训练成本并提升效率。",
+    "DeepSeek开源模型权重和推理参数，推动技术民主化，并对LLM基础设施和后续发展路线产生深远影响。"
+  ],
+  "limitations": [
+    "长链思维推理面临计算与存储开销大、奖励机制依赖结果奖励而忽略中间步骤正确性的挑战。",
+    "安全对齐脆弱，越狱技术可在推理链中诱导不安全内容，需要在安全与性能间取得平衡。"
+  ],
+  "relation_to_deepseek": "本文完全围绕DeepSeek系列模型展开，系统综述其技术演进与范式转变，是理解DeepSeek算法与工程路线的重要综述文献。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "系统效率与部署",
+    "多模态",
+    "对齐、安全与评测",
+    "应用、生态与影响"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-V3预训练采用三种关键创新：MLA降低KV缓存、DeepSeekMoE细粒度专家、MTP预测多token。",
+      "quote": "MLA [42] reduces the model’s Key-Value (KV) cache, which lowers memory consumption and enhances training and inference efficiency; 2) The DeepSeekMoE architecture [40] utilizes finer-grained experts and designates several experts as shared, helping to balance model expressiveness with computational cost control; and 3) MTP predicts multiple tokens at once, increasing the density of training signals and thereby enhancing text generation capabilities.",
+      "page": 6
+    },
+    {
+      "claim": "GRPO算法摒弃价值模型，改用准确率奖励和格式奖励，并基于组内相对优势优化策略。",
+      "quote": "Therefore, DeepSeek employs the GRPO algorithm, which abandons the value model and substitutes it with accuracy reward and format reward, as depicted in Fig 4.",
+      "page": 9
+    },
+    {
+      "claim": "DeepSeek-V3使用FP8混合精度训练框架以降低计算和内存开销。",
+      "quote": "DeepSeek-V3 employs a mixed precision training framework that utilizes FP8 (8-bit floating point) format for most of the model’s operations [123], [124], [125]. This technique helps reduce both the computational overhead and memory usage, facilitating more efficient training without compromising model accuracy.",
+      "page": 10
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "论文作为综述，未提供原始实验数据或基准测试分数，仅引用官方技术报告结果。",
+    "未深入分析DeepSeek模型与具体竞品在各项任务上的详细量化对比。"
+  ]
+}

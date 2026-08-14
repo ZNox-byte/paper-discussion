@@ -1,0 +1,61 @@
+{
+  "task_id": "P06",
+  "paper_id": "2401.02954",
+  "title": "DeepSeek LLM: Scaling Open-Source Language Models with Longtermism",
+  "one_sentence_summary": "该论文提出了DeepSeek LLM系列模型，通过研究缩放定律来指导7B和67B模型的训练，包括超参数、模型与数据的最优分配策略，并发现数据质量影响缩放定律。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "作者采用IsoFLOP profile方法拟合缩放曲线，通过网格搜索研究超参数（批次大小和学习率）与计算预算的关系，引入非嵌入FLOPs/token作为模型规模表示，并对比不同数据集上的缩放定律。基于这些缩放定律，他们构建并训练了7B和67B模型，进行了架构调整（如67B使用GQA），并执行了SFT和DPO对齐。",
+  "data_and_training": "预训练数据集包含2万亿token（主要为中英文），采用激进的去重、过滤和重混合策略。模型架构基本遵循LLaMA，但使用多步学习率调度器。7B和67B模型分别具有30层和95层，67B采用GQA以降低推理成本。训练使用AdamW优化器，bf16精度，并采用HAI-LLM框架进行并行训练。对齐阶段收集了约150万条指令数据，进行监督微调（SFT）和直接偏好优化（DPO）。",
+  "main_contributions": [
+    "提出了超参数缩放定律：拟合出最优批次大小和学习率与计算预算的幂律公式，用于指导不同规模模型的超参数选择。",
+    "引入非嵌入FLOPs/token作为模型规模表示，替代模型参数量，并给出最优模型和数据规模的缩放公式（a=0.5243, b=0.4757），指导7B和67B模型的规模分配。",
+    "发现数据质量影响缩放定律：高质量数据下应更多分配计算预算给模型规模，这解释了先前研究结论不一致的现象。",
+    "构建并开源DeepSeek LLM 7B和67B基础模型及聊天模型，在多项基准上超越LLaMA-2 70B，并在开放评测中超过GPT-3.5。"
+  ],
+  "key_findings": [
+    "最优批次大小随计算预算增加而增大，最优学习率随计算预算增加而减小，公式为𝜂opt = 0.3118·𝐶^{−0.1250}，𝐵opt = 0.2920·𝐶^{0.3271}。",
+    "使用非嵌入FLOPs/token作为模型规模表示能更准确预测大规模模型性能，拟合得到模型缩放指数a=0.5243，数据缩放指数b=0.4757。",
+    "数据质量影响最优模型/数据分配：数据质量越高，模型缩放指数越大，数据缩放指数越小。",
+    "DeepSeek LLM 67B在代码、数学和推理基准上优于LLaMA-2 70B，DeepSeek 67B Chat在中文和英文开放评测中超过GPT-3.5。",
+    "多步学习率调度器与余弦调度器性能相当，但便于持续训练。"
+  ],
+  "limitations": [
+    "模型缺乏训练后知识的持续更新，可能产生非事实信息或幻觉。",
+    "初始中文数据不全面，可能在某些中文特定主题上表现不佳。",
+    "由于数据主要为中英文，模型在其他语言上的能力有限。",
+    "超参数缩放定律尚未考虑计算预算以外因素的影响，需要进一步研究。"
+  ],
+  "relation_to_deepseek": "该论文是DeepSeek系列模型的开山之作，奠定了后续DeepSeek模型在缩放定律、架构设计（如GQA、非嵌入FLOPs表示）和开放生态方面的基础。其提出的缩放定律指导了7B和67B模型的训练，并为后续DeepSeek Coder、DeepSeek MoE等版本提供了方法论参考。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "论文拟合了学习率与计算预算的幂律关系，用于确定最优学习率。",
+      "quote": "𝜂opt = 0.3118·𝐶−0.1250",
+      "page": 9
+    },
+    {
+      "claim": "论文拟合了批次大小与计算预算的幂律关系，用于确定最优批次大小。",
+      "quote": "𝐵opt = 0.2920·𝐶 0.3271",
+      "page": 9
+    },
+    {
+      "claim": "论文提出使用非嵌入FLOPs/token作为模型规模表示，并给出了最优模型和数据规模的缩放公式。",
+      "quote": "The specific formulae for the optimal non-embedding FLOPs/token 𝑀opt and optimal tokens 𝐷opt are as follows: 𝑀opt = 𝑀base·𝐶𝑎, 𝑀base = 0.1715, 𝑎 = 0.5243 𝐷opt = 𝐷base·𝐶𝑏, 𝐷base = 5.8316, 𝑏 = 0.4757 (4)",
+      "page": 11
+    },
+    {
+      "claim": "研究发现数据质量影响缩放定律，高质量数据导致模型缩放指数增大、数据缩放指数减小。",
+      "quote": "as data quality improves, the model scaling exponent 𝑎 gradually increases, while the data scaling exponent 𝑏 decreases",
+      "page": 12
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "作者指出需要进一步研究超参数选择的训练动力学，以及计算预算以外的因素对最优超参数的影响。",
+    "数据质量如何具体影响缩放定律的机制仍不明确，需要更多分析。"
+  ]
+}

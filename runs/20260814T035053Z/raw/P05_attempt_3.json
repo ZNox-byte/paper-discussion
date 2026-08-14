@@ -1,0 +1,49 @@
+{
+  "task_id": "P05",
+  "paper_id": "2408.12757",
+  "title": "NanoFlow: Towards Optimal Large Language Model Serving Throughput",
+  "one_sentence_summary": "NanoFlow 提出 nano-batching 的 intra-device 并行方法，将输入拆分为细粒度 nano-batches 并复制操作，使计算、内存、网络等异构资源在同一 GPU 内重叠执行，从而显著提升 LLM 在线推理吞吐。",
+  "research_question": "以 vLLM 为代表的 AI Infra Systems 如何通过内存管理、请求调度、并行执行、低精度计算与软硬件协同，提高大模型训练和在线推理的吞吐、延迟、成本效率与可靠性？",
+  "methodology": "论文首先建立 LLM serving 的代价模型，将操作分为 compute-bound、memory-bound、network-bound，通过比较内存、计算、网络三类延迟判定现代 LLM serving 整体处于 compute-bound 状态；随后提出 NanoFlow，利用 nano-batching 将输入拆分为 nano-batches，并将操作复制为 nano-operations，使使用不同资源瓶颈的 nano-operations 在同一 GPU 内并行执行；使用两阶段 auto-search（第一阶段在忽略内核干扰下用 MILP 搜索 nano-operation 数量、大小和顺序，第二阶段考虑干扰并分配 GPU 资源利用率）自动生成流水线；运行时采用异步请求调度和 KV-cache 分层卸载来执行流水线。",
+  "experimental_setup": "在 8×A100 80GB SXM GPU（LLaMA-3-8B 在单卡 A100 上）评估 LLaMA-2-70B、LLaMA-3-70B、Qwen2-72B、Deepseek-67B、Mixtral 8×7B、LLaMA-3-8B 等模型，使用 FP16 权重和激活；基线包括 vLLM、DeepSpeed-FastGen、TensorRT-LLM；数据集包括 Splitwise、LMSYS-Chat-1M、ShareGPT；实验对比离线吞吐、延迟与请求率、资源利用率，并进行消融实验。",
+  "main_contributions": [
+    "通过详细分析和经验验证指出现代 LLM serving 整体处于 compute-bound 状态，并给出理论最优吞吐模型。",
+    "提出 NanoFlow，包括自动搜索 nano-batch 流水线的 auto-search 引擎和端到端 LLM serving runtime，利用 intra-device parallelism 重叠计算、内存、网络操作。",
+    "在多种模型和实际工作负载上验证 NanoFlow 的吞吐提升，相比 state-of-the-art serving 系统平均提升 1.91×，达到理论最优吞吐的 50%-72%。"
+  ],
+  "key_findings": [
+    "现有 serving 引擎顺序执行 compute-bound、memory-bound、network-bound 操作，导致 GPU 计算利用率仅约 40%，而单个操作对其瓶颈资源的利用率约 80%。",
+    "NanoFlow 在 LLaMA-2-70B 上相比 vLLM、DeepSpeed-FastGen、TensorRT-LLM 平均取得 1.91× 吞吐提升，最高达到理论最优吞吐的 68.5%。",
+    "在 200ms 平均归一化延迟 SLO 下，NanoFlow 在 LMSYS-Chat-1M 数据集上可比 TensorRT-LLM 支撑高 1.64× 的请求率，且尾部延迟约为平均延迟的 1.07 倍。",
+    "NanoFlow 自动生成的流水线在其他流行 LLM 上达到最优吞吐的 50%-72%，显著超过 vLLM。"
+  ],
+  "limitations": [
+    "评估仅在 NVIDIA A100 80GB SXM GPU 上进行，未在 AMD、Intel 等其它加速器上验证。",
+    "NanoFlow 假设 auto-scaling、负载均衡和优先级路由由外部控制面管理，且需要充足的请求来维持大 batch。",
+    "auto-search 优先搜索可行解而非可证明最优解，并且在模型架构或工作负载显著变化时需要重新搜索。"
+  ],
+  "relation_to_topic": "该工作直接回应调查问题中关于在线推理吞吐优化的部分：不同于仅优化连续 batching 或内存管理，NanoFlow 通过 nano-batching 在单个 GPU 内重叠调度计算、内存和网络三类异构资源，从而提升 LLM serving 的吞吐与硬件利用率；同时涉及请求调度、KV-cache 管理与并行执行，但不涉及低精度计算、训练系统或可靠性。",
+  "categories": [
+    "推理服务与请求调度",
+    "并行计算与分布式执行",
+    "异构硬件与内核优化"
+  ],
+  "evidence": [
+    {
+      "claim": "NanoFlow 通过将输入拆分为更小的 nano-batches 并复制操作，使单个设备内异构资源（计算、内存、网络）可以重叠执行，这是其核心机制。",
+      "quote": "We propose NanoFlow, a novel serving framework that exploits intra-device parallelism, which overlaps the usage of heterogeneous resources within a single device. NanoFlow splits inputs into smaller nano-batches and duplicates operations to operate on each portion independently, enabling overlapping.",
+      "page": 1
+    },
+    {
+      "claim": "不同 nano-batches 之间没有数据依赖，因此使用不同资源（计算、内存、网络）的 nano-operations 可以在设备内并行执行，以提高最受限资源（计算）的利用率。",
+      "quote": "Different nano-batches do not have data dependencies. Therefore, nano-operations that use different resources—compute, memory, network—can operate on different nano-batches in parallel within a device to maximize the utilization of the most constrained resource, compute.",
+      "page": 7
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "NanoFlow 的 nano-batching 方法能否扩展到更大规模的多节点、流水线并行或 disaggregated prefill/decode 架构中？",
+    "在更长上下文、更高并发或非 NVIDIA A100 硬件上，NanoFlow 的干扰模型和 auto-search 是否仍然有效？",
+    "NanoFlow 是否可与低精度量化或稀疏化方法进一步结合以继续提升吞吐？"
+  ]
+}

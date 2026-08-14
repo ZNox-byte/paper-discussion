@@ -1,0 +1,57 @@
+{
+  "task_id": "P05",
+  "paper_id": "2512.02556",
+  "title": "DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models",
+  "one_sentence_summary": "DeepSeek-V3.2 通过引入 DeepSeek Sparse Attention（DSA）在长上下文场景中大幅降低注意力计算复杂度，同时保持与稠密注意力相当的性能，并结合可扩展强化学习和大规模智能体任务合成提升推理与工具使用能力。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "论文提出 DSA，包括 lightning indexer 和细粒度 token 选择，基于 MLA 的 MQA 模式实例化；通过两个阶段的继续预训练（密集预热训练索引器、稀疏训练调整全部参数）从 DeepSeek-V3.1-Terminus 转换到稀疏注意力；评估时对比短长上下文基准、人类偏好 Elo、长上下文外部评测及推理成本；后训练采用专家蒸馏、混合 RL（GRPO）和大规模智能体任务合成。",
+  "data_and_training": "继续预训练基于 128K 长上下文数据：密集预热 1000 步，每步 16 条 128K 序列，共 2.1B tokens；稀疏训练 15000 步，每步 480 条 128K 序列，共 943.7B tokens。后训练数据包括数学、编程、通用推理、智能体等领域的专家生成数据，以及大规模合成智能体任务（如 1827 个环境、4417 个通用智能体任务）。RL 采用 GRPO 并引入无偏 KL 估计、离策略序列掩码、保持路由和保持采样掩码等稳定技术。",
+  "main_contributions": [
+    "提出 DeepSeek Sparse Attention (DSA)，大幅降低长序列注意力计算复杂度同时保持性能。",
+    "实现可扩展强化学习框架，后训练计算量超过预训练成本的 10%，使模型与 GPT-5 可比。",
+    "构建大规模智能体任务合成管道，生成 1800+ 环境和 85,000+ 复杂提示，提升工具使用泛化能力。",
+    "开发高计算变体 DeepSeek-V3.2-Speciale，在 IMO 2025 和 IOI 2025 等竞赛中达到金牌水平。"
+  ],
+  "key_findings": [
+    "DSA 将主模型核心注意力复杂度从 O(L^2) 降至 O(Lk)，其中 k 远小于 L，显著提升长上下文效率。",
+    "在标准基准和人类偏好评估中，DeepSeek-V3.2-Exp 与稠密基线 DeepSeek-V3.1-Terminus 性能相当，没有明显退化。",
+    "独立长上下文评测（如 AA-LCR、Fiction.liveBench）显示稀疏注意力基座在长上下文任务上不退化甚至更好。",
+    "尽管 lightning indexer 仍为 O(L^2)，但由于头数少且可 FP8 实现，整体开销低，结合优化实现获得端到端加速。",
+    "DeepSeek-V3.2 在推理和智能体基准上接近或达到闭源模型水平，但 token 效率仍低于 Gemini-3.0-Pro。"
+  ],
+  "limitations": [
+    "世界知识广度仍落后于领先闭源模型，因为总训练 FLOPs 较少。",
+    "token 效率（生成长轨迹）仍不如 Gemini-3.0-Pro 等前沿模型。",
+    "复杂任务解决能力仍弱于 frontier 闭源模型。"
+  ],
+  "relation_to_deepseek": "本文是 DeepSeek-AI 团队发布的 DeepSeek-V3.2 技术报告，属于 DeepSeek 系列模型的最新版本，在 DeepSeek-V3.1-Terminus 基础上通过继续预训练引入 DSA，并采用可扩展 RL 和智能体数据合成，体现 DeepSeek 在架构效率、推理能力和开放生态上的技术路线。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "推理与强化学习",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "DSA 被设计为高效注意力机制，在长上下文场景中减少计算复杂度同时保持模型性能。",
+      "quote": "we first introduce DSA, a highly efficient attention mechanism designed to substantially reduce computational complexity. This architecture effectively addresses the efficiency bottleneck, preserving model performance even in long-context scenarios.",
+      "page": 2
+    },
+    {
+      "claim": "在与稠密注意力基线 DeepSeek-V3.1-Terminus 的对比中，DSA 未导致明显性能退化。",
+      "quote": "we do not observe substantial performance degradation compared with DeepSeek-V3.1-Terminus, on both short- and long-context tasks.",
+      "page": 5
+    },
+    {
+      "claim": "Lightning indexer 计算效率高，因其头数少且可 FP8 实现。",
+      "quote": "Given that the lightning indexer has a small number of heads and can be implemented in FP8, its computational efficiency is remarkable.",
+      "page": 3
+    }
+  ],
+  "confidence": 0.92,
+  "unanswered_questions": [
+    "论文未详细报告 DSA 在不同 top-k 值下的消融实验或对推理性能的敏感度。",
+    "未提供 DSA 在超过 128K 上下文长度时的表现。",
+    "lightning indexer 的具体实现细节和 FP8 量化方案未完全展开。"
+  ]
+}

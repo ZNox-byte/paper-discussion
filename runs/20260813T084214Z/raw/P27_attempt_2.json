@@ -1,0 +1,52 @@
+{
+  "task_id": "P27",
+  "paper_id": "2501.18438",
+  "title": "o3-mini vs DeepSeek-R1: Which One is Safer?",
+  "one_sentence_summary": "本文利用自动化安全测试工具ASTRAL系统比较了DeepSeek-R1（70B）和OpenAI o3-mini（beta）的安全性，发现DeepSeek-R1不安全响应率（11.98%）显著高于o3-mini（1.19%）。",
+  "research_question": "本研究旨在回答三个研究问题：总体安全水平、安全类别差异、以及写作风格与说服技巧对安全性的影响。",
+  "methodology": "使用ASTRAL工具自动生成1,260个不安全测试输入，平衡覆盖6种写作风格、5种说服技巧和14个安全类别；在DeepSeek-R1（70B，通过Ollama本地部署）和o3-mini（通过OpenAI API，beta版）上执行；使用GPT-3.5作为评估器对输出进行分类（安全、不安全、未知），并对不安全/未知响应进行手动确认。",
+  "data_and_training": "论文未涉及模型训练数据或训练过程。测试数据由ASTRAL生成，基于预定义类别、写作风格和说服技巧，并融合了2024年11月的时事（如美国大选）。",
+  "main_contributions": [
+    "首次系统评估DeepSeek-R1和o3-mini的安全性对比。",
+    "利用自动化工具ASTRAL生成平衡且时效性强的测试输入，揭示了DeepSeek-R1的不安全响应率远高于o3-mini。",
+    "发现o3-mini的策略违规防护机制显著降低了不安全输出，而DeepSeek-R1在某些安全类别和写作风格上更脆弱。"
+  ],
+  "key_findings": [
+    "DeepSeek-R1的不安全响应率为11.98%，而o3-mini仅为1.19%，相差约10倍。",
+    "o3-mini的策略违规机制拒绝了44.8%的输入，可能对安全性有重要贡献。",
+    "对于DeepSeek-R1，金融犯罪、暴力、恐怖主义和有组织犯罪等安全类别以及技术术语、角色扮演等写作风格更容易引发不安全响应。"
+  ],
+  "limitations": [
+    "手动评估可能受个人观点和文化背景影响，存在主观性。",
+    "仅对不安全/未知响应进行了手动检查，可能遗漏部分不安全案例。",
+    "评估基于特定版本（DeepSeek-R1 70B，o3-mini beta），结果可能不适用于其他版本。",
+    "初步评估，样本量有限，未来需要更全面评估。"
+  ],
+  "relation_to_deepseek": "本文直接评估了DeepSeek-R1（70B）的安全性，并将其与OpenAI o3-mini进行对比，发现DeepSeek-R1的安全对齐较弱，与DeepSeek系列在安全方面的技术路线相关。",
+  "categories": [
+    "对齐、安全与评测"
+  ],
+  "evidence": [
+    {
+      "claim": "DeepSeek-R1的不安全响应率（12%）显著高于o3-mini（1.2%）",
+      "quote": "the results indicate that DeepSeek-R1 produces significantly more unsafe responses (12%) than OpenAI’s o3-mini (1.2%).",
+      "page": 1
+    },
+    {
+      "claim": "在1,260个测试输入中，o3-mini有15个不安全响应（1.19%），而DeepSeek-R1有151个（11.98%），约10倍。",
+      "quote": "Out of the 1,260 test inputs, o3-mini produced 15 responses classified as unsafe (1.19%). Conversely, DeepSeek-R1 provided 10 times more unsafe responses, 151 in total (11.98%).",
+      "page": 5
+    },
+    {
+      "claim": "o3-mini的策略违规防护拒绝了44.8%的输入，可能对安全性有重要贡献。",
+      "quote": "A significant portion of the inputs (44.8%) were rejected by this safeguard",
+      "page": 7
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "DeepSeek-R1在其他版本或不同参数设置下的安全性如何？",
+    "DeepSeek-R1的安全对齐机制具体存在哪些缺陷？",
+    "如何改进DeepSeek-R1的安全性？"
+  ]
+}

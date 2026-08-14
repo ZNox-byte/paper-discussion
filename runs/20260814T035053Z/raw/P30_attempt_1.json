@@ -1,0 +1,51 @@
+{
+  "task_id": "P30",
+  "paper_id": "2605.11202",
+  "title": "Continuous Discovery of Vulnerabilities in LLM Serving Systems with Fuzzing",
+  "one_sentence_summary": "GRIEF 是一种面向 LLM 推理引擎的灰盒模糊测试工具，将带时间的多请求轨迹作为输入，通过行为、结构与关系预言机及受控重放，在 vLLM 和 SGLang 中发现 15 个漏洞（10 个开发者确认、含 2 个 CVE），涵盖 KV 缓存隔离失效、跨请求性能干扰与崩溃/存活问题。",
+  "research_question": "带时间的多请求轨迹如何揭示 LLM 服务层的可靠性与安全缺陷？",
+  "methodology": "GRIEF 将并发客户端工作负载建模为时间戳化的请求轨迹，使用时序、事件、拼接三类变异探索请求重叠、前缀缓存复用、适配器共调度与取消时机；采用行为预言机、结构预言机（KV-cache 事件）和关系预言机（logprob 辅助重放），并通过受控重放与多数投票确认可复现的服务层故障。",
+  "experimental_setup": "在 vLLM 与 SGLang 上各运行 8 小时并发模糊测试，使用 Qwen2.5-0.5B-Instruct 和 H100 GPU；状态破坏实验使用 Qwen3-8B 与 GSM8K/GSM8K-hard，对每个受害提示在 solo、benign-concurrent、attack-concurrent 三种条件下各 10 次重复；性能干扰实验维护 8 个并发受害客户端并测量 TTFT 与吞吐量；SGLang LoRA 崩溃实验在单块 H100 上约 200 次迭代内触发崩溃。",
+  "main_contributions": [
+    "将并发 LLM 推理服务定义为安全相关攻击面，表明合法请求可触发隔离、性能与存活失败。",
+    "提出 GRIEF，以带时间多请求轨迹为输入的灰盒模糊测试器，支持时序、事件、拼接变异及定向拼接。",
+    "设计分层预言机与确认管线，包括行为检查、logprob 辅助关系确认和 KV 结构取证。",
+    "在 vLLM 和 SGLang 上评估，发现 15 个潜在漏洞、10 个开发者确认，包括 2 个 CVE。"
+  ],
+  "key_findings": [
+    "KV-cache 隔离缺陷会导致跨请求输出污染，表现为 confident value pollution、reasoning-chain disturbance 和 answer-first reasoning confusion；替换触发 prompt 后污染输出仍保持 bit-identical，表明是服务状态扰动而非提示注入。",
+    "单个 API 合法请求形状可将受害者 TTFT 从约 13 ms 提高到 18.0 s（1361×），并使受害者吞吐量从约 20.1 req/s 降至 0.01 req/s；eBPF 显示共享 EngineCore 协程被反复抢占，而非普通队头阻塞。",
+    "SGLang LoRA 调度器崩溃由多个合法条件同时出现触发，使调度器活动 LoRA 视图与已加载适配器集合不一致并触发断言；崩溃延迟出现，但 GRIEF 保留完整轨迹可复现。",
+    "服务层漏洞可在无畸形输入、无显式服务器错误的情况下产生，表现为静默跨请求污染、吵闹邻居拒绝服务和延迟崩溃。"
+  ],
+  "limitations": [
+    "当前评估集中于 vLLM 和 SGLang 及代表性服务模式与硬件，其他引擎、分布式部署、硬件后端或模型架构可能需要额外适配器与遥测钩子。",
+    "GRIEF 不能证明没有 bug，其效果依赖种子、变异、反馈信号和模糊测试预算。",
+    "最强的结构预言机依赖引擎级可观测性，确认策略保守，可能漏报部分低置信度候选。",
+    "案例研究刻画的是已确认 bug 的代表性后果，而非对所有生产部署的利用性建模，实际严重性取决于租户隔离、批处理策略、限流、监控和恢复机制。"
+  ],
+  "relation_to_topic": "本文直接展示 vLLM/SGLang 等推理服务系统中，内存管理（KV cache）与请求调度（并发批处理、适配器调度、前缀共享）的工程决策会引入服务层安全/可靠性漏洞；GRIEF 以带时间请求轨迹为模糊输入，证明这些缺陷只有在并发负载下才会暴露，是 AI Infra 系统吞吐、延迟、成本与可靠性研究中不可忽略的测试维度。",
+  "categories": [
+    "推理服务与请求调度",
+    "KV Cache与内存管理",
+    "可靠性、弹性与可观测性"
+  ],
+  "evidence": [
+    {
+      "claim": "GRIEF 的核心抽象是带时间戳的请求轨迹，同时编码请求内容、请求重叠方式以及对共享服务状态的竞争，从而能够发现仅由并发工作负载结构触发的服务层缺陷。",
+      "quote": "Its core abstraction is a timedrequest trace: a sequence of events that captures not only what clients ask, but when requests overlap and how they compete for shared serving state.",
+      "page": 2
+    },
+    {
+      "claim": "单个 API 合法的攻击者请求形状可以导致无关租户的跨请求饥饿，造成严重延迟放大和吞吐量塌缩，而服务器不崩溃、不返回显式错误。",
+      "quote": "Thus, a single attacker client repeatedly issuing one API-valid request shape, using documented and permitted parameters with no malformed input, can induce cross-request starvation in a shared inference server.",
+      "page": 8
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "GRIEF 的发现是否适用于其他分布式部署、不同硬件后端和模型架构？",
+    "在真实多租户生产环境中，这些漏洞的实际可利用性和缓解措施效果如何？",
+    "如何将服务层模糊测试集成到常规 CI/CD 测试中，并设计有效的监控、告警与恢复机制？"
+  ]
+}

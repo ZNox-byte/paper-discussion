@@ -1,0 +1,10 @@
+{
+  "valid": false,
+  "errors": [
+    "title does not exactly identify the assigned paper"
+  ],
+  "warnings": [],
+  "grounded_evidence_count": 2,
+  "total_evidence_count": 2,
+  "dropped_evidence_count": 0
+}

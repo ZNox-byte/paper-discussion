@@ -1,0 +1,52 @@
+{
+  "task_id": "P09",
+  "paper_id": "2505.00551",
+  "title": "100 Days After DeepSeek-R1: A Survey on Replication Studies and More Directions for Reasoning Language Models",
+  "one_sentence_summary": "该综述系统梳理了DeepSeek-R1发布100天内的开源复现研究，重点比较SFT与RLVR中的数据集构建、算法、奖励与采样策略，提炼出小规模精选SFT数据、RL数据难度选择、KL损失取舍等关键经验。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "本文是系统综述，作者按训练流程主线对开源复现工作进行分类：先总结SFT数据集构建与训练配置，再深入分析RLVR的数据、算法、奖励、采样和训练策略，最后讨论奖励建模、偏好优化、泛化、安全、多模态与多语言等方向。结论主要基于各复现研究报告的实验结果与实现细节。",
+  "data_and_training": "该综述汇总的SFT数据主要由DeepSeek-R1蒸馏生成，覆盖数学、代码、科学、谜题等，构建流程包括多轮过滤（去重、拒绝采样、ground-truth验证）、领域特定验证（Math Verify、代码执行、LLM judge）以及难度/多样性筛选。RLVR数据强调可验证性，常见来源为数学比赛题和代码评测题，需过滤不可验证、过易或过难样本。训练流程上，SFT常用学习率1e-5/5e-5、batch size 96/128、packing与RoPE扩展；RLVR常用GRPO/PPO变体、准确性+格式/长度奖励、动态采样、课程学习与最大响应长度控制；部分工作省略KL损失。",
+  "main_contributions": [
+    "提供了DeepSeek-R1发布100天后开源复现研究的系统综述，按SFT与RLVR两条主线组织。",
+    "总结了SFT数据集构建管道、现有数据集的规模/领域/长度分布，并绘制了数学推理数据集交叉引用关系图。",
+    "梳理了RLVR的算法变体（PPO、GRPO、DAPO、Dr.GRPO等）、奖励设计、采样策略、上下文长度和KL损失等关键组件及其实验结论。",
+    "讨论了奖励建模、偏好优化、泛化、安全、多模态与多语言等增强RLM的未来方向。"
+  ],
+  "key_findings": [
+    "SFT中，LIMO（817样本）和s1K-1.1（1k样本）等极小但精心筛选的数据集可以达到强结果，说明数据质量比规模更关键。",
+    "多数复现采用Qwen2.5-Instruct作为初始检查点，且instruct模型学习效率高于base模型；仅DeepSeek-R1蒸馏系列和AM从base模型微调。",
+    "RLVR训练数据应刻意选择模型可能出错但非完全失败的样本，并过滤过易、过难、不可验证及未去污的样本。",
+    "KL损失并非大规模RL训练必需；Open-Reasoner-Zero、DAPO、Dr.GRPO、SRPO和MiMo省略KL仍表现良好，Skywork-OR1消融表明KL会限制探索。",
+    "GRPO/PPO的诸多变体在理论上差异不大，但工程改进（如clip-higher、动态采样、token级loss、长度自适应GAE）可提升稳定性与效率。",
+    "最大响应长度与渐进式长度课程影响训练效果，如DeepScaleR从8k逐步增至24k，Skywork-OR1最多32k。"
+  ],
+  "limitations": [
+    "DeepSeek官方未公开SFT与RLVR阶段的训练数据和配置，限制了对原始路线的精确复现与比较。",
+    "各复现工作的实验设置和报告口径不一致，部分对比表中的结果缺失，直接横向比较可能存在偏差。",
+    "格式奖励的有效性仍缺乏严格消融研究，且一些结论（如KL可省略）来自单一工作的消融实验，普适性有待验证。"
+  ],
+  "relation_to_deepseek": "本文以DeepSeek-R1/R1-Zero和蒸馏模型为直接研究对象，尝试回答如何复现其推理能力；重点梳理了DeepSeek开源的GRPO+规则奖励路线，并指出官方未完全开源SFT/RLVR训练数据和配置，社区复现工作通过开放数据和训练细节补充了这一空白。",
+  "categories": [
+    "训练数据与训练方法",
+    "推理与强化学习"
+  ],
+  "evidence": [
+    {
+      "claim": "在SFT复现中，较少的精心筛选样本可以取得强结果，如LIMO和s1K-1.1，而非单纯依赖扩大数据规模。",
+      "quote": "While many approaches emphasize scaling up the number of training samples to boost performance, LIMO and S1k-1.1 demonstrate that strong results can be achieved with significantly smaller, carefully curated datasets.",
+      "page": 8
+    },
+    {
+      "claim": "有效RLVR训练数据并非越难越好，而应聚焦于模型当前“会出错但非完全失败”的样本，以创造学习机会。",
+      "quote": "We observe a consistent trend: datasets used for RL training are carefully designed to include data where models are likely to make mistakes (i.e., models neither consistently succeed nor completely fail).",
+      "page": 18
+    }
+  ],
+  "confidence": 0.85,
+  "unanswered_questions": [
+    "格式奖励是否必要？其与准确性奖励的交互如何影响reward hacking？",
+    "非推理数据与推理数据在SFT中的配比和相互作用如何影响最终推理能力？",
+    "RL训练在提升推理能力的同时是否会牺牲通用性（如pass@k下降、overthinking、安全性下降）？",
+    "如何将RLVR有效扩展到多语言、多模态及更多真实世界任务？"
+  ]
+}

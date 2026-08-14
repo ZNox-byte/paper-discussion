@@ -1,0 +1,58 @@
+{
+  "task_id": "P05",
+  "paper_id": "2401.02954",
+  "title": "DeepSeek LLM: Scaling Open-Source Language Models with Longtermism",
+  "one_sentence_summary": "DeepSeek LLM 报告了在7B/67B规模上基于自研缩放定律的预训练、SFT与DPO对齐及评测，提出用非嵌入FLOPs/token表示模型规模并发现数据质量影响最优模型/数据缩放分配，67B在多项基准上超越LLaMA-2 70B，67B Chat在开放评测中超越GPT-3.5。",
+  "research_question": "DeepSeek 系列模型在架构、训练、推理、对齐、效率和开放生态方面形成了哪些关键技术路线？",
+  "methodology": "论文采用实证缩放定律研究：通过小规模网格搜索拟合批大小和学习率关于计算量的幂律关系；采用IsoFLOP profile方法拟合最优模型/数据缩放曲线，并以非嵌入FLOPs/token M替代参数N表示模型规模；在1e17至3e20 FLOPs预算、8个预算点、每点约10种模型/数据分配上实验；用多步学习率调度器复用第一阶段训练；随后构建2T token中英数据集预训练7B/67B，并用约150万指令数据SFT和DPO对齐，在公共基准、开放评测、留出集和安全性上评估。",
+  "data_and_training": "预训练数据当前包含2万亿tokens，主要中英文，经过去重（跨91个Common Crawl dump去重率89.8%）、过滤和重混合；tokenizer为BBPE，词表100015，训练词表大小102400。7B/67B均训练2.0T tokens；7B batch size 2304、lr 4.2e-4，67B batch size 4608、lr 3.2e-4；采用多步学习率调度器（80%/10%/10%阶段）而非cosine。SFT数据约150万条（helpful 120万：31.2%通用、46.6%数学、22.2%代码；safety 30万），7B微调4 epochs，67B 2 epochs；DPO训练1 epoch，lr 5e-6，batch size 512。",
+  "main_contributions": [
+    "提出DeepSeek LLM 7B/67B开源模型，在2T中英tokens上从零预训练。",
+    "建立超参数缩放定律：拟合批大小和学习率关于计算量的幂律公式。",
+    "提出用非嵌入FLOPs/token M表示模型规模，得到更准确的最优模型/数据缩放分配（a=0.5243, b=0.4757），并准确预测7B/67B性能。",
+    "发现数据质量影响缩放定律：数据质量越高，新增算力越应分配给模型扩展。",
+    "采用多步学习率调度器替代cosine，保持性能并便于持续训练。",
+    "通过SFT+DPO构建DeepSeek Chat，67B Chat在AlignBench和MT-Bench上超越GPT-3.5，安全性在Do-Not-Answer上得分97.8。"
+  ],
+  "key_findings": [
+    "最优批大小随计算量增加而增大，最优学习率随计算量增加而减小（式1）。",
+    "以非嵌入FLOPs/token表示模型规模时，小规模实验可准确预测1000×算力模型的性能。",
+    "数据质量影响最优分配：OpenWebText2上模型缩放指数a=0.578，当前in-house数据a=0.524，早期数据a=0.450；数据质量越高a越大、b越小。",
+    "DeepSeek 67B Base在MMLU 71.3 vs LLaMA2 70B 69.0，GSM8K 63.4 vs 58.4，HumanEval 42.7 vs 28.7，BBH 68.7 vs 62.9。",
+    "DeepSeek 67B Chat DPO在MT-Bench平均8.76，仅次GPT-4；AlignBench总分6.69超GPT-3.5。",
+    "67B使用GQA和更深网络（95层）而非加宽FFN；7B为30层。",
+    "多步LR调度器与cosine最终性能基本一致。"
+  ],
+  "limitations": [
+    "模型缺乏持续知识更新，可能产生非事实信息和幻觉。",
+    "初始版中文数据不全面，某些中文特定主题表现可能次优。",
+    "数据主要中英文，其他语言能力较弱。",
+    "尚未考虑计算量C之外因素对最优超参数的影响。"
+  ],
+  "relation_to_deepseek": "本论文是DeepSeek系列的第一篇基础模型技术报告，确立了开源长期主义路线和缩放定律方法论；后续DeepSeek系列工作继承了其预训练数据、架构设计、对齐管线（SFT+DPO/RL）及基础设施（HAI-LLM）。论文也预告了代码智能和MoE技术报告以及更大的改进数据集。",
+  "categories": [
+    "基础模型与架构",
+    "训练数据与训练方法",
+    "对齐、安全与评测",
+    "系统效率与部署"
+  ],
+  "evidence": [
+    {
+      "claim": "在缩放定律的指导下，DeepSeek从零构建开源语言模型并采集2万亿tokens预训练数据，这直接对应67B模型和2T数据集的设计决策。",
+      "quote": "Under the guidance of our scaling laws, we build from scratch open-source large language models, and release as much information as possible for community reference. We collect 2 trillion tokens for pre-training, primarily in Chinese and English.",
+      "page": 3
+    },
+    {
+      "claim": "缩放定律给出最优模型/数据缩放分配系数：最优模型规模（非嵌入FLOPs/token）指数a=0.5243，最优数据规模指数b=0.4757，该公式用于确定计算预算下的模型与数据配置。",
+      "quote": "The specific formulae for the optimal non-embedding FLOPs/token 𝑀opt and optimal tokens 𝐷opt are as follows:\n𝑀opt = 𝑀base·𝐶𝑎, 𝑀base = 0.1715, 𝑎 = 0.5243\n𝐷opt = 𝐷base·𝐶𝑏, 𝐷base = 5.8316, 𝑏 = 0.4757",
+      "page": 11
+    }
+  ],
+  "confidence": 0.95,
+  "unanswered_questions": [
+    "论文未公布完整的数据来源清单和去重/过滤的具体超参数。",
+    "67B模型在推理时的实际部署延迟、吞吐和硬件配置未详细报告。",
+    "数据质量与缩放定律之间的因果机制尚未被完全解释，论文仅给出直观推测。",
+    "后续DeepSeek版本（MoE、Coder等）的具体设计细节未在本文中展开。"
+  ]
+}
