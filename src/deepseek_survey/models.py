@@ -32,9 +32,15 @@ class ScreeningItem(StrictModel):
     category_hint: str
 
 
+class DeferredCandidate(StrictModel):
+    paper_id: str
+    rationale: str
+
+
 class ScreeningDecision(StrictModel):
     selection_notes: str
     selected: list[ScreeningItem]
+    deferred_candidates: list[DeferredCandidate] = Field(default_factory=list)
 
 
 class Evidence(StrictModel):

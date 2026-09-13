@@ -68,7 +68,7 @@ async def test_screening_uses_flash_and_synthesis_uses_pro(tmp_path) -> None:
         lambda _: None,
     )
     assert len(decision.selected) == 32
-    assert screening_client.models == ["deepseek-v4-flash"]
+    assert screening_client.models == [config.routing.screening]
 
     result = ResearchResult(
         task_id="P01",
@@ -164,7 +164,7 @@ async def test_screening_uses_flash_and_synthesis_uses_pro(tmp_path) -> None:
         usage=[],
     )
     assert synthesis.title == "Survey"
-    assert synthesis_client.models == ["deepseek-v4-pro"] * 4
+    assert synthesis_client.models == [config.routing.reviewer] * 4
     assert synthesis_client.thinking_modes == ["disabled"] * 4
 
     reuse_client = RecordingClient([])
@@ -182,7 +182,7 @@ async def test_screening_uses_flash_and_synthesis_uses_pro(tmp_path) -> None:
     rendered = render_report(reused, [result], {"paper-01": papers[0]})
     assert "技术演进主线：Foundation" in rendered
     assert "直接改进" not in rendered
-    assert "DeepSeek v4 Pro 结构化草稿" in rendered
+    assert "上层模型结构化草稿" in rendered
 
     bundle = build_review_bundle(
         title="Survey",
@@ -192,8 +192,9 @@ async def test_screening_uses_flash_and_synthesis_uses_pro(tmp_path) -> None:
         papers_by_id={"paper-01": papers[0]},
         pro_report_path=pro_report_path,
     )
-    assert bundle["review_status"] == "awaiting_codex_review"
+    assert bundle["review_status"] == "awaiting_review"
     assert bundle["required_outputs"] == [
-        "review/codex_review.md",
-        "report_final.md",
+        "review/main.md",
+        "review/review.md",
+        "review/decision.json",
     ]

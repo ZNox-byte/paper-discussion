@@ -21,6 +21,7 @@ class PaperContent:
     text: str
     page_count: int | None
     warning: str | None = None
+    full_text: str | None = None
 
 
 def extract_pdf_text(content: bytes) -> tuple[str, int]:
@@ -73,6 +74,9 @@ async def fetch_paper_content(
             source="pdf",
             text=truncate_paper(text, max_chars),
             page_count=page_count,
+            full_text=text,
+            warning=("Text supplied to the reader was sampled; full extracted text is saved."
+                     if len(text) > max_chars else None),
         )
     except (httpx.HTTPError, PdfReadError, ValueError, OSError) as exc:
         return PaperContent(

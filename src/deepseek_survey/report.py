@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 from .models import Paper, ResearchResult, SurveySynthesis
+from .papers import PaperContent
 
 
 def _bullets(items: list[str]) -> str:
@@ -28,6 +30,9 @@ def render_report(
     cumulative_paper_count: int | None = None,
     planned_paper_count: int | None = None,
     failed_task_count: int = 0,
+    reviewer: str = "上层模型",
+    provenance: dict[str, Any] | None = None,
+    contents: dict[str, PaperContent] | None = None,
 ) -> str:
     cumulative_paper_count = cumulative_paper_count or len(results)
     planned_paper_count = planned_paper_count or len(results)
@@ -35,7 +40,7 @@ def render_report(
     lines = [
         f"# {synthesis.title}",
         "",
-        "> 阶段产物：DeepSeek v4 Pro 结构化草稿；尚待 Codex GPT 最终审查。",
+        f"> 阶段产物：上层模型结构化草稿；尚待 {reviewer} 最终审查。",
         "",
         (
             f"> 研究轮次：第 {round_number} 轮；本轮论文：{len(results)} 篇；"
@@ -134,10 +139,21 @@ def render_report(
             "",
             synthesis.conclusion,
             "",
-            "## 逐篇阅读卡片",
-            "",
         ]
     )
+    lines.append(render_reading_cards(results, papers_by_id, contents=contents, provenance=provenance))
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_reading_cards(
+    results: list[ResearchResult],
+    papers_by_id: dict[str, Paper],
+    *,
+    contents: dict[str, PaperContent] | None = None,
+    provenance: dict[str, Any] | None = None,
+) -> str:
+    """Render the evidence appendix independently of an upper-model draft."""
+    lines = ["## 逐篇阅读卡片", ""]
     for result in sorted(results, key=lambda item: item.task_id):
         paper = papers_by_id[result.paper_id]
         lines.extend(
@@ -157,6 +173,10 @@ def render_report(
                 "",
                 _bullets(result.main_contributions),
                 "",
+                "主要发现：",
+                "",
+                _bullets(result.key_findings),
+                "",
                 "局限：",
                 "",
                 _bullets(result.limitations),
@@ -168,6 +188,28 @@ def render_report(
         for evidence in result.evidence:
             page = f"，p. {evidence.page}" if evidence.page else ""
             lines.append(f'- {evidence.claim} — “{evidence.quote}”{page}')
+        lines.append("")
+        content = (contents or {}).get(result.paper_id)
+        if content is not None:
+            lines.extend([f"- 原文来源：{content.source}", f"- 原文快照：sources/{result.task_id}.json"])
+            if content.warning:
+                lines.append(f"- 来源限制：{content.warning}")
+            if "CONTENT OMITTED" in content.text:
+                lines.append("- 来源限制：阅读文本经过截断，未覆盖完整论文。")
+        elif contents is not None:
+            lines.append("- 来源限制：原文快照缺失，引用尚需回查。")
+        trace = (provenance or {}).get(result.task_id)
+        if trace:
+            producer = trace.get("producer", trace) if isinstance(trace, dict) else {}
+            model = producer.get("model") or "未记录"
+            provider = producer.get("provider")
+            identity = f"{provider} / {model}" if provider else model
+            lines.extend([
+                "", f"- 实际阅读模型：{identity}",
+                f"- 阅读记录：[provenance/{result.task_id}.json](provenance/{result.task_id}.json)",
+            ])
+        if result.unanswered_questions:
+            lines.extend(["", "尚未确认：", "", _bullets(result.unanswered_questions)])
         lines.append("")
 
     lines.extend(["## 参考文献", ""])

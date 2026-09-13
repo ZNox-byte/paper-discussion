@@ -6,21 +6,54 @@ target_papers = 32
 output_dir = "runs"
 max_paper_chars = 180000
 
-[deepseek]
+[providers.ds]
+protocol = "deepseek"
 base_url = "https://api.deepseek.com"
-# 分阶段选型：高吞吐任务用 Flash，跨论文综合用 Pro。
-screening_model = "deepseek-v4-flash"
-reader_model = "deepseek-v4-flash"
-synthesis_model = "deepseek-v4-pro"
+api_key_env = "DEEPSEEK_API_KEY"
+max_concurrency = 32
+max_retries = 3
+timeout_seconds = 900
+
+[models.ds_flash]
+provider = "ds"
+model = "deepseek-v4-flash"
+tier = "flash"
 thinking = "enabled"
-# Pro 采用分阶段结构化汇总；关闭长 thinking，避免每个子阶段超时。
-synthesis_thinking = "disabled"
+max_output_tokens = 16000
+
+# external 模式不会调用此模型；改为 api 模式时才由它综合并终审。
+[models.ds_pro]
+provider = "ds"
+model = "deepseek-v4-pro"
+tier = "pro"
+thinking = "disabled"
+max_output_tokens = 16000
+
+[routing]
+screening = "ds_flash"
+reader = "ds_flash"
+# 配置另一个 tier = "flash" 的模型后可启用：
+# reader_fallback = "other_flash"
+reviewer = "ds_pro"
+
+[review]
+mode = "external"
+name = "Codex"
+# api 模式下，上层审查及 Flash 补读的最大轮数。
+max_rounds = 2
+
+[execution]
 reader_concurrency = 32
+max_requests = 500
+# 包含失败请求的保守 token 预算，并非货币费用；计数方法见 README。
+max_total_tokens = 10000000
+# reuse 保留通过验证的旧模型成果；strict 在模型配置变化时重新阅读。
+resume_policy = "reuse"
+
+[limits]
 max_tokens_screening = 12000
 max_tokens_reader = 8000
 max_tokens_synthesis = 16000
-request_timeout_seconds = 900
-max_retries = 5
 
 [search]
 endpoint = "https://export.arxiv.org/api/query"

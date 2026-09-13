@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 from collections.abc import Callable
+from dataclasses import asdict, replace
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +13,6 @@ from pydantic import ValidationError
 from .artifacts import new_run_directory, read_json, write_json, write_text
 from .arxiv import deterministic_rank, search_arxiv
 from .config import AppConfig
-from .deepseek import DeepSeekClient
 from .models import (
     CategoryPlan,
     CategorySynthesis,
@@ -23,7 +25,7 @@ from .models import (
     SurveySynthesis,
     SynthesisPlan,
 )
-from .papers import PaperContent, fetch_all_papers
+from .papers import PaperContent, fetch_all_papers, truncate_paper
 from .prompts import (
     READER_SYSTEM,
     SCREENING_SYSTEM,
@@ -35,8 +37,16 @@ from .prompts import (
     screening_prompt,
     survey_narrative_prompt,
 )
-from .report import render_report
-from .review import build_review_bundle, render_review_instructions
+from .provenance import (
+    fingerprint,
+    model_identity,
+    reader_alias,
+    reader_identity,
+    reviewer_alias,
+    screening_alias,
+)
+from .providers import BudgetExceededError, RoutedClient
+from .review import finalize_review, prepare_review, run_api_review
 from .rounds import RoundContext, filter_previously_selected, load_saved_round_context
 from .validation import (
     validate_category_plan,
@@ -49,6 +59,22 @@ from .validation import (
 )
 
 Progress = Callable[[str], None]
+
+
+async def _gather_settled(*coroutines: Any) -> list[Any]:
+    """Settle every sibling before persisting budgets, including on interruption."""
+    tasks = [asyncio.ensure_future(coroutine) for coroutine in coroutines]
+    try:
+        values = await asyncio.gather(*tasks, return_exceptions=True)
+    finally:
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+    for value in values:
+        if isinstance(value, BaseException):
+            raise value
+    return values
 
 
 def _screening_errors(
@@ -77,6 +103,10 @@ def _screening_errors(
     )
     if invalid_categories:
         errors.append(f"screening used unknown categories: {invalid_categories}")
+    deferred = [item.paper_id for item in decision.deferred_candidates]
+    if (len(deferred) != len(set(deferred)) or set(deferred) - candidate_ids
+            or set(deferred) & set(selected_ids) or len(deferred) > 8):
+        errors.append("deferred candidates must be up to 8 unique unselected candidate IDs")
     return decision, errors
 
 
@@ -111,7 +141,7 @@ async def discover(config: AppConfig, destination: Path, progress: Progress = pr
 
 
 async def _screen_candidates(
-    client: DeepSeekClient,
+    client: RoutedClient,
     config: AppConfig,
     papers: list[Paper],
     run_dir: Path,
@@ -141,14 +171,14 @@ async def _screen_candidates(
                 errors
             )
         progress(
-            f"[screen] requesting {config.deepseek.screening_model} "
+            f"[screen] requesting {screening_alias(config)} "
             f"(attempt {attempt + 1}/2); waiting for non-streaming response"
         )
         raw, metadata = await client.complete_json(
             system=SCREENING_SYSTEM,
             user=prompt,
             max_tokens=config.deepseek.max_tokens_screening,
-            model=config.deepseek.screening_model,
+            model=screening_alias(config),
         )
         metadata.update({"stage": "screening", "attempt": attempt + 1})
         usage.append(metadata)
@@ -159,12 +189,28 @@ async def _screen_candidates(
             progress(f"[screen] selected exactly {target} papers from {pool_size} candidates")
             return decision
         write_json(run_dir / "screening" / f"errors_attempt_{attempt + 1}.json", errors)
-    raise RuntimeError(f"DeepSeek screening failed validation twice: {errors}")
+    raise RuntimeError(f"Screening failed validation twice: {errors}")
+
+
+def _reader_input(
+    config: AppConfig, task_id: str, paper: Paper,
+    screening: ScreeningItem, content: PaperContent,
+) -> str:
+    return fingerprint({
+        "system": READER_SYSTEM,
+        "prompt": reader_prompt(
+            task_id=task_id, paper=paper, screening=screening, content=content,
+            research_question=config.project.research_question,
+            language=config.project.language, categories=config.categories,
+        ),
+        "schema": ResearchResult.model_json_schema(),
+        "validation": asdict(config.validation),
+    })
 
 
 async def _read_one(
     *,
-    client: DeepSeekClient,
+    client: RoutedClient,
     config: AppConfig,
     run_dir: Path,
     task_id: str,
@@ -175,8 +221,16 @@ async def _read_one(
     usage: list[dict[str, Any]],
 ) -> ResearchResult:
     errors: list[str] = []
+    primary = reader_alias(config)
+    routing = getattr(config, "routing", None)
+    fallback = routing.reader_fallback if routing else None
+    attempts = [primary] * (config.validation.max_repair_attempts + 1)
+    if fallback and fallback != primary:
+        attempts.append(fallback)
+    input_sha256 = _reader_input(config, task_id, paper, screening, content)
+    first_attempt = len(list((run_dir / "raw").glob(f"{task_id}_attempt_*.json")))
     async with semaphore:
-        for attempt in range(config.validation.max_repair_attempts + 1):
+        for attempt, model in enumerate(attempts, start=first_attempt + 1):
             prompt = reader_prompt(
                 task_id=task_id,
                 paper=paper,
@@ -192,13 +246,19 @@ async def _read_one(
                     system=READER_SYSTEM,
                     user=prompt,
                     max_tokens=config.deepseek.max_tokens_reader,
-                    model=config.deepseek.reader_model,
+                    model=model,
                 )
-            except Exception as exc:
-                raise RuntimeError(f"{task_id} API request failed: {exc}") from exc
-            metadata.update({"stage": "reading", "task_id": task_id, "attempt": attempt + 1})
+            except BudgetExceededError:
+                raise
+            except Exception as exc:  # noqa: BLE001 -- isolate provider failures per reading task
+                errors = [f"API request failed ({type(exc).__name__}): {exc}"]
+                write_json(run_dir / "raw" / f"{task_id}_attempt_{attempt}.json",
+                           {"error": errors[0], "model_alias": model})
+                continue
+            metadata.update({"stage": "reading", "task_id": task_id, "attempt": attempt,
+                             "model_alias": model})
             usage.append(metadata)
-            write_json(run_dir / "raw" / f"{task_id}_attempt_{attempt + 1}.json", raw)
+            write_json(run_dir / "raw" / f"{task_id}_attempt_{attempt}.json", raw)
             result, validation = validate_research_result(
                 raw,
                 task_id=task_id,
@@ -208,19 +268,27 @@ async def _read_one(
                 config=config.validation,
             )
             write_json(
-                run_dir / "validation" / f"{task_id}_attempt_{attempt + 1}.json",
+                run_dir / "validation" / f"{task_id}_attempt_{attempt}.json",
                 validation,
             )
             errors = validation.errors
             if result is not None and validation.valid:
                 write_json(run_dir / "results" / f"{task_id}.json", result)
+                write_json(run_dir / "provenance" / f"{task_id}.json", {
+                    "schema_version": 1,
+                    "created_at": datetime.now(UTC).isoformat(),
+                    "input_sha256": input_sha256,
+                    "result_sha256": fingerprint(result.model_dump(mode="json")),
+                    "model_identity": reader_identity(config),
+                    "producer": {**model_identity(config, model), **metadata},
+                })
                 return result
     raise RuntimeError(f"{task_id} failed evidence/schema validation: {errors}")
 
 
 async def _run_readers(
     *,
-    client: DeepSeekClient,
+    client: RoutedClient,
     config: AppConfig,
     run_dir: Path,
     task_specs: list[tuple[str, Paper, ScreeningItem]],
@@ -228,7 +296,9 @@ async def _run_readers(
     usage: list[dict[str, Any]],
     progress: Progress,
 ) -> list[ResearchResult]:
-    semaphore = asyncio.Semaphore(config.deepseek.reader_concurrency)
+    execution = getattr(config, "execution", None)
+    concurrency = execution.reader_concurrency if execution else config.deepseek.reader_concurrency
+    semaphore = asyncio.Semaphore(concurrency)
     results: list[ResearchResult] = []
     failures: list[str] = []
     finished = 0
@@ -238,6 +308,19 @@ async def _run_readers(
         existing_path = run_dir / "results" / f"{task_id}.json"
         if existing_path.exists():
             existing_raw = read_json(existing_path)
+            provenance_path = run_dir / "provenance" / f"{task_id}.json"
+            provenance = read_json(provenance_path) if provenance_path.exists() else None
+            strict = execution and execution.resume_policy == "strict"
+            expected_input = _reader_input(
+                config, task_id, paper, screening, contents[paper.paper_id]
+            )
+            cache_matches = bool(provenance and (
+                provenance.get("input_sha256") == expected_input
+                and provenance.get("result_sha256") == fingerprint(existing_raw)
+                and (not strict or provenance.get("model_identity") == reader_identity(config))
+            ))
+            if provenance is None and not strict:
+                cache_matches = True
             existing, report = validate_research_result(
                 existing_raw,
                 task_id=task_id,
@@ -246,7 +329,15 @@ async def _run_readers(
                 allowed_categories=config.categories,
                 config=config.validation,
             )
-            if existing is not None and report.valid:
+            if existing is not None and report.valid and cache_matches:
+                if provenance is None:
+                    write_json(provenance_path, {
+                        "schema_version": 1,
+                        "input_sha256": expected_input,
+                        "result_sha256": fingerprint(existing_raw),
+                        "model_identity": None,
+                        "producer": {"origin": "legacy_unknown"},
+                    })
                 return existing
         return await _read_one(
             client=client,
@@ -262,23 +353,29 @@ async def _run_readers(
 
     # All 32 coroutines are scheduled at once; the default semaphore permits all 32 API calls.
     pending = [asyncio.create_task(execute(spec), name=spec[0]) for spec in task_specs]
-    for completed in asyncio.as_completed(pending):
-        try:
-            result = await completed
-            results.append(result)
-            finished += 1
-            progress(
-                f"[read] {result.task_id} validated; {len(results)}/{len(task_specs)} passed, "
-                f"{finished}/{len(task_specs)} finished"
-            )
-        # Keep collecting successful siblings so a resumed run can reuse their artifacts.
-        except Exception as exc:  # noqa: BLE001
-            failures.append(str(exc))
-            finished += 1
-            progress(
-                f"[read] task failed: {exc}; {len(results)}/{len(task_specs)} passed, "
-                f"{finished}/{len(task_specs)} finished"
-            )
+    try:
+        for completed in asyncio.as_completed(pending):
+            try:
+                result = await completed
+                results.append(result)
+                finished += 1
+                progress(
+                    f"[read] {result.task_id} validated; {len(results)}/{len(task_specs)} passed, "
+                    f"{finished}/{len(task_specs)} finished"
+                )
+            # Keep successful siblings so a resumed run can reuse their artifacts.
+            except Exception as exc:  # noqa: BLE001
+                failures.append(str(exc))
+                finished += 1
+                progress(
+                    f"[read] task failed: {exc}; {len(results)}/{len(task_specs)} passed, "
+                    f"{finished}/{len(task_specs)} finished"
+                )
+    finally:
+        for task in pending:
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
 
     write_json(run_dir / "failures.json", failures)
     return sorted(results, key=lambda item: item.task_id)
@@ -286,7 +383,7 @@ async def _run_readers(
 
 async def _synthesize(
     *,
-    client: DeepSeekClient,
+    client: RoutedClient,
     config: AppConfig,
     run_dir: Path,
     results: list[ResearchResult],
@@ -295,6 +392,21 @@ async def _synthesize(
     progress: Progress | None = None,
 ) -> SurveySynthesis:
     report_progress = progress or (lambda _message: None)
+    # Every synthesis cache belongs to exact cards, prompts and upper model settings.
+    cache_key = fingerprint({
+        "results": [r.model_dump(mode="json") for r in results],
+        "papers": {key: paper.model_dump(mode="json")
+                   for key, paper in (papers_by_id or {}).items()},
+        "model": model_identity(config, reviewer_alias(config)),
+        "max_tokens_synthesis": config.deepseek.max_tokens_synthesis,
+        "synthesis_thinking": config.deepseek.synthesis_thinking,
+        "question": config.project.research_question,
+        "categories": config.categories,
+        "language": config.project.language,
+        "prompts": Path(__file__).with_name("prompts.py").read_text(encoding="utf-8"),
+    })
+    write_json(run_dir / "upper" / "current.json", {"input_sha256": cache_key})
+    run_dir = run_dir / "upper" / cache_key
     task_ids = {result.task_id for result in results}
     final_path = run_dir / "synthesis" / "evolution_validated.json"
     if final_path.exists():
@@ -304,7 +416,7 @@ async def _synthesize(
             allowed_categories=config.categories,
         )
         if saved is not None and not saved_errors:
-            report_progress("[synthesis] reusing complete validated Pro evolution synthesis")
+            report_progress("[synthesis] reusing validated upper-model synthesis")
             return saved
 
     plan_path = run_dir / "synthesis" / "plan_validated.json"
@@ -345,14 +457,14 @@ async def _synthesize(
                         + "\n- ".join(classification_errors)
                     )
                 report_progress(
-                    f"[synthesis-classify] requesting {config.deepseek.synthesis_model} "
+                    f"[synthesis-classify] requesting {reviewer_alias(config)} "
                     f"(attempt {attempt + 1}/2)"
                 )
                 raw, metadata = await client.complete_json(
                     system=SYNTHESIS_SYSTEM,
                     user=prompt,
                     max_tokens=min(config.deepseek.max_tokens_synthesis, 5_000),
-                    model=config.deepseek.synthesis_model,
+                    model=reviewer_alias(config),
                     thinking=config.deepseek.synthesis_thinking,
                 )
                 metadata.update(
@@ -453,7 +565,7 @@ async def _synthesize(
                         system=SYNTHESIS_SYSTEM,
                         user=prompt,
                         max_tokens=min(config.deepseek.max_tokens_synthesis, 4_000),
-                        model=config.deepseek.synthesis_model,
+                        model=reviewer_alias(config),
                         thinking=config.deepseek.synthesis_thinking,
                     )
                     metadata.update(
@@ -480,7 +592,7 @@ async def _synthesize(
                         return category_plan
             raise RuntimeError(f"Category planning failed twice for {category}: {errors}")
 
-        category_plans = await asyncio.gather(
+        category_plans = await _gather_settled(
             *[
                 plan_category(index, category, assigned_ids)
                 for index, (category, assigned_ids) in enumerate(
@@ -542,7 +654,7 @@ async def _synthesize(
                     system=SYNTHESIS_SYSTEM,
                     user=prompt,
                     max_tokens=min(config.deepseek.max_tokens_synthesis, 6_000),
-                    model=config.deepseek.synthesis_model,
+                    model=reviewer_alias(config),
                     thinking=config.deepseek.synthesis_thinking,
                 )
                 metadata.update(
@@ -568,7 +680,7 @@ async def _synthesize(
             f"Category synthesis failed twice for {category_plan.category}: {errors}"
         )
 
-    category_syntheses = await asyncio.gather(
+    category_syntheses = await _gather_settled(
         *[
             synthesize_category(index, category_plan)
             for index, category_plan in enumerate(plan.categories, start=1)
@@ -602,14 +714,14 @@ async def _synthesize(
                     + "\n- ".join(narrative_errors)
                 )
             report_progress(
-                f"[synthesis-narrative] requesting {config.deepseek.synthesis_model} "
+                f"[synthesis-narrative] requesting {reviewer_alias(config)} "
                 f"(attempt {attempt + 1}/2)"
             )
             raw, metadata = await client.complete_json(
                 system=SYNTHESIS_SYSTEM,
                 user=prompt,
                 max_tokens=min(config.deepseek.max_tokens_synthesis, 8_000),
-                model=config.deepseek.synthesis_model,
+                model=reviewer_alias(config),
                 thinking=config.deepseek.synthesis_thinking,
             )
             metadata.update(
@@ -657,16 +769,141 @@ async def _synthesize(
     return validated
 
 
+async def _prepare_sources(
+    config: AppConfig, run_dir: Path,
+    task_specs: list[tuple[str, Paper, ScreeningItem]],
+) -> dict[str, PaperContent]:
+    contents: dict[str, PaperContent] = {}
+    missing: list[Paper] = []
+    manifest_path = run_dir / "sources" / "manifest.json"
+    saved_manifest = read_json(manifest_path) if manifest_path.exists() else {}
+    focus_path = run_dir / "review" / "reread_focus.json"
+    focus = read_json(focus_path) if focus_path.exists() else {}
+    for task_id, paper, _ in task_specs:
+        path = run_dir / "sources" / f"{task_id}.json"
+        entry = saved_manifest.get(task_id, {})
+        if path.exists() and hashlib.sha256(path.read_bytes()).hexdigest() == entry.get("sha256"):
+            saved = read_json(path)
+            if saved.get("paper_sha256") == fingerprint(paper.model_dump(mode="json")):
+                full_text = saved.get("full_text") or saved["text"]
+                text = (full_text if task_id in focus
+                        else truncate_paper(full_text, config.project.max_paper_chars))
+                contents[paper.paper_id] = PaperContent(
+                    paper_id=paper.paper_id, source=saved["source"], text=text,
+                    page_count=saved.get("page_count"), warning=saved.get("warning"),
+                    full_text=full_text,
+                )
+                continue
+        missing.append(paper)
+    if missing:
+        contents.update(await fetch_all_papers(
+            missing, max_chars=config.project.max_paper_chars,
+            concurrency=config.search.download_concurrency,
+            timeout_seconds=config.search.request_timeout_seconds,
+        ))
+    manifest = {}
+    for task_id, paper, _ in task_specs:
+        content = contents[paper.paper_id]
+        if task_id in focus and content.full_text:
+            content = replace(content, text=content.full_text)
+            contents[paper.paper_id] = content
+        path = run_dir / "sources" / f"{task_id}.json"
+        write_json(path, {
+            **asdict(content), "full_text": content.full_text or content.text,
+            "paper_sha256": fingerprint(paper.model_dump(mode="json")),
+            "sampled": (content.full_text or content.text) != content.text,
+        })
+        manifest[task_id] = {
+            "path": f"sources/{task_id}.json", "paper_id": paper.paper_id,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "source": content.source, "warning": content.warning,
+        }
+    write_json(manifest_path, manifest)
+    return contents
+
+
+def _set_reread_focus(
+    run_dir: Path, task_specs: list[tuple[str, Paper, ScreeningItem]],
+    requests: list[dict[str, Any]],
+) -> None:
+    focus_path = run_dir / "review" / "reread_focus.json"
+    focus = read_json(focus_path) if focus_path.exists() else {}
+    allowed = {task_id for task_id, _, _ in task_specs}
+    for request in requests:
+        if (not isinstance(request, dict) or request.get("task_id") not in allowed
+                or not isinstance(request.get("question"), str)
+                or not request["question"].strip()):
+            raise ValueError("补读请求必须包含本轮有效 task_id 和非空 question")
+        task_id = request["task_id"]
+        original = next(item for task, _, item in task_specs if task == task_id)
+        focus[task_id] = {
+            "reading_focus": f"{original.reading_focus}\nUpper reviewer request: "
+                             f"{request['question']}",
+            "question": request["question"], "reason": request.get("reason", ""),
+        }
+    if requests:
+        write_json(focus_path, focus)
+    for index, (task_id, paper, item) in enumerate(task_specs):
+        if task_id in focus:
+            task_specs[index] = (task_id, paper, item.model_copy(update={
+                "reading_focus": focus[task_id]["reading_focus"],
+            }))
+
+
+async def _reread_requested(
+    client: Any, config: AppConfig, run_dir: Path,
+    task_specs: list[tuple[str, Paper, ScreeningItem]], contents: dict[str, PaperContent],
+    results: list[ResearchResult], requests: list[dict[str, Any]],
+    usage: list[dict[str, Any]], progress: Progress,
+) -> list[ResearchResult]:
+    _set_reread_focus(run_dir, task_specs, requests)
+    contents.update(await _prepare_sources(config, run_dir, task_specs))
+    requested = {request["task_id"] for request in requests}
+    result_map = {result.task_id: result for result in results}
+    semaphore = asyncio.Semaphore(config.execution.reader_concurrency)
+    for task_id, paper, item in task_specs:
+        if task_id not in requested:
+            continue
+        progress(f"[reread] {task_id}: focused Flash reread using saved full text")
+        result_map[task_id] = await _read_one(
+            client=client, config=config, run_dir=run_dir, task_id=task_id,
+            paper=paper, screening=item, content=contents[paper.paper_id],
+            semaphore=semaphore, usage=usage,
+        )
+    failures_path = run_dir / "failures.json"
+    if failures_path.exists():
+        write_json(failures_path, [failure for failure in read_json(failures_path)
+                                  if not any(str(failure).startswith(f"{task} ")
+                                             for task in requested)])
+    return sorted(result_map.values(), key=lambda result: result.task_id)
+
+
 async def run_pipeline(
     config: AppConfig,
-    client: DeepSeekClient,
+    client: RoutedClient,
     *,
     candidates_path: Path | None = None,
     resume_dir: Path | None = None,
     round_context: RoundContext | None = None,
+    reread_requests: list[dict[str, Any]] | None = None,
     progress: Progress = print,
 ) -> Path:
     run_dir = resume_dir.resolve() if resume_dir else new_run_directory(config.project.output_dir)
+    configuration = {
+        "routing": asdict(config.routing), "review": asdict(config.review),
+        "execution": asdict(config.execution),
+        "models": {alias: model_identity(config, alias) for alias in config.models},
+        "question": config.project.research_question, "language": config.project.language,
+        "categories": config.categories, "max_paper_chars": config.project.max_paper_chars,
+        "validation": asdict(config.validation),
+        "limits": {"screening": config.deepseek.max_tokens_screening,
+                   "reader": config.deepseek.max_tokens_reader,
+                   "synthesis": config.deepseek.max_tokens_synthesis},
+        "prompt_version": fingerprint(
+            Path(__file__).with_name("prompts.py").read_text(encoding="utf-8")
+        ),
+    }
+    previous_manifest: dict[str, Any] = {}
     if resume_dir and (run_dir / "run.json").exists():
         previous_manifest = read_json(run_dir / "run.json")
         previous_title = previous_manifest.get("title")
@@ -675,6 +912,20 @@ async def run_pipeline(
                 "续跑目录的研究主题与当前 config.toml 不匹配；"
                 "请恢复该轮原配置，或不带 --resume 启动新的研究系列。"
             )
+        if (previous_manifest.get("status") == "completed" and not reread_requests
+                and fingerprint(previous_manifest.get("configuration")) == fingerprint(configuration)):
+            source_manifest_path = run_dir / "sources" / "manifest.json"
+            source_manifest = read_json(source_manifest_path) if source_manifest_path.exists() else {}
+            sources_unchanged = bool(source_manifest) and all(
+                (run_dir / "sources" / f"{task_id}.json").is_file()
+                and hashlib.sha256((run_dir / "sources" / f"{task_id}.json").read_bytes()).hexdigest()
+                == entry.get("sha256")
+                for task_id, entry in source_manifest.items()
+            )
+            if sources_unchanged:
+                finalize_review(run_dir)
+                progress("[resume] approved result and source snapshots remain valid; no API calls")
+                return run_dir
     run_dir.mkdir(parents=True, exist_ok=True)
     if resume_dir:
         round_context = load_saved_round_context(run_dir)
@@ -684,6 +935,8 @@ async def run_pipeline(
     usage: list[dict[str, Any]] = (
         list(read_json(usage_path)) if resume_dir and usage_path.exists() else []
     )
+    if resume_dir and hasattr(client, "restore_budget") and (run_dir / "budget.json").exists():
+        client.restore_budget(read_json(run_dir / "budget.json"))
     manifest: dict[str, Any] = {
         "status": "running",
         "title": config.project.title,
@@ -691,12 +944,18 @@ async def run_pipeline(
         "parent_run": str(round_context.parent_run) if round_context.parent_run else None,
         "previous_paper_count": len(round_context.previous_papers),
         "target_papers": config.project.target_papers,
+        "schema_version": 3,
         "models": {
-            "screening": config.deepseek.screening_model,
-            "reading": config.deepseek.reader_model,
-            "synthesis": config.deepseek.synthesis_model,
+            "screening": screening_alias(config), "reading": reader_alias(config),
+            "reviewer": config.routing.reviewer if config.review.mode == "api"
+            else config.review.name,
         },
-        "reader_concurrency": config.deepseek.reader_concurrency,
+        "configuration": configuration,
+        "configuration_history": [
+            *previous_manifest.get("configuration_history", []),
+            {"started_at": datetime.now(UTC).isoformat(), "configuration": configuration},
+        ],
+        "reader_concurrency": config.execution.reader_concurrency,
         "run_directory": str(run_dir),
     }
     write_json(run_dir / "run.json", manifest)
@@ -730,6 +989,16 @@ async def run_pipeline(
         )
 
         if resume_dir and saved_selection.exists():
+            previous_config = previous_manifest.get("configuration", {})
+            if previous_config.get("question", config.project.research_question) != (
+                config.project.research_question
+            ) or previous_config.get("categories", list(config.categories)) != list(config.categories):
+                raise ValueError("研究问题或分类体系已改变，请新建一轮以重新筛选论文。")
+            if config.execution.resume_policy == "strict" and previous_config:
+                old_alias = previous_config.get("routing", {}).get("screening")
+                old_model = previous_config.get("models", {}).get(old_alias)
+                if old_model != model_identity(config, screening_alias(config)):
+                    raise ValueError("严格续跑不能混用旧筛选模型；请新建运行以比较筛选结果。")
             decision = ScreeningDecision.model_validate(read_json(saved_selection))
             _, errors = _screening_errors(
                 decision.model_dump(),
@@ -766,6 +1035,7 @@ async def run_pipeline(
                 _task_instruction(task_id, paper, selected, config.categories),
             )
         write_json(run_dir / "tasks" / "manifest.json", task_manifest)
+        _set_reread_focus(run_dir, task_specs, reread_requests or [])
         current_round_papers = [
             {
                 "round_number": round_context.round_number,
@@ -789,13 +1059,7 @@ async def run_pipeline(
         )
 
         progress("[prepare] downloading/extracting the 32 selected papers")
-        selected_papers = [spec[1] for spec in task_specs]
-        contents = await fetch_all_papers(
-            selected_papers,
-            max_chars=config.project.max_paper_chars,
-            concurrency=config.search.download_concurrency,
-            timeout_seconds=config.search.request_timeout_seconds,
-        )
+        contents = await _prepare_sources(config, run_dir, task_specs)
         write_json(
             run_dir / "content_status.json",
             [
@@ -811,8 +1075,8 @@ async def run_pipeline(
         )
 
         progress(
-            f"[read] scheduling {len(task_specs)} tasks on {config.deepseek.reader_model} "
-            f"with concurrency {config.deepseek.reader_concurrency}"
+            f"[read] scheduling {len(task_specs)} tasks on {reader_alias(config)} "
+            f"with concurrency {config.execution.reader_concurrency}"
         )
         results = await _run_readers(
             client=client,
@@ -842,74 +1106,77 @@ async def run_pipeline(
             for category in config.categories
         }
         write_json(run_dir / "reader_classification.json", reader_classification)
-        synthesis = await _synthesize(
-            client=client,
-            config=config,
-            run_dir=run_dir,
-            results=results,
-            usage=usage,
-            papers_by_id=papers_by_id,
-            progress=progress,
-        )
-        final_classification = {
-            section.category: section.paper_ids for section in synthesis.category_syntheses
-        }
-        write_json(run_dir / "classification.json", final_classification)
-        pro_report = render_report(
-            synthesis,
-            results,
-            papers_by_id,
-            round_number=round_context.round_number,
-            cumulative_paper_count=len(corpus),
-            planned_paper_count=len(task_specs),
-            failed_task_count=len(failures),
-        )
-        pro_report_path = run_dir / "report_pro.md"
-        write_text(pro_report_path, pro_report)
-        review_bundle = build_review_bundle(
-            title=config.project.title,
-            research_question=config.project.research_question,
-            synthesis=synthesis,
-            results=results,
-            papers_by_id=papers_by_id,
-            pro_report_path=pro_report_path,
-        )
-        review_bundle_path = run_dir / "review" / "review_bundle.json"
-        write_json(review_bundle_path, review_bundle)
-        write_text(
-            run_dir / "review" / "instructions.md",
-            render_review_instructions(pro_report_path),
-        )
-        write_json(
-            run_dir / "review" / "status.json",
-            {
-                "status": "awaiting_codex_review",
-                "reviewer": "Codex GPT",
-                "pro_report": str(pro_report_path),
-                "review_bundle": str(review_bundle_path),
-            },
-        )
-        write_json(run_dir / "api_usage.json", usage)
-        manifest["status"] = "awaiting_codex_review"
-        manifest["pro_synthesis_status"] = (
-            "completed_with_gaps" if failures else "completed"
-        )
         manifest["validated_results"] = len(results)
         manifest["failed_results"] = len(failures)
-        manifest["synthesis_schema_version"] = 2
-        manifest["pro_report"] = str(pro_report_path)
-        manifest["review_bundle"] = str(review_bundle_path)
-        if (run_dir / "report.md").exists():
-            manifest["legacy_report"] = str(run_dir / "report.md")
+        manifest["failed_tasks"] = failures
+        manifest["status"] = "awaiting_review"
         write_json(run_dir / "run.json", manifest)
-        progress(
-            f"[pro-done] structured draft written to {pro_report_path}; "
-            "awaiting Codex review"
-        )
+        selected_ids = {item.paper_id for item in decision.selected}
+        screening_record = {
+            "decision": decision.model_dump(mode="json"),
+            "unselected_candidates": [paper.model_dump(mode="json") for paper in eligible_papers
+                                      if paper.paper_id not in selected_ids],
+        }
+        write_json(run_dir / "screening" / "triage.json", screening_record)
+        for review_round in range(config.review.max_rounds):
+            failures = read_json(run_dir / "failures.json")
+            current_manifest = read_json(run_dir / "run.json")
+            current_manifest.update({"validated_results": len(results),
+                                     "failed_results": len(failures), "failed_tasks": failures})
+            write_json(run_dir / "run.json", current_manifest)
+            synthesis = None
+            if config.review.mode == "api":
+                progress(f"[upper] synthesis and review use {reviewer_alias(config)}")
+                synthesis = await _synthesize(
+                    client=client, config=config, run_dir=run_dir, results=results,
+                    usage=usage, papers_by_id=papers_by_id, progress=progress,
+                )
+            provenance = {
+                result.task_id: read_json(run_dir / "provenance" / f"{result.task_id}.json")
+                for result in results
+            }
+            bundle = prepare_review(
+                run_dir, config, results, papers_by_id, contents=contents,
+                usage=usage, synthesis=synthesis, screening=screening_record,
+                provenance=provenance, failures=failures,
+            )
+            if config.review.mode == "external":
+                progress(f"[review] evidence package ready for {config.review.name}: "
+                         f"{run_dir / 'review_bundle.json'}")
+                break
+            review_decision = await run_api_review(
+                client=client, config=config, run_dir=run_dir, bundle=bundle,
+                synthesis=synthesis, usage=usage,
+            )
+            if review_decision["decision"] == "approved":
+                finalize_review(run_dir)
+                progress("[review] final report approved and written")
+                break
+            requests = review_decision.get("reread_requests", [])
+            if not requests or review_round + 1 >= config.review.max_rounds:
+                progress("[review] further evidence or revisions needed; see review/decision.json")
+                break
+            results = await _reread_requested(
+                client, config, run_dir, task_specs, contents, results, requests, usage, progress
+            )
         return run_dir
+    except asyncio.CancelledError:
+        manifest = read_json(run_dir / "run.json")
+        manifest["status"] = "interrupted"
+        write_json(run_dir / "run.json", manifest)
+        raise
     except Exception as exc:
+        if (run_dir / "run.json").exists():
+            manifest = read_json(run_dir / "run.json")
         manifest["status"] = "failed"
         manifest["error"] = str(exc)
         write_json(run_dir / "api_usage.json", usage)
         write_json(run_dir / "run.json", manifest)
         raise
+    finally:
+        write_json(run_dir / "api_usage.json", usage)
+        if hasattr(client, "events"):
+            events_path = run_dir / "api_attempts.json"
+            previous_events = read_json(events_path) if events_path.exists() else []
+            write_json(events_path, [*previous_events, *client.events])
+            write_json(run_dir / "budget.json", client.budget_status)
