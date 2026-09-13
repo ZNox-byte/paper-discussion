@@ -5,12 +5,14 @@ import json
 from .models import CategoryPlan, CategorySynthesis, Paper, ResearchResult, ScreeningItem
 from .papers import PaperContent
 
-SCREENING_SYSTEM = """You are the senior editor of a rigorous AI infrastructure systems literature survey.
+SCREENING_SYSTEM = """You are the editor of a rigorous research literature survey.
 Select real papers only from the supplied candidate metadata. Return one JSON object, without
-Markdown. Do not invent IDs. Balance foundational systems papers with high-relevance work on
-serving, scheduling, memory management, distributed execution, training infrastructure,
-low-precision computation, kernels, reliability, and performance evaluation. Prefer primary
-systems research, coverage diversity, and papers whose abstract provides enough evidence."""
+Markdown. Do not invent IDs. Follow the user's specific research question and requested emphasis.
+Do not substitute a predefined topic or choose an algorithm-versus-experiments focus for the user.
+Prefer relevant primary research, coverage diversity, and papers with sufficient evidence.
+When the question asks for experimental performance, prioritize papers reporting the requested
+metrics, datasets, baselines and conditions; when it asks about methods, prioritize mechanisms
+and assumptions. Recency is not proof that a method is state of the art."""
 
 
 def screening_prompt(
@@ -61,7 +63,7 @@ Candidate metadata JSON:
 {json.dumps(candidates, ensure_ascii=False)}"""
 
 
-READER_SYSTEM = """You are one of 32 parallel scholarly systems-paper readers. Analyze only the supplied
+READER_SYSTEM = """You are a scholarly paper reader. Analyze only the supplied
 paper text. Return a single JSON object without Markdown. Never rely on memory to fill missing
 details. Distinguish claims stated by the paper from your interpretation. Evidence quotes must be
 short, exact, verbatim substrings from the supplied text; include the visible [PAGE N] number when
@@ -111,6 +113,11 @@ Requirements:
    from the supplied text; do not paraphrase inside quote. For PDF text, copy the visible page
    number belonging to that quote.
 4. Never claim experiments, data, numbers, or limitations absent from the supplied text.
+   Follow the user's research question, including its specific emphasis and comparison conditions.
+   If experimental results are requested, record reported metric values, units, datasets, baselines,
+   hardware and settings in experimental_setup and key_findings with supporting quotes and pages.
+   Distinguish authors' measurements from independent replications; mark missing values as not reported.
+   If method details are requested, explain the mechanism, assumptions, complexity and trade-offs.
 5. Output valid JSON matching this JSON Schema:
 {json.dumps(schema, ensure_ascii=False)}
 {correction}
@@ -119,7 +126,7 @@ SUPPLIED PAPER TEXT START
 SUPPLIED PAPER TEXT END"""
 
 
-SYNTHESIS_SYSTEM = """You are the chief systems-literature editor synthesizing independently
+SYNTHESIS_SYSTEM = """You are the chief research-literature editor synthesizing independently
 validated paper reports. Build explicit technical evolution threads, not folders of loosely related
 papers. Distinguish direct improvement, mechanism extension, alternative, orthogonal work, and
 evaluation. Never claim that one paper improves another unless the supplied reports support that

@@ -1,6 +1,6 @@
 "use strict";
 const $ = (s, root = document) => root.querySelector(s);
-const state = { index: null, run: null, route: 'results', tab: 'read', version: '', query: '', category: '', source: '', scope: 'current', compare: new Set(), drawer: null, cumulative: null };
+const state = { index: null, run: null, route: 'results', tab: 'read', version: '', query: '', category: '', source: '', scope: 'current', sort: 'newest', compare: new Set(), drawer: null, cumulative: null };
 const icons = {
   book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 3H20v19H6.5A2.5 2.5 0 0 1 4 19.5v-14A2.5 2.5 0 0 1 6.5 3Z"/>',
   grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
@@ -73,7 +73,7 @@ function markdown(text, { title = false, prefix = 'section' } = {}) {
   return { html, toc };
 }
 
-async function api(url) { const response = await fetch(url); const data = await response.json(); if (!response.ok) throw new Error(data.error || '无法读取研究记录'); return data; }
+async function api(url, options) { const response = await fetch(url, options); const data = await response.json(); if (!response.ok) throw new Error(data.error || '无法读取研究记录'); return data; }
 let runRequest = 0;
 async function loadRun(id) {
   const request = ++runRequest;
@@ -88,21 +88,39 @@ async function loadRun(id) {
   } catch (error) { if (request !== runRequest) return false; notify(error.message); if (!state.run) $('#app').innerHTML = `<div class="boot"><h1>暂时无法读取</h1><p>${esc(error.message)}</p><button data-action="refresh" class="button">重新读取</button></div>`; }
   finally { if (request === runRequest) $('#app').removeAttribute('aria-busy'); }
 }
-async function refresh() { try { state.index = await api('/api/runs'); if (!state.index.runs.length) { $('#app').innerHTML = '<div class="boot"><span class="brand-mark">P</span><h1>还没有研究记录</h1><p>在项目 runs 目录中生成或放入研究产物，再刷新页面。</p><button data-action="refresh" class="button">重新读取</button></div>'; return; } return await loadRun(state.index.runs.some(r => r.id === state.run?.id) ? state.run.id : state.index.default_run); } catch (error) { $('#app').innerHTML = `<div class="boot"><h1>连接暂时中断</h1><p>${esc(error.message)}</p><button data-action="refresh" class="button">重新连接</button></div>`; } }
+async function refresh() {
+  try {
+    state.index = await api('/api/runs');
+    if (!state.index.runs.length) { state.run = null; state.route = 'research'; render(); return true; }
+    return await loadRun(state.index.runs.some(r => r.id === state.run?.id) ? state.run.id : state.index.default_run);
+  } catch (error) { $('#app').innerHTML = `<div class="boot"><h1>连接暂时中断</h1><p>${esc(error.message)}</p><button data-action="refresh" class="button">重新连接</button></div>`; }
+}
+function sortPapers(papers, order = state.sort) {
+  return [...papers].sort((a,b) => {
+    const x = Date.parse(a.published || ''), y = Date.parse(b.published || '');
+    if (!Number.isFinite(x)) return Number.isFinite(y) ? 1 : String(a.title||'').localeCompare(String(b.title||''));
+    if (!Number.isFinite(y)) return -1;
+    return (order === 'oldest' ? x-y : y-x) || String(a.paper_id||a.title).localeCompare(String(b.paper_id||b.title));
+  });
+}
+function sortControl(id = 'paper-sort') {
+  return `<select id="${id}" aria-label="按论文发表时间排序"><option value="newest" ${state.sort==='newest'?'selected':''}>发表时间 · 最新优先</option><option value="oldest" ${state.sort==='oldest'?'selected':''}>发表时间 · 最早优先</option></select>`;
+}
+
 function statusTag(status) { return `<span class="status ${status === 'approved' ? 'good' : ['stale', 'needs_revision', 'insufficient_evidence'].includes(status) ? 'warning' : 'neutral'}">${esc(reviewLabels[status] || runLabels[status] || status)}</span>`; }
 function sourceLabel(p) { return p.source === 'abstract' ? (p.has_source ? '仅摘要 · 已保存' : '仅摘要') : p.has_source ? (p.sampled ? '全文已存 · 阅读有截断' : '原文已保存') : p.source === 'pdf' ? '历史 PDF · 无文本存档' : '来源未记录'; }
 
 function render() {
-  if (!state.run) return;
-  const r = state.run, valid = r.papers.filter(p => p.result && Object.keys(p.result).length).length;
+  if (!state.index) return;
+  const r = state.run || { papers: [], title: '文献查询', read_at: new Date().toISOString(), reports: {} }, valid = r.papers.filter(p => p.result && Object.keys(p.result).length).length;
   const titles = [...new Set(state.index.runs.map(item => item.title))];
-  const nav = [['results', 'book', '研究结果'], ['papers', 'grid', '论文库'], ['review', 'check', '审阅与问题'], ['runs', 'clock', '运行记录']];
-  const sections = { results: '研究结果', papers: '论文库', review: '审阅与问题', runs: '运行记录' };
-  $('#app').innerHTML = `<aside class="sidebar" aria-label="主导航"><a class="brand" href="#" data-action="home"><span class="brand-mark">P<span>·</span></span><span>Paper Atlas<small>论文研究工作台</small></span></a><div class="sidebar-label">工作空间</div><nav>${nav.map(([route, name, label]) => `<button data-route="${route}" class="nav-item ${state.route === route ? 'active' : ''}" ${state.route === route ? 'aria-current="page"' : ''}>${icon(name)}<span>${label}</span>${route === 'papers' ? `<span class="nav-count">${r.papers.length}</span>` : ''}</button>`).join('')}</nav><div class="sidebar-bottom"><span class="local-icon">${icon(layersIcon())}</span><div>本地研究库<small>只读浏览 · v0.1</small></div></div></aside>
+  const nav = [['research', 'search', '文献查询'], ['results', 'book', '研究结果'], ['papers', 'grid', '论文库'], ['review', 'check', '审阅与问题'], ['runs', 'clock', '运行记录']];
+  const sections = { research: '文献查询', results: '研究结果', papers: '论文库', review: '审阅与问题', runs: '运行记录' };
+  $('#app').innerHTML = `<aside class="sidebar" aria-label="主导航"><a class="brand" href="#" data-action="home"><span class="brand-mark">P<span>·</span></span><span>Paper Atlas<small>论文研究工作台</small></span></a><div class="sidebar-label">工作空间</div><nav>${nav.map(([route, name, label]) => `<button data-route="${route}" ${!state.run&&route!=='research'?'disabled':''} class="nav-item ${state.route === route ? 'active' : ''}" ${state.route === route ? 'aria-current="page"' : ''}>${icon(name)}<span>${label}</span>${route === 'papers' ? `<span class="nav-count">${r.papers.length}</span>` : ''}</button>`).join('')}</nav><div class="sidebar-bottom"><span class="local-icon">${icon(layersIcon())}</span><div>本地研究库<small>查询与阅读 · v0.2</small></div></div></aside>
   <div class="app-body"><header class="topbar"><div class="breadcrumb">工作空间 ${icon('chevron')} <span>${sections[state.route]}</span></div><div class="top-actions"><span class="sync-label">${new Date(r.read_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'})} 更新</span><button class="icon-button" data-action="refresh" title="刷新本地记录" aria-label="刷新本地记录">${icon('refresh')}</button><span class="avatar" aria-label="本地工作空间">研</span></div></header>
-  <main id="main" tabindex="-1"><div class="collection-bar"><span class="eyebrow">RESEARCH COLLECTION</span><div class="selectors">${titles.length > 1 ? `<select id="project-select" aria-label="研究主题">${titles.map(t => `<option ${t === r.title ? 'selected' : ''} value="${esc(t)}">${esc(t)}</option>`).join('')}</select>` : ''}<select id="run-select" aria-label="运行记录">${state.index.runs.filter(item => item.title === r.title).map(item => `<option value="${item.id}" ${item.id === r.id ? 'selected' : ''}>${item.round ? `第 ${item.round} 轮 · ` : ''}${runDate(item.id)}</option>`).join('')}</select></div></div>
-  <section class="page-heading"><div><h1>${esc(r.title.replace(/论文综述$/, '').trim())}</h1><div class="heading-meta">${statusTag(r.review_state)}<span>${r.round ? `第 ${r.round} 轮研究` : r.papers.length ? '轮次未记录' : '候选资料'}<span class="meta-dot">·</span>${valid}${r.target ? ` / ${r.target}` : ''} 篇阅读结果</span><span class="meta-separator"></span><span>审阅者 ${esc(r.reviewer)}</span></div></div><button class="button secondary" data-action="export">${icon('download')} 导出结果</button></section>
-  <div id="page-content">${state.route === 'results' ? renderResults() : state.route === 'papers' ? renderPapers() : state.route === 'review' ? renderReview() : renderRuns()}</div></main><footer>Paper Atlas<span>本地资料 · 依据原始研究记录呈现</span></footer></div>`;
+  <main id="main" tabindex="-1">${state.route==='research'?'<section class="page-heading research-heading"><div><span class="eyebrow">LITERATURE SEARCH</span><h1>你想研究什么？</h1><p>写下具体需求，让检索和阅读围绕你的问题展开。</p></div></section>':`<div class="collection-bar"><span class="eyebrow">RESEARCH COLLECTION</span><div class="selectors">${titles.length > 1 ? `<select id="project-select" aria-label="研究主题">${titles.map(t => `<option ${t === r.title ? 'selected' : ''} value="${esc(t)}">${esc(t)}</option>`).join('')}</select>` : ''}<select id="run-select" aria-label="运行记录">${state.index.runs.filter(item => item.title === r.title).map(item => `<option value="${item.id}" ${item.id === r.id ? 'selected' : ''}>${item.round ? `第 ${item.round} 轮 · ` : ''}${runDate(item.id)}</option>`).join('')}</select></div></div>
+  <section class="page-heading"><div><h1>${esc(r.title.replace(/论文综述$/, '').trim())}</h1><div class="heading-meta">${statusTag(r.review_state)}<span>${r.round ? `第 ${r.round} 轮研究` : r.papers.length ? '轮次未记录' : '候选资料'}<span class="meta-dot">·</span>${valid}${r.target ? ` / ${r.target}` : ''} 篇阅读结果</span><span class="meta-separator"></span><span>审阅者 ${esc(r.reviewer)}</span></div></div><button class="button secondary" data-action="export">${icon('download')} 导出结果</button></section>`}
+  <div id="page-content">${state.route === 'research' ? renderResearch() : state.route === 'results' ? renderResults() : state.route === 'papers' ? renderPapers() : state.route === 'review' ? renderReview() : renderRuns()}</div></main><footer>Paper Atlas<span>本地资料 · 依据原始研究记录呈现</span></footer></div>`;
   if (state.route === 'results' && state.tab === 'read') observeHeadings();
 }
 function layersIcon() { return 'layers'; }
@@ -124,33 +142,33 @@ function renderMap() {
   const r = state.run, entries = Object.entries(r.categories).sort((a,b) => b[1]-a[1]);
   const max = Math.max(...entries.map(e => e[1]), 1);
   const groups = {};
-  r.papers.forEach(p => { const year = p.published?.slice(0,4) || '年份未记录'; (groups[year] ||= []).push(p); });
+  sortPapers(r.papers, 'oldest').forEach(p => { const year = p.published?.slice(0,4) || '年份未记录'; (groups[year] ||= []).push(p); });
   return `<div class="map-grid"><section class="panel category-panel"><div class="section-title"><div><span class="eyebrow">RESEARCH AREAS</span><h2>研究方向分布</h2></div><span class="subtle">${r.papers.filter(p => p.status === 'validated').length} 篇</span></div><p class="muted">${r.review_state === 'approved' ? '按终审确认的唯一主分类展示。' : r.review_state === 'legacy_completed' ? '按历史记录中的主分类展示。' : '当前为阅读阶段的暂定分类。'}</p><div class="category-bars">${entries.map(([c,n],i) => `<button class="category-bar" data-category-open="${esc(c)}"><span class="bar-title"><span>${esc(c)}</span><b>${n}</b></span><meter class="category-meter color-${i%8}" min="0" max="${max}" value="${n}" aria-label="${esc(c)} ${n} 篇">${n}</meter></button>`).join('')}</div></section><section class="panel timeline-panel"><div class="section-title"><div><span class="eyebrow">PUBLICATION TIMELINE</span><h2>论文发表时间轴</h2></div>${icon('clock')}</div><p class="muted">时间先后不代表技术继承。当前没有经终审确认的结构化关系图。</p><div class="timeline">${Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([year,papers])=>`<div class="year-group"><div class="year-label">${esc(year)}<span>${papers.length} 篇</span></div><div class="year-papers">${papers.map(p=>`<button data-paper="${p.task_id}" class="timeline-paper"><span class="paper-id">${p.task_id}</span><span>${esc(p.title)}</span>${icon('chevron')}</button>`).join('')}</div></div>`).join('')}</div></section></div>`;
 }
 
 function filteredPapers() {
   const list = state.scope === 'all' && state.cumulative ? state.cumulative : state.run.papers;
   const q = state.query.toLocaleLowerCase();
-  return list.filter(p => (!state.category || p.category === state.category) && (!state.source || (state.source === 'saved' ? p.has_source : state.source === 'abstract' ? p.source === 'abstract' : p.status !== 'validated')) && (!q || [p.title, (p.authors||[]).join(' '), p.result.research_question, p.result.methodology, p.task_id].join(' ').toLocaleLowerCase().includes(q)));
+  return sortPapers(list).filter(p => (!state.category || p.category === state.category) && (!state.source || (state.source === 'saved' ? p.has_source : state.source === 'abstract' ? p.source === 'abstract' : p.status !== 'validated')) && (!q || [p.title, (p.authors||[]).join(' '), p.result.research_question, p.result.methodology, p.task_id].join(' ').toLocaleLowerCase().includes(q)));
 }
 function renderPapers() {
   const candidates = state.scope === 'candidates';
   const cats = [...new Set((state.cumulative && state.scope === 'all' ? state.cumulative : state.run.papers).map(p=>p.category))];
-  return `<div class="library-toolbar"><div class="scope-tabs"><button data-scope="current" class="${state.scope==='current'?'active':''}">本轮论文 <span>${state.run.papers.length}</span></button><button data-scope="all" class="${state.scope==='all'?'active':''}">累计论文</button><button data-scope="candidates" class="${candidates?'active':''}">候选记录 <span>${state.run.candidates.length}</span></button></div><div class="filter-row"><label class="search-box">${icon('search')}<input id="paper-search" type="search" placeholder="搜索标题、作者、研究问题…" aria-label="搜索论文" value="${esc(state.query)}"></label><select id="category-filter" aria-label="分类筛选" ${candidates?'disabled':''}><option value="">全部分类</option>${cats.map(c=>`<option ${c===state.category?'selected':''}>${esc(c)}</option>`).join('')}</select><select id="source-filter" aria-label="状态筛选" ${candidates?'disabled':''}><option value="">全部状态</option><option value="saved" ${state.source==='saved'?'selected':''}>有原文存档</option><option value="abstract" ${state.source==='abstract'?'selected':''}>仅摘要</option><option value="failed" ${state.source==='failed'?'selected':''}>无有效阅读结果</option></select></div></div><div id="paper-results">${renderPaperRows()}</div><div id="compare-tray">${renderCompareTray()}</div>`;
+  return `<div class="library-toolbar"><div class="scope-tabs"><button data-scope="current" class="${state.scope==='current'?'active':''}">本轮论文 <span>${state.run.papers.length}</span></button><button data-scope="all" class="${state.scope==='all'?'active':''}">累计论文</button><button data-scope="candidates" class="${candidates?'active':''}">候选记录 <span>${state.run.candidates.length}</span></button></div><div class="filter-row"><label class="search-box">${icon('search')}<input id="paper-search" type="search" placeholder="搜索标题、作者、研究问题…" aria-label="搜索论文" value="${esc(state.query)}"></label><select id="category-filter" aria-label="分类筛选" ${candidates?'disabled':''}><option value="">全部分类</option>${cats.map(c=>`<option ${c===state.category?'selected':''}>${esc(c)}</option>`).join('')}</select><select id="source-filter" aria-label="状态筛选" ${candidates?'disabled':''}><option value="">全部状态</option><option value="saved" ${state.source==='saved'?'selected':''}>有原文存档</option><option value="abstract" ${state.source==='abstract'?'selected':''}>仅摘要</option><option value="failed" ${state.source==='failed'?'selected':''}>无有效阅读结果</option></select>${sortControl()}</div></div><div id="paper-results">${renderPaperRows()}</div><div id="compare-tray">${renderCompareTray()}</div>`;
 }
 function renderPaperRows() {
   if (state.scope === 'candidates') {
-    const list = state.run.candidates.filter(p => !state.query || [p.title,p.abstract].join(' ').toLowerCase().includes(state.query.toLowerCase()));
-    return `<div class="list-summary">${list.length} 篇候选论文<span>保留筛选记录，不将未入选解释为低质量</span></div><div class="paper-list">${list.map(p=>`<article class="candidate-row"><div><span class="tag">${({selected:'已入选',deferred:'待定',unselected:'未入选',unscreened:'尚未筛选'})[p.disposition]}</span><h3><a href="${safeUrl(p.url)}" target="_blank" rel="noopener noreferrer">${esc(p.title)} ${icon('external')}</a></h3><p class="muted">${p.rationale ? esc(p.rationale) : p.disposition==='unselected' ? '历史记录未提供逐篇排除理由。' : date(p.published)}</p><details><summary>查看摘要</summary><p>${esc(p.abstract || '摘要未记录')}</p></details></div></article>`).join('') || '<div class="empty-state"><h3>没有匹配的候选论文</h3></div>'}</div>`;
+    const list = sortPapers(state.run.candidates).filter(p => !state.query || [p.title,p.abstract].join(' ').toLowerCase().includes(state.query.toLowerCase()));
+    return `<div class="list-summary">${list.length} 篇候选论文<span>保留筛选记录，不将未入选解释为低质量</span></div><div class="paper-list">${list.map(p=>`<article class="candidate-row"><div><span class="tag">${({selected:'已入选',deferred:'待定',unselected:'未入选',unscreened:'尚未筛选'})[p.disposition]}</span><h3><a href="${safeUrl(p.url)}" target="_blank" rel="noopener noreferrer">${esc(p.title)} ${icon('external')}</a></h3><p class="candidate-date">首次发表：${date(p.published)}</p><p class="muted">${p.rationale ? esc(p.rationale) : p.disposition==='unselected' ? '历史记录未提供逐篇排除理由。' : date(p.published)}</p><details><summary>查看摘要</summary><p>${esc(p.abstract || '摘要未记录')}</p></details></div></article>`).join('') || '<div class="empty-state"><h3>没有匹配的候选论文</h3></div>'}</div>`;
   }
   const papers = filteredPapers();
-  return `<div class="list-summary">${papers.length} 篇论文<span>勾选 2–4 篇，按相同维度进行对照</span></div><div class="paper-list">${papers.map(p=>`<article class="paper-row"><label class="paper-check"><input type="checkbox" data-compare="${esc(p.key)}" aria-label="选择 ${esc(p.title)} 进行比较" ${state.compare.has(p.key)?'checked':''} ${p.status!=='validated'?'disabled':''}></label><span class="paper-id large">${esc(p.task_id)}</span><div class="paper-info"><div class="paper-tags"><span class="category-label">${esc(p.category)}</span><span>${p.published?.slice(0,4)||'年份未记录'}</span>${state.scope==='all'?`<span>${runDate(p.run_id)}</span>`:''}</div><button class="paper-title" data-paper="${p.task_id}" data-run="${p.run_id}">${esc(p.title)}</button><p>${esc(p.result.one_sentence_summary || '此论文尚无通过校验的阅读结果。')}</p><div class="paper-meta"><span>${icon('file')}${sourceLabel(p)}</span><span>${(p.result.evidence||[]).length} 条引文</span><span class="${p.status==='validated'?'validated-label':'warning-text'}">${p.status==='validated'?'阅读卡片已生成':'阅读未完成'}</span></div></div><button class="row-open icon-button" data-paper="${p.task_id}" data-run="${p.run_id}" aria-label="查看 ${esc(p.title)}">${icon('arrow')}</button></article>`).join('') || `<div class="empty-state">${icon('search')}<h3>没有匹配的论文</h3><p>试试其他关键词，或清除筛选条件。</p><button class="button secondary" data-action="clear-filters">清除筛选</button></div>`}</div>`;
+  return `<div class="list-summary">${papers.length} 篇论文<span>勾选 2–4 篇，按相同维度进行对照</span></div><div class="paper-list">${papers.map(p=>`<article class="paper-row"><label class="paper-check"><input type="checkbox" data-compare="${esc(p.key)}" aria-label="选择 ${esc(p.title)} 进行比较" ${state.compare.has(p.key)?'checked':''} ${p.status!=='validated'?'disabled':''}></label><span class="paper-id large">${esc(p.task_id)}</span><div class="paper-info"><div class="paper-tags"><span class="category-label">${esc(p.category)}</span><span>${date(p.published)}</span>${state.scope==='all'?`<span>${runDate(p.run_id)}</span>`:''}</div><button class="paper-title" data-paper="${p.task_id}" data-run="${p.run_id}">${esc(p.title)}</button><p>${esc(p.result.one_sentence_summary || '此论文尚无通过校验的阅读结果。')}</p><div class="paper-meta"><span>${icon('file')}${sourceLabel(p)}</span><span>${(p.result.evidence||[]).length} 条引文</span><span class="${p.status==='validated'?'validated-label':'warning-text'}">${p.status==='validated'?'阅读卡片已生成':'阅读未完成'}</span></div></div><button class="row-open icon-button" data-paper="${p.task_id}" data-run="${p.run_id}" aria-label="查看 ${esc(p.title)}">${icon('arrow')}</button></article>`).join('') || `<div class="empty-state">${icon('search')}<h3>没有匹配的论文</h3><p>试试其他关键词，或清除筛选条件。</p><button class="button secondary" data-action="clear-filters">清除筛选</button></div>`}</div>`;
 }
 function renderCompareTray() { return state.compare.size ? `<div class="compare-tray"><span>${icon('compare')} 已选 <b>${state.compare.size}</b> 篇论文</span><div><button class="text-button" data-action="clear-compare">清空</button><button class="button" data-action="compare" ${state.compare.size < 2 ? 'disabled':''}>并排比较 ${icon('arrow')}</button></div></div>` : ''; }
 function renderReview() {
   const r = state.run, d = r.decision;
   const issues = [...(d.unresolved_issues||[]).map(v=>({title:typeof v==='string'?v:JSON.stringify(v), type:'待解决'})), ...(d.coverage_gaps||[]).map(v=>({title:typeof v==='string'?v:JSON.stringify(v),type:'覆盖缺口'})), ...(d.reread_requests||[]).map(v=>({title:v.question||'需要补读', detail:v.reason, task:v.task_id,type:'补读请求'}))];
-  return `<div class="review-summary panel"><div class="review-symbol">${icon('check')}</div><div><span class="eyebrow">REVIEW STATUS</span><h2>${esc(reviewLabels[r.review_state]||'审阅状态未记录')}</h2><p>${r.review_state==='legacy_completed'?'已保存历史审阅意见。该轮没有新版的正文与证据包哈希验证。':r.review_state==='approved'?'批准决定、引用覆盖及正文和证据包的一致性检查通过。':r.approval_error || (r.review_mode==='external'?'当前采用外部审阅方式，等待审阅者返回综合结果或处理意见。':'依据审阅决定处理证据缺口，再进入最终定稿。')}</p></div><div class="review-owner"><span>本轮审阅者</span><strong>${esc(r.reviewer)}</strong><small>${r.review_mode==='external'?'外部审阅':'API 审阅'}</small></div></div><div class="review-grid"><section class="panel review-record"><div class="section-title"><h2>审阅记录</h2><span class="subtle">依据与修订决定</span></div><div class="prose compact">${r.review_record ? markdown(r.review_record, {prefix:'review'}).html : '<div class="empty-state"><h3>还没有审阅记录</h3><p>阅读结果已保留，可先在论文库中查看证据。</p></div>'}</div></section><aside class="review-aside"><section class="panel"><div class="section-title"><h2>待处理问题</h2><span class="count-pill">${issues.length}</span></div>${issues.map(issue=>`<div class="issue"><span class="tag amber">${issue.type}</span>${issue.task?`<button class="citation" data-paper="${esc(issue.task)}">${esc(issue.task)}</button>`:''}<p>${esc(issue.title)}</p>${issue.detail?`<small>${esc(issue.detail)}</small>`:''}</div>`).join('')||`<div class="quiet-empty">${icon('check')}<p>没有结构化的待处理问题</p><small>${r.review_state==='legacy_completed'?'历史细节请以左侧审阅记录为准。':'这不代表报告已经获得批准。'}</small></div>`}${issues.length?'<button class="button secondary full" data-action="copy-issues">复制问题清单</button>':''}</section><section class="note-card"><h3>阅读时留意</h3><p>引句匹配只说明文字存在于提供的原文中。实验条件、因果关系与结论仍需要审阅者判断。</p>${r.has_bundle?`<button class="text-link" data-action="export-bundle">导出审查材料 ${icon('arrow')}</button>`:''}</section></aside></div>`;
+  return `${typeof renderCodexPanel === "function" ? renderCodexPanel() : ""}<div class="review-summary panel"><div class="review-symbol">${icon('check')}</div><div><span class="eyebrow">REVIEW STATUS</span><h2>${esc(reviewLabels[r.review_state]||'审阅状态未记录')}</h2><p>${r.review_state==='legacy_completed'?'已保存历史审阅意见。该轮没有新版的正文与证据包哈希验证。':r.review_state==='approved'?'批准决定、引用覆盖及正文和证据包的一致性检查通过。':r.approval_error || (r.review_mode==='external'?'当前采用外部审阅方式，等待审阅者返回综合结果或处理意见。':'依据审阅决定处理证据缺口，再进入最终定稿。')}</p></div><div class="review-owner"><span>本轮审阅者</span><strong>${esc(r.reviewer)}</strong><small>${r.review_mode==='codex_subscription'?'Codex 订阅':r.review_mode==='external'?'外部审阅':'API 审阅'}</small></div></div><div class="review-grid"><section class="panel review-record"><div class="section-title"><h2>审阅记录</h2><span class="subtle">依据与修订决定</span></div><div class="prose compact">${r.review_record ? markdown(r.review_record, {prefix:'review'}).html : '<div class="empty-state"><h3>还没有审阅记录</h3><p>阅读结果已保留，可先在论文库中查看证据。</p></div>'}</div></section><aside class="review-aside"><section class="panel"><div class="section-title"><h2>待处理问题</h2><span class="count-pill">${issues.length}</span></div>${issues.map(issue=>`<div class="issue"><span class="tag amber">${issue.type}</span>${issue.task?`<button class="citation" data-paper="${esc(issue.task)}">${esc(issue.task)}</button>`:''}<p>${esc(issue.title)}</p>${issue.detail?`<small>${esc(issue.detail)}</small>`:''}</div>`).join('')||`<div class="quiet-empty">${icon('check')}<p>没有结构化的待处理问题</p><small>${r.review_state==='legacy_completed'?'历史细节请以左侧审阅记录为准。':'这不代表报告已经获得批准。'}</small></div>`}${issues.length?'<button class="button secondary full" data-action="copy-issues">复制问题清单</button>':''}</section><section class="note-card"><h3>阅读时留意</h3><p>引句匹配只说明文字存在于提供的原文中。实验条件、因果关系与结论仍需要审阅者判断。</p>${r.has_bundle?`<button class="text-link" data-action="export-bundle">导出审查材料 ${icon('arrow')}</button>`:''}</section></aside></div>`;
 }
 function renderRuns() {
   const r = state.run;
@@ -186,7 +204,7 @@ document.addEventListener('click', async event => {
   const target = event.target.closest('button,a,[data-dismiss]'); if (!target) return;
   if (target.dataset.dismiss && event.target===target) { closeOverlay(); return; }
   if (target.dataset.paper) { event.preventDefault(); return openPaper(target.dataset.paper, target.dataset.run||state.run.id); }
-  if (target.dataset.route) { state.route=target.dataset.route; state.compare.clear(); render(); window.scrollTo({top:0}); return; }
+  if (target.dataset.route) { if(target.disabled)return; state.route=target.dataset.route; state.compare.clear(); render(); window.scrollTo({top:0}); return; }
   if (target.dataset.tab) { state.tab=target.dataset.tab; render(); return; }
   if (target.dataset.runOpen) return loadRun(target.dataset.runOpen);
   if (target.dataset.categoryOpen) { state.category=target.dataset.categoryOpen; state.route='papers'; state.scope='current'; render(); return; }
@@ -200,8 +218,8 @@ document.addEventListener('click', async event => {
     render();return;
   }
   switch(target.dataset.action) {
-    case 'home': event.preventDefault(); state.route='results'; render(); break;
-    case 'refresh': if (await refresh()) notify('已重新读取本地研究记录'); break;
+    case 'home': event.preventDefault(); state.route=state.run?'results':'research'; render(); break;
+    case 'refresh': await refreshResearchSettings(); if (await refresh()) notify('已重新读取本地研究记录'); break;
     case 'close': closeOverlay(); break;
     case 'export': openExport(); break;
     case 'export-bundle': window.location.href=`/api/download?run=${state.run.id}&kind=bundle`; break;
@@ -219,6 +237,7 @@ document.addEventListener('click', async event => {
 });
 document.addEventListener('change', event => {
   const target=event.target;
+  if(target.id==='paper-sort'){state.sort=target.value;$('#paper-results').innerHTML=renderPaperRows();return;}
   if(target.id==='run-select') return loadRun(target.value);
   if(target.id==='project-select') return loadRun(state.index.runs.find(r=>r.title===target.value&&r.has_final)?.id||state.index.runs.find(r=>r.title===target.value).id);
   if(target.id==='version-select'){state.version=target.value;render();return;}
@@ -230,4 +249,4 @@ document.addEventListener('keydown', event=>{
   if(event.key==='Escape') closeOverlay();
   if(event.key==='Tab'&&$('.overlay')) {const items=[...$('.overlay').querySelectorAll('a[href],button:not(:disabled),input,select,summary,[tabindex="0"]')];if(!items.length)return;const first=items[0],last=items[items.length-1];if(event.shiftKey&&(document.activeElement===first||document.activeElement.matches('[role="dialog"]'))){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}
 });
-refresh();
+

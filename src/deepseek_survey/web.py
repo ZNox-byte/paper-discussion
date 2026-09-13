@@ -1,4 +1,4 @@
-"""Read-only local research viewer. Never starts models or rewrites research artifacts."""
+"""Local research viewer with explicitly submitted discovery and reading jobs."""
 from __future__ import annotations
 
 import argparse
@@ -6,6 +6,7 @@ import hashlib
 import json
 import mimetypes
 import re
+import secrets
 from collections import Counter
 from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -86,7 +87,7 @@ class ResearchLibrary:
                     })
         preferred = next((r["id"] for r in runs if r["has_final"]), None)
         return {"runs": runs, "default_run": preferred or (runs[0]["id"] if runs else None),
-                "read_at": datetime.now(UTC).isoformat(), "mode": "read_only"}
+                "read_at": datetime.now(UTC).isoformat(), "mode": "local"}
 
     def detail(self, run_id: str) -> dict:
         run = self.run_path(run_id)
@@ -136,7 +137,7 @@ class ResearchLibrary:
                     approval_error = "批准记录未通过完整性检查"
             review_state = "approved" if valid_new else (
                 "stale" if decision.get("decision") == "approved"
-                else decision.get("decision", "awaiting_review")
+                else decision.get("decision", "awaiting_review" if bundle.get("source_cards") else "unreviewed")
             )
         else:
             review_state = "legacy_completed" if manifest.get("status") == "completed" else (
@@ -266,12 +267,14 @@ class ResearchLibrary:
             "reviewer": decision.get("reviewer") or status.get("reviewer") or bundle.get("reviewer", "未记录"),
             "review_mode": _dict(_dict(manifest.get("configuration")).get("review")).get("mode", "external"),
             "reports": reports, "has_bundle": bool(bundle), "papers": papers, "categories": categories,
+            "research_request": _dict(_json(run / "ui_job.json", {})).get("request"),
             "review_record": review_record, "decision": {
                 k: decision.get(k, []) for k in ("unresolved_issues", "coverage_gaps", "reread_requests")},
             "failures": _list(_json(run / "failures.json", [])),
             "models": _dict(manifest.get("models")), "usage": list(usage_by_model.values()),
             "budget": budget, "usage_complete": bool(budget),
             "candidates": [{"paper_id": p.get("paper_id"), "title": p.get("title"),
+                            "authors": p.get("authors", []),
                             "published": p.get("published"), "url": p.get("url"),
                             "abstract": p.get("abstract"),
                             "disposition": "selected" if p.get("paper_id") in selected_ids else (
@@ -311,12 +314,27 @@ class ResearchLibrary:
         return path.read_bytes(), f"{run_id}-{path.name}"
 
 
-def make_handler(library: ResearchLibrary):
+def make_handler(library: ResearchLibrary, jobs=None):
     class Handler(BaseHTTPRequestHandler):
+        def local_request(self):
+            host = urlsplit("http://" + self.headers.get("Host", "")).hostname
+            return host in {"127.0.0.1", "localhost"}
+
         def do_GET(self):
+            if not self.local_request():
+                return self.send_json({"error": "只接受本机地址访问"}, 403)
             url = urlsplit(self.path)
             route = unquote(url.path)
             try:
+                if jobs and route == "/api/settings":
+                    return self.send_json(jobs.settings())
+                if jobs and route == "/api/codex/status":
+                    return self.send_json(jobs.subscription.bridge.status())
+                if jobs and route == "/api/jobs":
+                    return self.send_json(jobs.list())
+                job_match = re.fullmatch(r"/api/jobs/([A-Za-z0-9_-]+)", route)
+                if jobs and job_match:
+                    return self.send_json(jobs.get(job_match[1]))
                 if route == "/api/runs":
                     return self.send_json(library.index())
                 match = re.fullmatch(r"/api/runs/([^/]+)(?:/source/(P\d+))?", route)
@@ -330,7 +348,7 @@ def make_handler(library: ResearchLibrary):
                     return self.send_bytes(data, "application/octet-stream", filename=filename)
                 if route.startswith("/api/"):
                     raise FileNotFoundError("接口不存在")
-                asset = {"/": "index.html", "/app.js": "app.js", "/style.css": "style.css",
+                asset = {"/": "index.html", "/app.js": "app.js", "/research.js": "research.js", "/codex.js": "codex.js", "/style.css": "style.css",
                          "/favicon.svg": "favicon.svg"}.get(route)
                 if not asset:
                     raise FileNotFoundError("页面不存在")
@@ -343,6 +361,55 @@ def make_handler(library: ResearchLibrary):
                 self.send_json({"error": str(exc)}, 404 if isinstance(exc, FileNotFoundError) else 400)
             except (OSError, TypeError, KeyError):
                 self.send_json({"error": "这条记录暂时无法读取，请刷新或选择其他运行。"}, 500)
+
+        def do_POST(self):
+            if jobs is None:
+                return self.send_json({"error": "未启用任务操作"}, 501)
+            if not self.local_request() or not secrets.compare_digest(
+                    self.headers.get("X-Research-Token", ""), jobs.token):
+                return self.send_json({"error": "会话已失效，请刷新页面后再提交"}, 403)
+            origin = self.headers.get("Origin")
+            if origin and origin != "http://" + self.headers.get("Host", ""):
+                return self.send_json({"error": "不接受跨站任务提交"}, 403)
+            if self.headers.get_content_type() != "application/json":
+                return self.send_json({"error": "请求必须为 JSON"}, 415)
+            try:
+                from pydantic import ValidationError
+
+                from .web_jobs import JobConflict
+
+                length = int(self.headers.get("Content-Length", "0"))
+                if not 0 < length <= 32000 or self.headers.get("Transfer-Encoding"):
+                    return self.send_json({"error": "请求内容长度不正确或过大"}, 413)
+                payload = json.loads(self.rfile.read(length))
+                if not isinstance(payload, dict):
+                    return self.send_json({"error": "请求内容必须是对象"}, 400)
+                route = urlsplit(self.path).path
+                if route == "/api/codex/connect":
+                    return self.send_json(jobs.subscription.bridge.connect())
+                if route == "/api/codex/login":
+                    return self.send_json(jobs.subscription.bridge.login_start())
+                if route == "/api/jobs/review":
+                    return self.send_json(jobs.subscription.start(payload), 202)
+                if route == "/api/jobs/search":
+                    return self.send_json(jobs.start_search(payload), 202)
+                if route == "/api/jobs/read":
+                    return self.send_json(jobs.start_read(payload), 202)
+                match = re.fullmatch(r"/api/jobs/([A-Za-z0-9_-]+)/cancel", route)
+                if match:
+                    return self.send_json(jobs.cancel(match[1]))
+                raise FileNotFoundError("接口不存在")
+            except JobConflict as exc:
+                self.send_json({"error": str(exc)}, 409)
+            except ValidationError as exc:
+                errors = [f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors()]
+                self.send_json({"error": "请检查填写内容：" + "；".join(errors)}, 400)
+            except (ValueError, UnicodeError) as exc:
+                self.send_json({"error": str(exc)}, 400)
+            except FileNotFoundError:
+                self.send_json({"error": "记录或项目配置不存在"}, 404)
+            except (OSError, TypeError, KeyError):
+                self.send_json({"error": "暂时无法提交任务，请检查本地配置或稍后重试"}, 500)
 
         def send_json(self, data, status=200):
             self.send_bytes(json.dumps(data, ensure_ascii=False).encode("utf-8"),
@@ -368,14 +435,23 @@ def make_handler(library: ResearchLibrary):
     return Handler
 
 
-def serve(runs_dir: Path, port: int = 8765) -> None:
-    server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(ResearchLibrary(runs_dir)))
+def serve(runs_dir: Path, port: int = 8765, config_path: Path = Path("config.toml")) -> None:
+    from .web_jobs import ResearchJobs
+
+    library = ResearchLibrary(runs_dir)
+    jobs = ResearchJobs(library, config_path)
+    server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(library, jobs))
     print(f"Paper Atlas ready: http://127.0.0.1:{port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
+        jobs.subscription.close()
+        if jobs.active_id:
+            jobs.cancel(jobs.active_id)
+            if jobs.thread:
+                jobs.thread.join(timeout=5)
         server.server_close()
 
 
@@ -383,5 +459,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="本地论文研究结果工作台")
     parser.add_argument("--runs", type=Path, default=Path("runs"))
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--config", type=Path, default=Path("config.toml"))
     args = parser.parse_args()
-    serve(args.runs, args.port)
+    serve(args.runs, args.port, args.config)

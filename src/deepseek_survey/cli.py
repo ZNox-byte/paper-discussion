@@ -23,7 +23,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--config", default="config.toml", help="TOML 配置路径")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("doctor", help="检查配置和 API Key，不发送任何请求")
-    serve_parser = subparsers.add_parser("serve", help="打开只读的本地论文研究工作台，无需 API Key")
+    serve_parser = subparsers.add_parser("serve", help="启动本地研究工作台；浏览结果无需 API Key")
     serve_parser.add_argument("--runs", type=Path, default=Path("runs"), help="研究记录目录")
     serve_parser.add_argument("--port", type=int, default=8765, help="本机监听端口")
     discover_parser = subparsers.add_parser("discover", help="只检索 arXiv，不需要 API Key")
@@ -140,7 +140,7 @@ def main() -> None:
         if args.command == "serve":
             from .web import serve
 
-            serve(args.runs, args.port)
+            serve(args.runs, args.port, Path(args.config))
             return
         if args.command == "doctor":
             raise SystemExit(_doctor(args.config))

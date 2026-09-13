@@ -47,6 +47,8 @@ def parse_arxiv_feed(xml_text: str, query: str) -> list[Paper]:
         url = _text(entry, "atom:id") or ""
         if not url:
             continue
+        if "/api/errors" in url:
+            raise ValueError("arXiv 查询错误：" + (_text(entry, "atom:summary") or "请检查检索式"))
         links = {
             link.attrib.get("title", link.attrib.get("rel", "")): link.attrib.get("href", "")
             for link in entry.findall("atom:link", NAMESPACES)
@@ -126,6 +128,17 @@ def deterministic_rank(paper: Paper) -> tuple[int, str, str]:
     return (-score, paper.published or "", paper.paper_id)
 
 
+def rank_search_results(papers: Iterable[Paper], config: SearchConfig) -> list[Paper]:
+    items = list(papers)
+    if config.sort_by == "relevance":
+        return sorted(items, key=deterministic_rank)
+    field = "updated" if config.sort_by == "lastUpdatedDate" else "published"
+    dated = [p for p in items if getattr(p, field)]
+    undated = [p for p in items if not getattr(p, field)]
+    return sorted(dated, key=lambda p: (getattr(p, field), p.paper_id),
+                  reverse=config.sort_order == "descending") + undated
+
+
 async def search_arxiv(
     config: SearchConfig, progress: Callable[[str], None] | None = None
 ) -> list[Paper]:
@@ -142,8 +155,8 @@ async def search_arxiv(
                         "search_query": query,
                         "start": 0,
                         "max_results": config.max_results_per_query,
-                        "sortBy": "relevance",
-                        "sortOrder": "descending",
+                        "sortBy": config.sort_by,
+                        "sortOrder": config.sort_order,
                     },
                 )
                 if response.status_code not in {429, 500, 502, 503, 504}:
@@ -177,4 +190,4 @@ async def search_arxiv(
             result_sets.append(await search_one(query, query_number))
 
     papers = deduplicate_papers(paper for group in result_sets for paper in group)
-    return sorted(papers, key=deterministic_rank)
+    return rank_search_results(papers, config)

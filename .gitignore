@@ -18,6 +18,8 @@ __pycache__/
 .uv-cache/
 .python/
 .tmp/
+.app-data/
+vendor/
 
 # 构建产物
 build/

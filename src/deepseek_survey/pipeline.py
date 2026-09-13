@@ -11,7 +11,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from .artifacts import new_run_directory, read_json, write_json, write_text
-from .arxiv import deterministic_rank, search_arxiv
+from .arxiv import rank_search_results, search_arxiv
 from .config import AppConfig
 from .models import (
     CategoryPlan,
@@ -155,7 +155,7 @@ async def _screen_candidates(
             "Add search queries or provide a larger candidates JSON file."
         )
     pool_size = min(len(papers), max(96, target * 4))
-    pool = sorted(papers, key=deterministic_rank)[:pool_size]
+    pool = rank_search_results(papers, config.search)[:pool_size]
     write_json(run_dir / "screening" / "candidate_pool.json", [p.model_dump() for p in pool])
     base_prompt = screening_prompt(
         pool,
@@ -205,6 +205,7 @@ def _reader_input(
         ),
         "schema": ResearchResult.model_json_schema(),
         "validation": asdict(config.validation),
+        "search": asdict(config.search),
     })
 
 
@@ -969,7 +970,7 @@ async def run_pipeline(
             progress(f"[resume] loaded {len(papers)} candidates")
         elif candidates_path:
             papers = [Paper.model_validate(item) for item in read_json(candidates_path)]
-            papers = sorted(papers, key=deterministic_rank)
+            papers = rank_search_results(papers, config.search)
             write_json(saved_candidates, [paper.model_dump() for paper in papers])
             progress(f"[discover] loaded {len(papers)} candidates from {candidates_path}")
         else:
@@ -1058,7 +1059,7 @@ async def run_pipeline(
             },
         )
 
-        progress("[prepare] downloading/extracting the 32 selected papers")
+        progress(f"[prepare] downloading/extracting the {len(task_specs)} selected papers")
         contents = await _prepare_sources(config, run_dir, task_specs)
         write_json(
             run_dir / "content_status.json",

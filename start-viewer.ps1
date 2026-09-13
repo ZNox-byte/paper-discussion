@@ -11,5 +11,5 @@ $env:PYTHONUTF8 = '1'
 $env:TEMP = Join-Path $projectRoot '.tmp'
 $env:TMP = $env:TEMP
 New-Item -ItemType Directory -Force -Path $env:TEMP | Out-Null
-& $python -m deepseek_survey.web --runs (Join-Path $projectRoot 'runs') --port $Port
+& $python -m deepseek_survey.web --runs (Join-Path $projectRoot 'runs') --config (Join-Path $projectRoot 'config.toml') --port $Port
 exit $LASTEXITCODE

@@ -203,8 +203,8 @@ def test_serve_cli_needs_no_config_or_keys(monkeypatch, tmp_path):
     from deepseek_survey import cli
 
     calls = []
-    monkeypatch.setattr("deepseek_survey.web.serve", lambda root, port: calls.append((root, port)))
+    monkeypatch.setattr("deepseek_survey.web.serve", lambda root, port, config: calls.append((root, port, config)))
     monkeypatch.setattr("sys.argv", ["deepseek-survey", "--config", "nonexistent.toml", "serve",
                                     "--runs", str(tmp_path), "--port", "9876"])
     cli.main()
-    assert calls == [(tmp_path, 9876)]
+    assert calls == [(tmp_path, 9876, Path("nonexistent.toml"))]

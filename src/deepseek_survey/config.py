@@ -43,6 +43,8 @@ class SearchConfig:
     queries: tuple[str, ...]
     max_retries: int = 3
     request_delay_seconds: float = 3.0
+    sort_by: str = "relevance"
+    sort_order: str = "descending"
 
 
 @dataclass(frozen=True, slots=True)
@@ -292,6 +294,8 @@ def load_config(path: str | Path) -> AppConfig:
         queries=tuple(search.get("queries", ("all:vLLM",))),
         max_retries=int(search.get("max_retries", 3)),
         request_delay_seconds=float(search.get("request_delay_seconds", 3)),
+        sort_by=str(search.get("sort_by", "relevance")),
+        sort_order=str(search.get("sort_order", "descending")),
     )
     validation_config = ValidationConfig(
         minimum_grounded_evidence=int(validation.get("minimum_grounded_evidence", 2)),
@@ -375,8 +379,12 @@ def load_config(path: str | Path) -> AppConfig:
             max_retries=provider.max_retries if provider else deepseek_config.max_retries,
         )
 
-    if project_config.target_papers != 32:
-        raise ValueError("本项目固定调度 32 个阅读任务，请将 project.target_papers 设为 32")
+    if not 1 <= project_config.target_papers <= 32:
+        raise ValueError("project.target_papers 必须在 1..32 范围内")
+    if search_config.sort_by not in {"relevance", "submittedDate", "lastUpdatedDate"}:
+        raise ValueError("search.sort_by 不受支持")
+    if search_config.sort_order not in {"ascending", "descending"}:
+        raise ValueError("search.sort_order 不受支持")
     if not 1 <= deepseek_config.reader_concurrency <= 32:
         raise ValueError("deepseek.reader_concurrency 必须在 1..32；设为 32 才会满并发运行")
     if not categories:

@@ -1,4 +1,10 @@
-from deepseek_survey.arxiv import deduplicate_papers, parse_arxiv_feed
+from dataclasses import replace
+
+import httpx
+import pytest
+
+from deepseek_survey.arxiv import deduplicate_papers, parse_arxiv_feed, search_arxiv
+from deepseek_survey.config import load_config
 
 FEED = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">
@@ -36,3 +42,29 @@ def test_deduplicate_merges_queries() -> None:
     merged = deduplicate_papers([first, second])
     assert len(merged) == 1
     assert merged[0].matched_queries == ["all:vLLM", 'all:"PagedAttention"']
+
+
+@pytest.mark.asyncio
+async def test_date_sorting_reaches_arxiv_and_rate_limit_is_not_empty_results(monkeypatch):
+    original_client = httpx.AsyncClient
+    requests = []
+    status = 200
+    def handler(request):
+        requests.append(request)
+        return httpx.Response(status, text=FEED)
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: original_client(
+        **kw, transport=httpx.MockTransport(handler)))
+    config = replace(load_config("config.toml").search, queries=('all:"PagedAttention"',),
+                     sort_by="submittedDate", sort_order="descending", max_retries=0)
+    papers = await search_arxiv(config)
+    assert len(papers) == 1
+    assert requests[0].url.params["sortBy"] == "submittedDate"
+    assert requests[0].url.params["sortOrder"] == "descending"
+    status = 429
+    with pytest.raises(httpx.HTTPStatusError):
+        await search_arxiv(config)
+
+
+def test_arxiv_error_feed_is_not_a_paper():
+    with pytest.raises(ValueError, match="arXiv 查询错误"):
+        parse_arxiv_feed(FEED.replace("http://arxiv.org/abs/2309.06180v2", "http://arxiv.org/api/errors"), "bad")
